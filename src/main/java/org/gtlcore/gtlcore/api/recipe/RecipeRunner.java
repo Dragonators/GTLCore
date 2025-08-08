@@ -119,7 +119,7 @@ public class RecipeRunner {
                                 }
                             }
                             if (!itemContent.isEmpty()) {
-                                for (var item : machine.getCapabilities().get(IO.IN)) {
+                                for (var item : machine.getCapabilities().getOrDefault(IO.IN, Collections.emptyList())) {
                                     var result = item.handleRecipe(IO.IN, recipe, contents, simulated);
                                     if (result.isEmpty()) {
                                         if (simulated) machine.setRecipeHandleMap(item, recipe);
