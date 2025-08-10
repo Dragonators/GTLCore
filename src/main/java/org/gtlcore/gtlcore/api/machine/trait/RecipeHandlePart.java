@@ -15,7 +15,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
-public class RecipeHandlePart {
+public class RecipeHandlePart implements IRecipeHandlePart {
 
     public static final RecipeHandlePart NO_DATA = new RecipeHandlePart(IO.NONE);
 
@@ -45,6 +45,7 @@ public class RecipeHandlePart {
         return rhl;
     }
 
+    @Override
     public Object2LongOpenHashMap<?> getContent(RecipeCapability<?> cap) {
         if (cap == ItemRecipeCapability.CAP) {
             itemContent = (Object2LongOpenHashMap<ItemStack>) this.initializeContent(cap);

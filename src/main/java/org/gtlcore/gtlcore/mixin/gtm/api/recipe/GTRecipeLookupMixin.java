@@ -1,6 +1,7 @@
 package org.gtlcore.gtlcore.mixin.gtm.api.recipe;
 
 import org.gtlcore.gtlcore.api.machine.trait.IRecipeCapabilityMachine;
+import org.gtlcore.gtlcore.api.machine.trait.MERecipeHandlePart;
 import org.gtlcore.gtlcore.api.machine.trait.RecipeHandlePart;
 import org.gtlcore.gtlcore.api.recipe.IRecipeIterator;
 import org.gtlcore.gtlcore.api.recipe.RecipeResult;
@@ -15,7 +16,10 @@ import com.gregtechceu.gtceu.common.machine.multiblock.electric.research.Researc
 import com.gregtechceu.gtceu.common.machine.multiblock.primitive.PrimitiveWorkableMachine;
 
 import com.mojang.datafixers.util.Either;
+import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMaps;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.Reference2ObjectArrayMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.*;
@@ -61,8 +65,8 @@ public abstract class GTRecipeLookupMixin {
             }
             return list;
         } else if (holder instanceof IRecipeCapabilityMachine machine) {
-            if (machine.getRecipeHandleParts().isEmpty()) return null;
-            List<List<AbstractMapIngredient>> list = new ObjectArrayList<>(machine.getRecipeHandleParts().size());
+            if (machine.getRecipeHandleParts().isEmpty() && machine.getMERecipeHandleParts().isEmpty()) return null;
+            List<List<AbstractMapIngredient>> list = new ObjectArrayList<>(machine.getRecipeHandleParts().size() + machine.getMERecipeHandleParts().size());
             list.addAll(this.gtlcore$fromHolder(machine));
             if (list.isEmpty()) {
                 RecipeResult.of((IRecipeLogicMachine) holder, RecipeResult.FAIL_NO_INPUT);
@@ -76,8 +80,56 @@ public abstract class GTRecipeLookupMixin {
     @Unique
     protected @NotNull List<List<AbstractMapIngredient>> gtlcore$fromHolder(@NotNull IRecipeCapabilityMachine r) {
         List<RecipeHandlePart> recipeHandleParts = r.getCapabilities().getOrDefault(IO.IN, new ObjectArrayList<>());
-        if (recipeHandleParts.isEmpty()) return Collections.emptyList();
-        List<List<AbstractMapIngredient>> list = new ObjectArrayList<>(recipeHandleParts.size());
+        List<MERecipeHandlePart> meRecipeHandleParts = r.getMERecipeHandleParts();
+        if (recipeHandleParts.isEmpty() && meRecipeHandleParts.isEmpty()) return Collections.emptyList();
+        List<List<AbstractMapIngredient>> list = new ObjectArrayList<>(recipeHandleParts.size() + meRecipeHandleParts.size());
+
+        // region ME Pattern
+        if (!meRecipeHandleParts.isEmpty()) {
+            for (var part : meRecipeHandleParts) {
+                Int2ObjectArrayMap<Reference2ObjectArrayMap<RecipeCapability<?>, List<Object>>> finalMap = new Int2ObjectArrayMap<>();
+
+                // slot -> (RecipeCapability -> Contents)
+                part.getMeHandlerMap().reference2ObjectEntrySet().fastForEach(entry -> {
+                    var cap = entry.getKey();
+                    var meHandler = entry.getValue();
+
+                    Int2ObjectMaps.fastForEach(meHandler.getActiveSlotsLimitContentsMap(), e -> {
+                        int key = e.getIntKey();
+                        var values = e.getValue();
+
+                        var capToList = finalMap.computeIfAbsent(key, k -> new Reference2ObjectArrayMap<>(2));
+
+                        var existing = capToList.get(cap);
+                        if (existing == null) {
+                            capToList.put(cap, new ArrayList<>(values));
+                        } else {
+                            existing.addAll(values);
+                        }
+                    });
+                });
+
+                finalMap.int2ObjectEntrySet().fastForEach(e -> {
+                    List<AbstractMapIngredient> ingredient = new ObjectArrayList<>();
+                    var capToContent = e.getValue();
+
+                    capToContent.reference2ObjectEntrySet().fastForEach(n -> {
+                        var cap = n.getKey();
+                        var capContent = n.getValue();
+                        for (var content : cap.compressIngredients(capContent)) {
+                            ingredient.addAll(cap.convertToMapIngredient(content));
+                        }
+                    });
+
+                    if (!ingredient.isEmpty()) {
+                        ingredient.sort(Comparator.comparing(i -> !i.isSpecialIngredient()));
+                        list.add(ingredient);
+                    }
+                });
+            }
+        }
+        // endregion
+
         if (r.isDistinct()) {
             for (var part : recipeHandleParts) {
                 List<AbstractMapIngredient> ingredients = new ObjectArrayList<>();

@@ -1,6 +1,8 @@
 package org.gtlcore.gtlcore.api.recipe;
 
 import org.gtlcore.gtlcore.api.machine.trait.IRecipeCapabilityMachine;
+import org.gtlcore.gtlcore.api.machine.trait.MERecipeHandlePart;
+import org.gtlcore.gtlcore.api.machine.trait.RecipeHandlePart;
 
 import com.gregtechceu.gtceu.api.capability.recipe.*;
 import com.gregtechceu.gtceu.api.machine.feature.IRecipeLogicMachine;
@@ -22,6 +24,7 @@ import com.hepdd.gtmthings.common.block.machine.trait.CatalystFluidStackHandler;
 import it.unimi.dsi.fastutil.objects.*;
 
 import java.util.*;
+import java.util.function.Predicate;
 
 public interface IParallelLogic {
 
@@ -96,7 +99,7 @@ public interface IParallelLogic {
     static long getInputItemParallel(IRecipeCapabilityHolder holder, GTRecipe recipe, long parallelAmount) {
         if (parallelAmount <= 1) return parallelAmount;
         if (holder instanceof IRecipeCapabilityMachine machine) {
-            if (machine.getRecipeHandleParts().isEmpty()) return 0;
+            if (machine.getRecipeHandleParts().isEmpty() && machine.getMERecipeHandleParts().isEmpty()) return 0;
             Object2LongOpenCustomHashMap<Ingredient> countableMap = new Object2LongOpenCustomHashMap<>(IngredientEquality.IngredientHashStrategy.INSTANCE);
             for (Content content : recipe.getInputContents(ItemRecipeCapability.CAP)) {
                 Ingredient recipeIngredient = ItemRecipeCapability.CAP.of(content.content);
@@ -110,42 +113,40 @@ public interface IParallelLogic {
             }
             if (countableMap.isEmpty()) return parallelAmount;
             Object2LongOpenCustomHashMap<ItemStack> ingredientStacks = new Object2LongOpenCustomHashMap<>(ItemStackHashStrategy.comparingAllButCount());
-            if (machine.getRecipeHandleMap().get(recipe) != null) {
-                for (var it = machine.getRecipeHandleMap().get(recipe).getContent(ItemRecipeCapability.CAP).object2LongEntrySet().fastIterator(); it.hasNext();) {
+            var handler = machine.getCachedRecipeHandle(recipe);
+            if (handler instanceof MERecipeHandlePart meRecipeHandlePart) {
+                // ME handler
+                for (var it = Object2LongMaps.fastIterator(meRecipeHandlePart.<ItemStack>getMEContent(ItemRecipeCapability.CAP, List.of(meRecipeHandlePart.getSlotMap().getInt(recipe)))); it.hasNext();) {
                     var entry = it.next();
-                    ingredientStacks.computeLong((ItemStack) entry.getKey(), (k, v) -> v == null ? entry.getLongValue() : v + entry.getLongValue());
+                    ingredientStacks.addTo(entry.getKey(), entry.getLongValue());
+                }
+            } else if (handler != null) {
+                // other handler
+                for (var it = Object2LongMaps.fastIterator(handler.getContent(ItemRecipeCapability.CAP)); it.hasNext();) {
+                    var entry = it.next();
+                    ingredientStacks.addTo((ItemStack) entry.getKey(), entry.getLongValue());
                 }
             } else {
                 Object2LongOpenCustomHashMap<ItemStack> map = new Object2LongOpenCustomHashMap<>(ItemStackHashStrategy.comparingAllButCount());
-                for (var it : machine.getCapabilities().get(IO.IN)) {
-                    for (var obj = it.getContent(ItemRecipeCapability.CAP).object2LongEntrySet().fastIterator(); obj.hasNext();) {
-                        var entry = obj.next();
-                        map.computeLong((ItemStack) entry.getKey(), (k, v) -> v == null ? entry.getLongValue() : v + entry.getLongValue());
+                // ME handlers, All Active Slots
+                for (MERecipeHandlePart part : machine.getMERecipeHandleParts()) {
+                    for (var it = Object2LongMaps.fastIterator(part.<ItemStack>getMEContent(ItemRecipeCapability.CAP)); it.hasNext();) {
+                        var entry = it.next();
+                        map.addTo(entry.getKey(), entry.getLongValue());
                     }
                 }
-                for (var obj : map.object2LongEntrySet()) {
-                    ingredientStacks.computeLong(obj.getKey(), (k, v) -> v == null ? obj.getLongValue() : v + obj.getLongValue());
-                }
-            }
-            long needed;
-            long available;
-            for (var it = Object2LongMaps.fastIterator(countableMap); it.hasNext(); parallelAmount = Math.min(parallelAmount, available / needed)) {
-                var entry = it.next();
-                needed = entry.getLongValue();
-                available = 0;
-                for (var iter = Object2LongMaps.fastIterator(ingredientStacks); iter.hasNext();) {
-                    var inputItem = iter.next();
-                    if (entry.getKey().test(inputItem.getKey())) {
-                        available += inputItem.getLongValue();
-                        break;
+                // other handlers
+                for (RecipeHandlePart part : machine.getCapabilities().getOrDefault(IO.IN, Collections.emptyList())) {
+                    for (var it = part.getContent(ItemRecipeCapability.CAP).object2LongEntrySet().fastIterator(); it.hasNext();) {
+                        var entry = it.next();
+                        map.addTo((ItemStack) entry.getKey(), entry.getLongValue());
                     }
                 }
-                if (available < needed) {
-                    parallelAmount = 0;
-                    break;
+                for (var e : Object2LongMaps.fastIterable(map)) {
+                    ingredientStacks.addTo(e.getKey(), e.getLongValue());
                 }
             }
-            return parallelAmount;
+            return calculate(parallelAmount, countableMap, ingredientStacks);
         }
         return 1;
     }
@@ -153,7 +154,7 @@ public interface IParallelLogic {
     static long getInputFluidParallel(IRecipeCapabilityHolder holder, GTRecipe recipe, long parallelAmount) {
         if (parallelAmount <= 1) return parallelAmount;
         if (holder instanceof IRecipeCapabilityMachine machine) {
-            if (machine.getRecipeHandleParts().isEmpty()) return 0;
+            if (machine.getRecipeHandleParts().isEmpty() && machine.getMERecipeHandleParts().isEmpty()) return 0;
             Object2LongOpenHashMap<FluidIngredient> fluidCountMap = new Object2LongOpenHashMap<>();
             for (Content content : recipe.getInputContents(FluidRecipeCapability.CAP)) {
                 FluidIngredient fluidInput = FluidRecipeCapability.CAP.of(content.content);
@@ -163,10 +164,18 @@ public interface IParallelLogic {
             }
             if (fluidCountMap.isEmpty()) return parallelAmount;
             Object2LongOpenHashMap<FluidStack> ingredientStacks = new Object2LongOpenHashMap<>();
-            if (machine.isDistinct() && machine.getRecipeHandleMap().get(recipe) != null) {
-                for (var it = machine.getRecipeHandleMap().get(recipe).getContent(FluidRecipeCapability.CAP).object2LongEntrySet().fastIterator(); it.hasNext();) {
+            var recipeHandle = machine.getCachedRecipeHandle(recipe);
+            if (recipeHandle instanceof MERecipeHandlePart merecipeHandlePart) {
+                // ME handler
+                for (var it = Object2LongMaps.fastIterator(merecipeHandlePart.<FluidStack>getMEContent(FluidRecipeCapability.CAP, List.of(merecipeHandlePart.getSlotMap().getInt(recipe)))); it.hasNext();) {
                     var entry = it.next();
-                    ingredientStacks.computeLong((FluidStack) entry.getKey(), (k, v) -> v == null ? entry.getLongValue() : v + entry.getLongValue());
+                    ingredientStacks.addTo(entry.getKey(), entry.getLongValue());
+                }
+            } else if (recipeHandle != null && machine.isDistinct()) {
+                // other handler
+                for (var it = Object2LongMaps.fastIterator(recipeHandle.getContent(FluidRecipeCapability.CAP)); it.hasNext();) {
+                    var entry = it.next();
+                    ingredientStacks.addTo((FluidStack) entry.getKey(), entry.getLongValue());
                 }
             } else {
                 for (var container : machine.getCapabilitiesFlat(IO.IN, FluidRecipeCapability.CAP)) {
@@ -178,27 +187,33 @@ public interface IParallelLogic {
                     }
                 }
             }
-            long needed;
-            long available;
-            for (var it = Object2LongMaps.fastIterator(fluidCountMap); it.hasNext(); parallelAmount = Math.min(parallelAmount, available / needed)) {
-                var entry = it.next();
-                needed = entry.getLongValue();
-                available = 0;
-                for (var iter = Object2LongMaps.fastIterator(ingredientStacks); iter.hasNext();) {
-                    var inputFluid = iter.next();
-                    if (entry.getKey().test(inputFluid.getKey())) {
-                        available += inputFluid.getLongValue();
-                        break;
-                    }
-                }
-                if (available < needed) {
-                    parallelAmount = 0;
+            return calculate(parallelAmount, fluidCountMap, ingredientStacks);
+        }
+        return 1;
+    }
+
+    private static <I extends Predicate<S>, S> long calculate(long parallelAmount, Object2LongMap<I> countableMap, Object2LongMap<S> ingredientStacks) {
+        if (ingredientStacks.isEmpty()) return 0;
+
+        long needed;
+        long available;
+        final Iterable<Object2LongMap.Entry<S>> inputs = Object2LongMaps.fastIterable(ingredientStacks);
+        for (var it = Object2LongMaps.fastIterator(countableMap); it.hasNext(); parallelAmount = Math.min(parallelAmount, available / needed)) {
+            var entry = it.next();
+            needed = entry.getLongValue();
+            available = 0;
+            for (Object2LongMap.Entry<S> input : inputs) {
+                if (entry.getKey().test(input.getKey())) {
+                    available = input.getLongValue();
                     break;
                 }
             }
-            return parallelAmount;
+            if (available < needed) {
+                parallelAmount = 0;
+                break;
+            }
         }
-        return 1;
+        return parallelAmount;
     }
 
     static long getOutputItemParallel(IRecipeCapabilityHolder holder, GTRecipe recipe, List<Content> contents, long multiplier) {

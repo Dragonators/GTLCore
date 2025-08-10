@@ -1,7 +1,6 @@
 package org.gtlcore.gtlcore.mixin.gtm.api.machine;
 
-import org.gtlcore.gtlcore.api.machine.trait.IRecipeCapabilityMachine;
-import org.gtlcore.gtlcore.api.machine.trait.RecipeHandlePart;
+import org.gtlcore.gtlcore.api.machine.trait.*;
 import org.gtlcore.gtlcore.api.recipe.RecipeResult;
 
 import com.gregtechceu.gtceu.api.capability.recipe.*;
@@ -11,11 +10,14 @@ import com.gregtechceu.gtceu.api.machine.feature.multiblock.IDistinctPart;
 import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMultiPart;
 import com.gregtechceu.gtceu.api.machine.multiblock.MultiblockControllerMachine;
 import com.gregtechceu.gtceu.api.machine.multiblock.WorkableMultiblockMachine;
+import com.gregtechceu.gtceu.api.machine.trait.MachineTrait;
+import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 import com.gregtechceu.gtceu.common.machine.multiblock.part.FluidHatchPartMachine;
 import com.gregtechceu.gtceu.integration.ae2.machine.MEOutputBusPartMachine;
 import com.gregtechceu.gtceu.integration.ae2.machine.MEOutputHatchPartMachine;
 
+import com.lowdragmc.lowdraglib.syncdata.ISubscription;
 import com.lowdragmc.lowdraglib.syncdata.annotation.DescSynced;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 
@@ -27,18 +29,24 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import lombok.Getter;
 import lombok.Setter;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.util.EnumMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Mixin(WorkableMultiblockMachine.class)
 public abstract class WorkableMultiblockMachineMixin extends MultiblockControllerMachine implements IRecipeCapabilityMachine {
 
+    @Shadow(remap = false)
+    @Final
+    protected List<ISubscription> traitSubscriptions;
+    @Shadow(remap = false)
+    @Final
+    public RecipeLogic recipeLogic;
     @Getter
     private boolean MEOutPutBus = false;
     @Getter
@@ -53,7 +61,8 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
     @Getter
     private List<RecipeHandlePart> recipeHandleParts = new ObjectArrayList<>();
     @Getter
-    private Map<GTRecipe, RecipeHandlePart> recipeHandleMap = new Object2ObjectOpenHashMap<>();
+    private List<MERecipeHandlePart> mERecipeHandleParts = new ObjectArrayList<>();
+    private Map<GTRecipe, IRecipeHandlePart> recipeHandleMap = new Object2ObjectOpenHashMap<>();
     @Getter
     protected Map<IO, List<RecipeHandlePart>> capabilities = new EnumMap<>(IO.class);
     @Getter
@@ -106,12 +115,33 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
         this.recipeHandleMap.put(recipe, hatch);
     }
 
+    @Override
+    public void setMERecipeHandleMap(MERecipeHandlePart hatch, GTRecipe recipe, int slot) {
+        hatch.getSlotMap().put(recipe, slot);
+        this.recipeHandleMap.put(recipe, hatch);
+    }
+
+    @Override
+    public IRecipeHandlePart getCachedRecipeHandle(GTRecipe recipe) {
+        return recipeHandleMap.get(recipe);
+    }
+
     public void upDate() {
         capabilities.clear();
         capabilitiesFlat.clear();
         recipeHandleParts.clear();
+        mERecipeHandleParts.clear();
         recipeHandleMap.clear();
         if (!this.isFormed) return;
+
+        // ME Traits
+        for (MachineTrait trait : this.getTraits()) {
+            if (trait instanceof IMERecipeHandlerTrait<?> meHandlerTrait) {
+                traitSubscriptions.add(meHandlerTrait.addChangedListener(recipeLogic::updateTickSubscription));
+            }
+        }
+
+        // IMultiPart
         var distinctParts = new ObjectArrayList<IRecipeHandler<?>>();
         for (IMultiPart part : this.getParts()) {
             if (part instanceof FluidHatchPartMachine || part instanceof IDistinctPart) {
@@ -123,6 +153,13 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
                     MEOutPutBus = true;
                 } else if (part instanceof MEOutputHatchPartMachine) {
                     MEOutPutHatch = true;
+                } else if (part instanceof IMEPatternPartMachine mePart) {
+                    var meHandlers = mePart.getMERecipeHandlerTraits();
+                    for (IMERecipeHandlerTrait<?> meHandlerTrait : meHandlers) {
+                        traitSubscriptions.add(meHandlerTrait.addChangedListener(recipeLogic::updateTickSubscription));
+                    }
+                    mERecipeHandleParts.add(MERecipeHandlePart.of(meHandlers));
+                    continue;
                 }
                 List<IRecipeHandler<?>> hatch = new ObjectArrayList<>();
                 boolean isOutput = false;
