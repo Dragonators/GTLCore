@@ -1,5 +1,6 @@
 package org.gtlcore.gtlcore.mixin.gtm.api.machine;
 
+import org.gtlcore.gtlcore.api.machine.trait.IMEPatternPartMachine;
 import org.gtlcore.gtlcore.api.machine.trait.IRecipeCapabilityMachine;
 import org.gtlcore.gtlcore.api.machine.trait.RecipeHandlePart;
 import org.gtlcore.gtlcore.api.recipe.RecipeResult;
@@ -52,6 +53,8 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
     public boolean isDistinct = false;
     @Getter
     private List<RecipeHandlePart> recipeHandleParts = new ObjectArrayList<>();
+    @Getter
+    private List<RecipeHandlePart> mERecipeHandleParts = new ObjectArrayList<>();
     @Getter
     private Map<GTRecipe, RecipeHandlePart> recipeHandleMap = new Object2ObjectOpenHashMap<>();
     @Getter
@@ -106,10 +109,18 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
         this.recipeHandleMap.put(recipe, hatch);
     }
 
+    @Override
+    public void setMERecipeHandleMap(RecipeHandlePart hatch, GTRecipe recipe, List<Integer> slots) {
+        hatch.getCacheSlot().clear();
+        hatch.getCacheSlot().addAll(slots);
+        this.recipeHandleMap.put(recipe, hatch);
+    }
+
     public void upDate() {
         capabilities.clear();
         capabilitiesFlat.clear();
         recipeHandleParts.clear();
+        mERecipeHandleParts.clear();
         recipeHandleMap.clear();
         if (!this.isFormed) return;
         var distinctParts = new ObjectArrayList<IRecipeHandler<?>>();
@@ -123,6 +134,9 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
                     MEOutPutBus = true;
                 } else if (part instanceof MEOutputHatchPartMachine) {
                     MEOutPutHatch = true;
+                } else if (part instanceof IMEPatternPartMachine mePart) {
+                    mERecipeHandleParts.add(RecipeHandlePart.of(mePart.getMERecipeHandlers()));
+                    continue;
                 }
                 List<IRecipeHandler<?>> hatch = new ObjectArrayList<>();
                 boolean isOutput = false;
