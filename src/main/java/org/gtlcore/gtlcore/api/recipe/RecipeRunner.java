@@ -89,68 +89,100 @@ public class RecipeRunner {
     }
 
     private boolean handleContentsInternal(IO capIO) {
-        if (holder instanceof IRecipeCapabilityMachine machine) {
-            if (machine.getRecipeHandleParts().isEmpty()) return false;
-            else {
-                if (capIO == IO.IN) {
-                    if (machine.isDistinct()) {
-                        if (this.recipeHandlePart != null) {
-                            var result = this.recipeHandlePart.handleRecipe(IO.IN, recipe, recipeContent, simulated);
-                            if (result.isEmpty()) {
-                                return true;
-                            }
-                        }
-                        for (var handlePart : machine.getCapabilities().get(IO.IN)) {
-                            var result = handlePart.handleRecipe(IO.IN, recipe, recipeContent, simulated);
-                            if (result.isEmpty()) {
-                                if (simulated) machine.setRecipeHandleMap(handlePart, recipe);
-                                return true;
-                            }
-                        }
-                    } else {
-                        var itemContent = recipeContent.getOrDefault(ItemRecipeCapability.CAP, new ObjectArrayList<>());
-                        if (!itemContent.isEmpty()) {
-                            Map<RecipeCapability<?>, List<Object>> contents = new HashMap<>();
-                            contents.put(ItemRecipeCapability.CAP, itemContent);
-                            if (this.recipeHandlePart != null) {
-                                var result = this.recipeHandlePart.handleRecipe(IO.IN, recipe, contents, simulated);
-                                if (result.isEmpty()) {
-                                    itemContent.clear();
-                                }
-                            }
-                            if (!itemContent.isEmpty()) {
-                                for (var item : machine.getCapabilities().getOrDefault(IO.IN, Collections.emptyList())) {
-                                    var result = item.handleRecipe(IO.IN, recipe, contents, simulated);
-                                    if (result.isEmpty()) {
-                                        if (simulated) machine.setRecipeHandleMap(item, recipe);
-                                        itemContent.clear();
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                        List<?> fluidContent = recipeContent.getOrDefault(FluidRecipeCapability.CAP, new ObjectArrayList<>());
-                        if (!fluidContent.isEmpty()) {
-                            for (var fluid : machine.getCapabilitiesFlat(IO.IN, FluidRecipeCapability.CAP)) {
-                                var result = fluid.handleRecipe(IO.IN, recipe, fluidContent, null, simulated);
-                                if (result == null) {
-                                    fluidContent.clear();
-                                    break;
-                                } else fluidContent = result;
-                            }
-                        }
-                        return itemContent.isEmpty() && fluidContent.isEmpty();
+        if (!(holder instanceof IRecipeCapabilityMachine machine)) {
+            return false;
+        }
+        if (machine.getRecipeHandleParts().isEmpty() && machine.getMERecipeHandleParts().isEmpty()) {
+            return false;
+        }
+
+        if (capIO == IO.IN) {
+            if (tryHandleWithPart(recipeHandlePart, machine, recipeContent)) {
+                return true;
+            }
+
+            if (!machine.getMERecipeHandleParts().isEmpty()) {
+                var parts = machine.getMERecipeHandleParts();
+                if (parts.isEmpty()) return false;
+                for (var p : parts) {
+                    var slot = p.meHandleRecipe(IO.IN, recipe, recipeContent, simulated);
+                    if (slot >= 0) {
+                        if (simulated) machine.setMERecipeHandleMap(p, recipe, slot);
+                        return true;
                     }
-                } else {
-                    var handlers = machine.getCapabilities().getOrDefault(IO.OUT, new ObjectArrayList<>());
-                    handlers.sort(RecipeHandlePart.COMPARATOR.reversed());
-                    for (var handler : handlers) {
-                        recipeContent = handler.handleRecipe(capIO, recipe, recipeContent, simulated);
-                        if (recipeContent.isEmpty()) {
-                            return true;
+                }
+                return false;
+            }
+
+            if (machine.isDistinct()) {
+                var inHandlers = machine.getCapabilities().getOrDefault(IO.IN, Collections.emptyList());
+                if (inHandlers.isEmpty()) return false;
+                for (var handler : inHandlers) {
+                    var result = handler.handleRecipe(IO.IN, recipe, recipeContent, simulated);
+                    if (result.isEmpty()) {
+                        if (simulated) machine.setRecipeHandleMap(handler, recipe);
+                        return true;
+                    }
+                }
+            } else {
+                List<Object> itemContent = recipeContent.getOrDefault(ItemRecipeCapability.CAP, Collections.emptyList());
+                if (!itemContent.isEmpty()) {
+                    Map<RecipeCapability<?>, List<Object>> itemsOnly = Collections.singletonMap(ItemRecipeCapability.CAP, itemContent);
+                    if (tryHandleWithPart(recipeHandlePart, machine, itemsOnly)) {
+                        itemContent.clear();
+                    }
+                    if (!itemContent.isEmpty()) {
+                        for (var part : machine.getCapabilities().getOrDefault(IO.IN, Collections.emptyList())) {
+                            var result = part.handleRecipe(IO.IN, recipe, itemsOnly, simulated);
+                            if (result.isEmpty()) {
+                                if (simulated) machine.setRecipeHandleMap(part, recipe);
+                                itemContent.clear();
+                                break;
+                            }
                         }
                     }
                 }
+
+                List<?> fluidContent = recipeContent.getOrDefault(FluidRecipeCapability.CAP, Collections.emptyList());
+                if (!fluidContent.isEmpty()) {
+                    for (var fluid : machine.getCapabilitiesFlat(IO.IN, FluidRecipeCapability.CAP)) {
+                        var result = fluid.handleRecipe(IO.IN, recipe, fluidContent, null, simulated);
+                        if (result == null) {
+                            fluidContent = Collections.emptyList();
+                            break;
+                        } else {
+                            fluidContent = result;
+                        }
+                    }
+                }
+
+                return itemContent.isEmpty() && fluidContent.isEmpty();
+            }
+        } else {
+            var handlers = machine.getCapabilities().getOrDefault(IO.OUT, Collections.emptyList());
+            if (handlers.isEmpty()) return false;
+            handlers.sort(RecipeHandlePart.COMPARATOR.reversed());
+            for (var handler : handlers) {
+                recipeContent = handler.handleRecipe(capIO, recipe, recipeContent, simulated);
+                if (recipeContent.isEmpty()) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean tryHandleWithPart(RecipeHandlePart part,
+                                      IRecipeCapabilityMachine machine,
+                                      Map<RecipeCapability<?>, List<Object>> contents) {
+        if (part == null) return false;
+        if (part.isMEHandlePart()) {
+            return part.meHandleCacheRecipe(IO.IN, recipe, recipeContent, part.getSlotMap().getInt(recipe), simulated);
+        } else {
+            var result = part.handleRecipe(IO.IN, recipe, contents, simulated);
+            if (result.isEmpty()) {
+                if (simulated) machine.setRecipeHandleMap(part, recipe);
+                return true;
             }
         }
         return false;
