@@ -6,6 +6,7 @@ import org.gtlcore.gtlcore.common.data.*;
 import org.gtlcore.gtlcore.data.recipe.*;
 import org.gtlcore.gtlcore.data.recipe.chemistry.MixerRecipes;
 import org.gtlcore.gtlcore.data.recipe.processing.Lanthanidetreatment;
+import org.gtlcore.gtlcore.data.recipe.processing.SkyTearsAndGregHeart;
 import org.gtlcore.gtlcore.data.recipe.processing.StoneDustProcess;
 
 import com.gregtechceu.gtceu.api.addon.GTAddon;
@@ -74,6 +75,7 @@ public class GTLGTAddon implements IGTAddon {
         Lanthanidetreatment.init(provider);
         CircuitRecipes.init(provider);
         MixerRecipes.init(provider);
+        SkyTearsAndGregHeart.init(provider);
     }
 
     @Override
