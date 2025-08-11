@@ -20,6 +20,9 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import static org.gtlcore.gtlcore.common.data.GTLRecipeTypes.CREATE_AGGREGATION_RECIPES;
+import static org.gtlcore.gtlcore.common.data.GTLRecipeTypes.DOOR_OF_CREATE_RECIPES;
+
 @Mixin(GTRecipeBuilder.class)
 @Accessors(chain = true, fluent = true)
 public class GTRecipeBuilderMixin {
@@ -56,7 +59,9 @@ public class GTRecipeBuilderMixin {
                 recipeType == GTRecipeTypes.get("slaughterhouse") ||
                 recipeType == GTRecipeTypes.get("dyson_sphere") ||
                 recipeType == GTRecipeTypes.get("space_elevator") ||
-                recipeType == GTRecipeTypes.get("annihilate_generator")) {
+                recipeType == GTRecipeTypes.get("annihilate_generator") ||
+                recipeType == CREATE_AGGREGATION_RECIPES ||
+                recipeType == DOOR_OF_CREATE_RECIPES) {
             return Math.abs(duration);
         }
         return (int) Math.min(Integer.MAX_VALUE, Math.max(1, Math.abs(duration * ConfigHolder.INSTANCE.durationMultiplier)));
