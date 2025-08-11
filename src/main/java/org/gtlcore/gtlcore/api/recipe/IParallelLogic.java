@@ -115,7 +115,7 @@ public interface IParallelLogic {
             var handler = machine.getRecipeHandleMap().get(recipe);
             if (handler != null) {
                 if (handler.isMEHandlePart()) {
-                    for (var it = handler.<ItemStack>getMEContent(ItemRecipeCapability.CAP, handler.getCacheSlot()).object2LongEntrySet().fastIterator(); it.hasNext();) {
+                    for (var it = Object2LongMaps.fastIterator(handler.<ItemStack>getMEContent(ItemRecipeCapability.CAP, handler.getCacheSlot())); it.hasNext();) {
                         var entry = it.next();
                         ingredientStacks.addTo(entry.getKey(), entry.getLongValue());
                     }
@@ -129,7 +129,7 @@ public interface IParallelLogic {
                 Object2LongOpenCustomHashMap<ItemStack> map = new Object2LongOpenCustomHashMap<>(ItemStackHashStrategy.comparingAllButCount());
                 // ME handlers, All Active Slots
                 for (RecipeHandlePart part : machine.getMERecipeHandleParts()) {
-                    for (var it = part.<ItemStack>getMEContent(ItemRecipeCapability.CAP).object2LongEntrySet().fastIterator(); it.hasNext();) {
+                    for (var it = Object2LongMaps.fastIterator(part.<ItemStack>getMEContent(ItemRecipeCapability.CAP)); it.hasNext();) {
                         var entry = it.next();
                         map.addTo(entry.getKey(), entry.getLongValue());
                     }
@@ -166,7 +166,7 @@ public interface IParallelLogic {
             var recipeHandle = machine.getRecipeHandleMap().get(recipe);
             if (recipeHandle != null && (machine.isDistinct() || recipeHandle.isMEHandlePart())) {
                 if (recipeHandle.isMEHandlePart()) {
-                    for (var it = recipeHandle.<FluidStack>getMEContent(FluidRecipeCapability.CAP, recipeHandle.getCacheSlot()).object2LongEntrySet().fastIterator(); it.hasNext();) {
+                    for (var it = Object2LongMaps.fastIterator(recipeHandle.<FluidStack>getMEContent(FluidRecipeCapability.CAP, recipeHandle.getCacheSlot())); it.hasNext();) {
                         var entry = it.next();
                         ingredientStacks.addTo(entry.getKey(), entry.getLongValue());
                     }
@@ -196,14 +196,14 @@ public interface IParallelLogic {
 
         long needed;
         long available;
-        final Iterable<Object2LongMap.Entry<S>> inputItems = Object2LongMaps.fastIterable(ingredientStacks);
+        final Iterable<Object2LongMap.Entry<S>> inputs = Object2LongMaps.fastIterable(ingredientStacks);
         for (var it = Object2LongMaps.fastIterator(countableMap); it.hasNext(); parallelAmount = Math.min(parallelAmount, available / needed)) {
             var entry = it.next();
             needed = entry.getLongValue();
             available = 0;
-            for (Object2LongMap.Entry<S> inputItem : inputItems) {
-                if (entry.getKey().test(inputItem.getKey())) {
-                    available = inputItem.getLongValue();
+            for (Object2LongMap.Entry<S> input : inputs) {
+                if (entry.getKey().test(input.getKey())) {
+                    available = input.getLongValue();
                     break;
                 }
             }

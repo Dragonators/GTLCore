@@ -6,7 +6,7 @@ import com.gregtechceu.gtceu.api.capability.recipe.RecipeCapability;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 
 import appeng.api.stacks.AEKey;
-import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.objects.*;
 import org.jetbrains.annotations.Nullable;
 
@@ -21,13 +21,13 @@ public interface IMERecipeHandler<T> extends IRecipeHandler<T> {
 
     List<List<Object>> getActiveLimitContents();
 
-    Int2ObjectArrayMap<List<Object>> getActiveLimitContentsMap();
+    Int2ObjectMap<List<Object>> getActiveLimitContentsMap();
 
-    Object2LongOpenHashMap<AEKey> getActiveMEContentsMap();
+    Object2LongMap<AEKey> getActiveMEContentsMap();
 
-    Object2LongOpenHashMap<?> getActiveSlotsContentsMap();
+    Object2LongMap<?> getActiveSlotsContentsMap();
 
-    Object2LongOpenHashMap<?> getCustomSlotsStackMap(List<Integer> slots);
+    Object2LongMap<?> getCustomSlotsStackMap(List<Integer> slots);
 
     default List<Integer> meHandleRecipe(IO io, GTRecipe recipe, List<?> left, @Nullable String slotName, boolean simulate, List<Integer> trySlots) {
         List<T> contents = new ObjectArrayList<>(left.size());

@@ -16,6 +16,7 @@ import com.gregtechceu.gtceu.common.machine.multiblock.primitive.PrimitiveWorkab
 
 import com.mojang.datafixers.util.Either;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMaps;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectArrayMap;
 import org.jetbrains.annotations.NotNull;
@@ -92,7 +93,7 @@ public abstract class GTRecipeLookupMixin {
                     var cap = entry.getKey();
                     var meHandler = entry.getValue();
 
-                    meHandler.getActiveLimitContentsMap().int2ObjectEntrySet().fastForEach(e -> {
+                    Int2ObjectMaps.fastForEach(meHandler.getActiveLimitContentsMap(), e -> {
                         int key = e.getIntKey();
                         var values = e.getValue();
 

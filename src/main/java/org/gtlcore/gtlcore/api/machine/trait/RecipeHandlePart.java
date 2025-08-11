@@ -158,22 +158,22 @@ public class RecipeHandlePart {
         }
     }
 
-    public <T> Object2LongOpenHashMap<T> getMEContent(RecipeCapability<?> cap) {
+    public <T> Object2LongMap<T> getMEContent(RecipeCapability<?> cap) {
         return getMEContent(cap, this.getMECapability(cap).getActiveSlots(cap));
     }
 
-    public <T> Object2LongOpenHashMap<T> getMEContent(RecipeCapability<?> cap, List<Integer> slots) {
-        return (Object2LongOpenHashMap<T>) this.getMECapability(cap).getCustomSlotsStackMap(slots);
+    public <T> Object2LongMap<T> getMEContent(RecipeCapability<?> cap, List<Integer> slots) {
+        return (Object2LongMap<T>) this.getMECapability(cap).getCustomSlotsStackMap(slots);
     }
 
-    public <T> Object2LongOpenHashMap<T> getMEContentSafe(RecipeCapability<?> cap, Class<T> expectedType) {
+    public <T> Object2LongMap<T> getMEContentSafe(RecipeCapability<?> cap, Class<T> expectedType) {
         return getMEContentSafe(cap, this.getMECapability(cap).getActiveSlots(cap), expectedType);
     }
 
-    public <T> Object2LongOpenHashMap<T> getMEContentSafe(RecipeCapability<?> cap, List<Integer> slots, Class<T> expectedType) {
+    public <T> Object2LongMap<T> getMEContentSafe(RecipeCapability<?> cap, List<Integer> slots, Class<T> expectedType) {
         @SuppressWarnings("unchecked")
-        var map = (Object2LongOpenHashMap<T>) this.getMECapability(cap).getCustomSlotsStackMap(slots);
-        for (var it = map.object2LongEntrySet().fastIterator(); it.hasNext();) {
+        var map = (Object2LongMap<T>) this.getMECapability(cap).getCustomSlotsStackMap(slots);
+        for (var it = Object2LongMaps.fastIterator(map); it.hasNext();) {
             if (!expectedType.isInstance(it.next().getKey())) {
                 it.remove();
             }
