@@ -15,7 +15,6 @@ import it.unimi.dsi.fastutil.Pair;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.objects.*;
 import lombok.Getter;
-import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -140,9 +139,8 @@ public class RecipeHandlePart {
     //////////////////////////////////////
     // ********** ME Part ***********//
     //////////////////////////////////////
-    @Setter
     @Getter
-    private int cacheSlot = -1;
+    private final Object2IntMap<GTRecipe> slotMap = new Object2IntOpenHashMap<>();
     @Getter
     private final boolean isMEHandlePart;
     @Getter
