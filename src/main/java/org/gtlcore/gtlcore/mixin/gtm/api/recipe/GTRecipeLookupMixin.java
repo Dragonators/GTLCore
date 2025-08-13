@@ -93,7 +93,7 @@ public abstract class GTRecipeLookupMixin {
                     var cap = entry.getKey();
                     var meHandler = entry.getValue();
 
-                    Int2ObjectMaps.fastForEach(meHandler.getActiveLimitContentsMap(), e -> {
+                    Int2ObjectMaps.fastForEach(meHandler.getActiveSlotsLimitContentsMap(), e -> {
                         int key = e.getIntKey();
                         var values = e.getValue();
 

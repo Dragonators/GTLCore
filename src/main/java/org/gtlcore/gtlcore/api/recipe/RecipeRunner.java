@@ -105,9 +105,9 @@ public class RecipeRunner {
                 var parts = machine.getMERecipeHandleParts();
                 if (parts.isEmpty()) return false;
                 for (var p : parts) {
-                    var slots = p.meHandleRecipe(IO.IN, recipe, recipeContent, simulated);
-                    if (!slots.isEmpty()) {
-                        if (simulated) machine.setMERecipeHandleMap(p, recipe, slots);
+                    var slot = p.meHandleRecipe(IO.IN, recipe, recipeContent, simulated);
+                    if (slot >= 0) {
+                        if (simulated) machine.setMERecipeHandleMap(p, recipe, slot);
                         return true;
                     }
                 }

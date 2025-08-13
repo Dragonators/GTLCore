@@ -1,42 +1,55 @@
 package org.gtlcore.gtlcore.api.capability;
 
+import com.gregtechceu.gtceu.api.capability.recipe.IFilteredHandler;
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
-import com.gregtechceu.gtceu.api.capability.recipe.IRecipeHandler;
 import com.gregtechceu.gtceu.api.capability.recipe.RecipeCapability;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 
-import appeng.api.stacks.AEKey;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.objects.*;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-public interface IMERecipeHandler<T> extends IRecipeHandler<T> {
-
-    List<Object> getLimitContents(int slot);
+public interface IMERecipeHandler<T> extends IFilteredHandler<T> {
 
     // Active means this slot contains pattern && pattern contains CAP
     List<Integer> getActiveSlots(RecipeCapability<?> cap);
 
-    List<List<Object>> getActiveLimitContents();
-
-    Int2ObjectMap<List<Object>> getActiveLimitContentsMap();
-
-    Object2LongMap<AEKey> getActiveMEContentsMap();
-
-    Object2LongMap<?> getActiveSlotsContentsMap();
+    // Object is
+    // Ingredient -> ItemStack
+    // FluidIngredient -> FluidStack
+    Int2ObjectMap<List<Object>> getActiveSlotsLimitContentsMap();
 
     Object2LongMap<?> getCustomSlotsStackMap(List<Integer> slots);
 
-    default List<Integer> meHandleRecipe(IO io, GTRecipe recipe, List<?> left, @Nullable String slotName, boolean simulate, List<Integer> trySlots) {
-        List<T> contents = new ObjectArrayList<>(left.size());
+    // try slot as distinct slot to handle full left Content
+    // a meHandler must initContents before calling this method
+    // if !simulate, it will consume the contents
+    default boolean meHandleRecipe(IO io, GTRecipe recipe, @Nullable String slotName, boolean simulate, int trySlot) {
+        return meHandleRecipeInner(io, recipe, getPreparedMEHandleContents(), slotName, simulate, trySlot);
+    }
 
+    boolean meHandleRecipeInner(IO var1, GTRecipe var2, Object2LongMap<?> var3, @Nullable String var4, boolean var5, int var6);
+
+    default void initMEHandleContents(List<?> left) {
+        if (left.isEmpty()) return;
+
+        List<T> contents = new ObjectArrayList<>(left.size());
         for (Object leftObj : left) {
             contents.add(this.copyContent(leftObj));
         }
-        return meHandleRecipeInner(io, recipe, contents, slotName, simulate, trySlots);
+
+        prepareMEHandleContents(contents);
     }
 
-    List<Integer> meHandleRecipeInner(IO var1, GTRecipe var2, List<?> var3, @Nullable String var4, boolean var5, List<Integer> var6);
+    RecipeCapability<T> getCapability();
+
+    default T copyContent(Object content) {
+        return getCapability().copyInner((T) content);
+    }
+
+    void prepareMEHandleContents(List<T> contents);
+
+    Object2LongMap<?> getPreparedMEHandleContents();
 }
