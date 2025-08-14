@@ -146,13 +146,13 @@ public class RecipeHandlePart {
     @Getter
     private final Reference2ObjectOpenHashMap<RecipeCapability<?>, IMERecipeHandler<?>> meHandlerMap = new Reference2ObjectOpenHashMap<>();
 
-    public static RecipeHandlePart of(Iterable<IMERecipeHandler<?>> handlers) {
+    public static RecipeHandlePart of(Iterable<IMERecipeHandlerTrait<?>> handlers) {
         RecipeHandlePart rhl = new RecipeHandlePart(IO.IN, true);
         rhl.addMEHandlers(handlers);
         return rhl;
     }
 
-    public void addMEHandlers(Iterable<IMERecipeHandler<?>> handlers) {
+    public void addMEHandlers(Iterable<IMERecipeHandlerTrait<?>> handlers) {
         for (var handler : handlers) {
             getMeHandlerMap().putIfAbsent(handler.getCapability(), handler);
         }
