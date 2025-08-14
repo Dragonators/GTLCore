@@ -221,7 +221,7 @@ public class RecipeHandlePart {
             var entry = it.next();
             var meHandler = entry.getKey();
             var content = entry.getValue().left();
-            meHandler.initMEHandleContents(content);
+            meHandler.initMEHandleContents(io, recipe, content, null, simulate);
         }
 
         // 遍历交集中的每个slot
@@ -250,15 +250,15 @@ public class RecipeHandlePart {
     }
 
     public boolean meHandleCacheRecipe(IO io, GTRecipe recipe,
-                                       Reference2ObjectMap<RecipeCapability<?>, List<Object>> contents, int trySlot) {
+                                       Reference2ObjectMap<RecipeCapability<?>, List<Object>> contents, int trySlot, boolean simulate) {
         if (!getMeHandlerMap().isEmpty() && trySlot >= 0) {
             for (var it = Reference2ObjectMaps.fastIterator(contents); it.hasNext();) {
                 var entry = it.next();
                 var cap = entry.getKey();
                 var content = entry.getValue();
                 var meHandler = getMECapability(cap);
-                meHandler.initMEHandleContents(content);
-                if (!meHandler.meHandleRecipe(io, recipe, null, false, trySlot)) return false;
+                meHandler.initMEHandleContents(io, recipe, content, null, simulate);
+                if (!meHandler.meHandleRecipe(io, recipe, null, simulate, trySlot)) return false;
             }
             return true;
         }

@@ -64,8 +64,8 @@ public abstract class GTRecipeLookupMixin {
             }
             return list;
         } else if (holder instanceof IRecipeCapabilityMachine machine) {
-            if (machine.getRecipeHandleParts().isEmpty()) return null;
-            List<List<AbstractMapIngredient>> list = new ObjectArrayList<>(machine.getRecipeHandleParts().size());
+            if (machine.getRecipeHandleParts().isEmpty() && machine.getMERecipeHandleParts().isEmpty()) return null;
+            List<List<AbstractMapIngredient>> list = new ObjectArrayList<>(machine.getRecipeHandleParts().size() + machine.getMERecipeHandleParts().size());
             list.addAll(this.gtlcore$fromHolder(machine));
             if (list.isEmpty()) {
                 RecipeResult.of((IRecipeLogicMachine) holder, RecipeResult.FAIL_NO_INPUT);
@@ -85,7 +85,7 @@ public abstract class GTRecipeLookupMixin {
 
         // region ME Pattern
         if (!meRecipeHandleParts.isEmpty()) {
-            for (var part : recipeHandleParts) {
+            for (var part : meRecipeHandleParts) {
                 Int2ObjectArrayMap<Reference2ObjectArrayMap<RecipeCapability<?>, List<Object>>> finalMap = new Int2ObjectArrayMap<>();
 
                 // slot -> (RecipeCapability -> Contents)

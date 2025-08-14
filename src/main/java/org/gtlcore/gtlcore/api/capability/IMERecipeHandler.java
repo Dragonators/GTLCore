@@ -32,7 +32,7 @@ public interface IMERecipeHandler<T> extends IFilteredHandler<T> {
 
     boolean meHandleRecipeInner(IO var1, GTRecipe var2, Object2LongMap<?> var3, @Nullable String var4, boolean var5, int var6);
 
-    default void initMEHandleContents(List<?> left) {
+    default void initMEHandleContents(IO io, GTRecipe recipe, List<?> left, @Nullable String slotName, boolean simulate) {
         if (left.isEmpty()) return;
 
         List<T> contents = new ObjectArrayList<>(left.size());
@@ -40,7 +40,7 @@ public interface IMERecipeHandler<T> extends IFilteredHandler<T> {
             contents.add(this.copyContent(leftObj));
         }
 
-        prepareMEHandleContents(contents);
+        prepareMEHandleContents(io, recipe, contents, slotName, simulate);
     }
 
     RecipeCapability<T> getCapability();
@@ -49,7 +49,7 @@ public interface IMERecipeHandler<T> extends IFilteredHandler<T> {
         return getCapability().copyInner((T) content);
     }
 
-    void prepareMEHandleContents(List<T> contents);
+    void prepareMEHandleContents(IO io, GTRecipe recipe, List<T> contents, @Nullable String slotName, boolean simulate);
 
     Object2LongMap<?> getPreparedMEHandleContents();
 }

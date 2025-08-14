@@ -177,7 +177,7 @@ public class RecipeRunner {
                                       Map<RecipeCapability<?>, List<Object>> contents) {
         if (part == null) return false;
         if (part.isMEHandlePart()) {
-            return part.meHandleCacheRecipe(IO.IN, recipe, recipeContent, part.getSlotMap().getInt(recipe));
+            return part.meHandleCacheRecipe(IO.IN, recipe, recipeContent, part.getSlotMap().getInt(recipe), simulated);
         } else {
             var result = part.handleRecipe(IO.IN, recipe, contents, simulated);
             if (result.isEmpty()) {
