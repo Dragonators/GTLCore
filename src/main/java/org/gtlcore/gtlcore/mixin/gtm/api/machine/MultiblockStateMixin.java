@@ -50,10 +50,11 @@ public abstract class MultiblockStateMixin {
                     mwsd.removeMapping((MultiblockState) (Object) this);
                 }
             } else {
-                var tempThis = (MultiblockState) (Object) this;
-                IMultiController controller = tempThis.getController();
+                final var tempThis = (MultiblockState) (Object) this;
+                final IMultiController controller = tempThis.getController();
+                final boolean formed = controller.isFormed();
                 if (controller != null) {
-                    if (controller.isFormed()) {
+                    if (formed) {
                         if (state.getBlock() instanceof ActiveBlock) {
                             LongSet activeBlocks = tempThis.getMatchContext().getOrDefault("vaBlocks", LongSets.emptySet());
                             if (activeBlocks.contains(pos.asLong())) {
@@ -65,7 +66,7 @@ public abstract class MultiblockStateMixin {
                         }
                     }
 
-                    if (controller.isFormed() && controller.checkPatternWithLock()) {
+                    if (formed && controller.checkPatternWithLock()) {
                         controller.self().setFlipped(tempThis.isNeededFlip());
                         controller.onStructureFormed();
                     } else {
