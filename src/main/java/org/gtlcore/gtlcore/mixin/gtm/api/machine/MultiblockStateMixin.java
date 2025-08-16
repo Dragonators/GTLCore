@@ -52,8 +52,8 @@ public abstract class MultiblockStateMixin {
             } else {
                 final var tempThis = (MultiblockState) (Object) this;
                 final IMultiController controller = tempThis.getController();
-                final boolean formed = controller.isFormed();
                 if (controller != null) {
+                    final boolean formed = controller.isFormed();
                     if (formed) {
                         if (state.getBlock() instanceof ActiveBlock) {
                             LongSet activeBlocks = tempThis.getMatchContext().getOrDefault("vaBlocks", LongSets.emptySet());
