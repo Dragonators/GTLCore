@@ -1,6 +1,8 @@
 package org.gtlcore.gtlcore.api.recipe;
 
 import org.gtlcore.gtlcore.api.machine.trait.IRecipeCapabilityMachine;
+import org.gtlcore.gtlcore.api.machine.trait.IRecipeHandlePart;
+import org.gtlcore.gtlcore.api.machine.trait.MERecipeHandlePart;
 import org.gtlcore.gtlcore.api.machine.trait.RecipeHandlePart;
 
 import com.gregtechceu.gtceu.api.capability.recipe.*;
@@ -23,7 +25,7 @@ import java.util.*;
 public class RecipeRunner {
 
     private final GTRecipe recipe;
-    private final RecipeHandlePart recipeHandlePart;
+    private final IRecipeHandlePart recipeHandlePart;
     private final IO io;
     private final boolean isTick;
     private final IRecipeCapabilityHolder holder;
@@ -33,9 +35,9 @@ public class RecipeRunner {
 
     public RecipeRunner(GTRecipe recipe, IO io, boolean isTick, IRecipeCapabilityHolder holder,
                         Map<RecipeCapability<?>, Object2IntMap<?>> chanceCaches, boolean simulated) {
-        RecipeHandlePart recipeHandlePart = null;
+        IRecipeHandlePart recipeHandlePart = null;
         if (io == IO.IN && holder instanceof IRecipeCapabilityMachine machine) {
-            recipeHandlePart = machine.getRecipeHandleMap().get(recipe);
+            recipeHandlePart = machine.getCachedRecipeHandle(recipe);
         }
         this.recipeHandlePart = recipeHandlePart;
         this.recipe = recipe;
@@ -105,7 +107,7 @@ public class RecipeRunner {
                 var parts = machine.getMERecipeHandleParts();
                 if (parts.isEmpty()) return false;
                 for (var p : parts) {
-                    var slot = p.meHandleRecipe(IO.IN, recipe, recipeContent, simulated);
+                    var slot = p.meHandleRecipe(recipe, recipeContent, simulated);
                     if (slot >= 0) {
                         if (simulated) machine.setMERecipeHandleMap(p, recipe, slot);
                         return true;
@@ -172,16 +174,16 @@ public class RecipeRunner {
         return false;
     }
 
-    private boolean tryHandleWithPart(RecipeHandlePart part,
+    private boolean tryHandleWithPart(IRecipeHandlePart part,
                                       IRecipeCapabilityMachine machine,
                                       Map<RecipeCapability<?>, List<Object>> contents) {
         if (part == null) return false;
-        if (part.isMEHandlePart()) {
-            return part.meHandleCacheRecipe(IO.IN, recipe, recipeContent, part.getSlotMap().getInt(recipe), simulated);
-        } else {
-            var result = part.handleRecipe(IO.IN, recipe, contents, simulated);
+        if (part instanceof MERecipeHandlePart meRecipeHandlePart) {
+            return meRecipeHandlePart.meHandleCacheRecipe(recipe, recipeContent, meRecipeHandlePart.getSlotMap().getInt(recipe), simulated);
+        } else if (part instanceof RecipeHandlePart handlePart) {
+            var result = handlePart.handleRecipe(IO.IN, recipe, contents, simulated);
             if (result.isEmpty()) {
-                if (simulated) machine.setRecipeHandleMap(part, recipe);
+                if (simulated) machine.setRecipeHandleMap(handlePart, recipe);
                 return true;
             }
         }

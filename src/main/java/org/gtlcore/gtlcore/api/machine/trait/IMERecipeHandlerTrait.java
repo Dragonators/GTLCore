@@ -8,7 +8,9 @@ import com.lowdragmc.lowdraglib.syncdata.ISubscription;
 
 public interface IMERecipeHandlerTrait<T> extends IMERecipeHandler<T> {
 
-    IO getHandlerIO();
+    default IO getHandlerIO() {
+        return IO.IN;
+    }
 
     ISubscription addChangedListener(Runnable var1);
 }

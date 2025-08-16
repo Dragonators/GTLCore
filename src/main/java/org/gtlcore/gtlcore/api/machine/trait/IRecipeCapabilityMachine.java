@@ -52,15 +52,15 @@ public interface IRecipeCapabilityMachine {
 
     // region ME
 
-    List<RecipeHandlePart> getMERecipeHandleParts();
+    List<MERecipeHandlePart> getMERecipeHandleParts();
 
-    void setMERecipeHandleMap(RecipeHandlePart hatch, GTRecipe recipe, int slot);
+    void setMERecipeHandleMap(MERecipeHandlePart hatch, GTRecipe recipe, int slot);
 
     // endregion
 
     List<RecipeHandlePart> getRecipeHandleParts();
 
-    Map<GTRecipe, RecipeHandlePart> getRecipeHandleMap();
+    IRecipeHandlePart getCachedRecipeHandle(GTRecipe recipe);
 
     void setRecipeHandleMap(RecipeHandlePart hatch, GTRecipe recipe);
 

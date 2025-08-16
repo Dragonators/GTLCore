@@ -1,6 +1,7 @@
 package org.gtlcore.gtlcore.mixin.gtm.api.recipe;
 
 import org.gtlcore.gtlcore.api.machine.trait.IRecipeCapabilityMachine;
+import org.gtlcore.gtlcore.api.machine.trait.MERecipeHandlePart;
 import org.gtlcore.gtlcore.api.machine.trait.RecipeHandlePart;
 import org.gtlcore.gtlcore.api.recipe.IRecipeIterator;
 import org.gtlcore.gtlcore.api.recipe.RecipeResult;
@@ -79,7 +80,7 @@ public abstract class GTRecipeLookupMixin {
     @Unique
     protected @NotNull List<List<AbstractMapIngredient>> gtlcore$fromHolder(@NotNull IRecipeCapabilityMachine r) {
         List<RecipeHandlePart> recipeHandleParts = r.getCapabilities().getOrDefault(IO.IN, new ObjectArrayList<>());
-        List<RecipeHandlePart> meRecipeHandleParts = r.getMERecipeHandleParts();
+        List<MERecipeHandlePart> meRecipeHandleParts = r.getMERecipeHandleParts();
         if (recipeHandleParts.isEmpty() && meRecipeHandleParts.isEmpty()) return Collections.emptyList();
         List<List<AbstractMapIngredient>> list = new ObjectArrayList<>(recipeHandleParts.size() + meRecipeHandleParts.size());
 

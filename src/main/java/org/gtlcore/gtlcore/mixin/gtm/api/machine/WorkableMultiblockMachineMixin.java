@@ -1,9 +1,6 @@
 package org.gtlcore.gtlcore.mixin.gtm.api.machine;
 
-import org.gtlcore.gtlcore.api.machine.trait.IMEPatternPartMachine;
-import org.gtlcore.gtlcore.api.machine.trait.IMERecipeHandlerTrait;
-import org.gtlcore.gtlcore.api.machine.trait.IRecipeCapabilityMachine;
-import org.gtlcore.gtlcore.api.machine.trait.RecipeHandlePart;
+import org.gtlcore.gtlcore.api.machine.trait.*;
 import org.gtlcore.gtlcore.api.recipe.RecipeResult;
 
 import com.gregtechceu.gtceu.api.capability.recipe.*;
@@ -64,9 +61,8 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
     @Getter
     private List<RecipeHandlePart> recipeHandleParts = new ObjectArrayList<>();
     @Getter
-    private List<RecipeHandlePart> mERecipeHandleParts = new ObjectArrayList<>();
-    @Getter
-    private Map<GTRecipe, RecipeHandlePart> recipeHandleMap = new Object2ObjectOpenHashMap<>();
+    private List<MERecipeHandlePart> mERecipeHandleParts = new ObjectArrayList<>();
+    private Map<GTRecipe, IRecipeHandlePart> recipeHandleMap = new Object2ObjectOpenHashMap<>();
     @Getter
     protected Map<IO, List<RecipeHandlePart>> capabilities = new EnumMap<>(IO.class);
     @Getter
@@ -120,9 +116,14 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
     }
 
     @Override
-    public void setMERecipeHandleMap(RecipeHandlePart hatch, GTRecipe recipe, int slot) {
+    public void setMERecipeHandleMap(MERecipeHandlePart hatch, GTRecipe recipe, int slot) {
         hatch.getSlotMap().put(recipe, slot);
         this.recipeHandleMap.put(recipe, hatch);
+    }
+
+    @Override
+    public IRecipeHandlePart getCachedRecipeHandle(GTRecipe recipe) {
+        return recipeHandleMap.get(recipe);
     }
 
     public void upDate() {
@@ -157,7 +158,7 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
                     for (IMERecipeHandlerTrait<?> meHandlerTrait : meHandlers) {
                         traitSubscriptions.add(meHandlerTrait.addChangedListener(recipeLogic::updateTickSubscription));
                     }
-                    mERecipeHandleParts.add(RecipeHandlePart.of(meHandlers));
+                    mERecipeHandleParts.add(MERecipeHandlePart.of(meHandlers));
                     continue;
                 }
                 List<IRecipeHandler<?>> hatch = new ObjectArrayList<>();
