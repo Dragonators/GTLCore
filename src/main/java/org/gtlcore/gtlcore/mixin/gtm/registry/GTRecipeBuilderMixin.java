@@ -20,8 +20,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import static org.gtlcore.gtlcore.common.data.GTLRecipeTypes.CREATE_AGGREGATION_RECIPES;
-import static org.gtlcore.gtlcore.common.data.GTLRecipeTypes.DOOR_OF_CREATE_RECIPES;
+import static org.gtlcore.gtlcore.common.data.GTLRecipeTypes.*;
 
 @Mixin(GTRecipeBuilder.class)
 @Accessors(chain = true, fluent = true)
