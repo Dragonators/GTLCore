@@ -22,7 +22,7 @@ import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
 
 @Mixin(MultiblockState.class)
-public abstract class MultiblockStateMixin {
+public class MultiblockStateMixin {
 
     @Final
     @Shadow(remap = false)
@@ -41,8 +41,7 @@ public abstract class MultiblockStateMixin {
      */
     @Overwrite(remap = false)
     public void onBlockStateChanged(BlockPos pos, BlockState state) {
-        Level var4 = this.world;
-        if (var4 instanceof ServerLevel serverLevel) {
+        if (this.world instanceof ServerLevel serverLevel) {
             if (pos.equals(this.controllerPos)) {
                 if (this.lastController != null && !state.is(this.lastController.self().getBlockState().getBlock())) {
                     this.lastController.onStructureInvalid();
@@ -62,7 +61,10 @@ public abstract class MultiblockStateMixin {
                             }
                         } else if (serverLevel.getBlockEntity(pos) instanceof IMachineBlockEntity IMBE) {
                             var metaMachine = IMBE.getMetaMachine();
-                            if (metaMachine instanceof ItemBusPartMachine || metaMachine instanceof FluidHatchPartMachine || metaMachine instanceof HugeBusPartMachine) return;
+                            if (metaMachine instanceof ItemBusPartMachine ||
+                                    metaMachine instanceof FluidHatchPartMachine ||
+                                    metaMachine instanceof HugeBusPartMachine)
+                                return;
                         }
                     }
 
