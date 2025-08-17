@@ -105,7 +105,6 @@ public class RecipeRunner {
 
             if (!machine.getMERecipeHandleParts().isEmpty()) {
                 var parts = machine.getMERecipeHandleParts();
-                if (parts.isEmpty()) return false;
                 for (var p : parts) {
                     var slot = p.meHandleRecipe(recipe, recipeContent, simulated);
                     if (slot >= 0) {
