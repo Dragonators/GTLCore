@@ -17,6 +17,7 @@ import com.gregtechceu.gtceu.data.recipe.builder.GTRecipeBuilder;
 
 import net.minecraft.nbt.CompoundTag;
 
+import com.google.common.collect.Iterators;
 import com.google.common.primitives.Ints;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import lombok.Getter;
@@ -106,12 +107,16 @@ public class MultipleRecipesLogic extends RecipeLogic implements ILockRecipe {
                     .find(machine, this::checkRecipe));
             else if (!checkRecipe(this.getLockRecipe())) return Collections.emptyIterator();
             return Collections.singleton(this.getLockRecipe()).iterator();
-        } else if (this.machine instanceof IRecipeCapabilityMachine rlm) {
-            if (!rlm.getMERecipeHandleParts().isEmpty()) {
-                List<GTRecipe> recipes = new ObjectArrayList<>();
-                rlm.getMERecipeHandleParts().forEach(m -> recipes.addAll(m.getMachine().getRecipe()));
-                var list = recipes.stream().filter(Objects::nonNull).toList();
-                if (!list.isEmpty()) return list.listIterator();
+        }
+
+        if (this.machine instanceof IRecipeCapabilityMachine rlm) {
+            var parts = rlm.getMERecipeHandleParts();
+            if (!parts.isEmpty()) {
+                List<GTRecipe> meRecipes = new ObjectArrayList<>();
+                for (var part : parts) {
+                    meRecipes.addAll(part.getMachine().getCachedGTRecipe());
+                }
+                if (!meRecipes.isEmpty()) return Iterators.concat(IRecipeIterator.findIteratorRecipeCollection(machine.getRecipeType().getLookup().getRecipeIterator(machine, this::checkRecipe)).iterator(), meRecipes.iterator());
             }
         }
         return IRecipeIterator.findIteratorRecipeCollection(

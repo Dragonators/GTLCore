@@ -82,6 +82,9 @@ import com.google.common.primitives.Ints;
 import com.hepdd.gtmthings.common.block.machine.trait.CatalystFluidStackHandler;
 import com.hepdd.gtmthings.common.block.machine.trait.CatalystItemStackHandler;
 import com.mojang.datafixers.util.Pair;
+import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMaps;
 import it.unimi.dsi.fastutil.objects.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -146,6 +149,8 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
     @Getter
     @Persisted
     protected final InternalSlot[] internalInventory;
+
+    protected final Int2ObjectMap<GTRecipe> gtRecipeCacheMap = new Int2ObjectArrayMap<>();
 
     private final BiMap<IPatternDetails, Integer> patternSlotMap;
 
@@ -267,7 +272,6 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
             hasPatternArray[index] = true;
         } else {
             patternSlotMap.inverse().remove(index);
-            internalInv.setRecipe(null);
             hasPatternArray[index] = false;
         }
 
@@ -276,6 +280,8 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
             // 样板更换时清理缓存的电路和原始样板
             internalInv.storedCircuit = ItemStack.EMPTY;
             internalInv.cacheManager.clearAllCaches();
+            cacheRecipe[index] = false;
+            gtRecipeCacheMap.remove(index);
             refundSlot(internalInv);
             pendingRefundData.reFunds();
         }
@@ -577,18 +583,29 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
     // ========================================
 
     @Override
-    public List<GTRecipe> getRecipe() {
+    public @NotNull List<@NotNull GTRecipe> getCachedGTRecipe() {
         List<GTRecipe> recipes = new ObjectArrayList<>();
-        for (int i = 0; i < this.maxPatternCount; i++) {
-            var slot = this.internalInventory[i];
-            if (slot.isActive() && cacheRecipe[i]) recipes.add(slot.getRecipe());
+        for (var it = Int2ObjectMaps.fastIterator(gtRecipeCacheMap); it.hasNext();) {
+            var entry = it.next();
+            GTRecipe recipe = entry.getValue();
+            int slot = entry.getIntKey();
+            if (recipe == null) it.remove();
+            else if (internalInventory[slot].isActive()) recipes.add(recipe);
         }
         return recipes;
     }
 
     @Override
     public void setRecipe(int index, GTRecipe recipe) {
-        this.internalInventory[index].setRecipe(recipe);
+        if (recipe != null) {
+            gtRecipeCacheMap.put(index, recipe);
+            cacheRecipe[index] = true;
+        }
+    }
+
+    @Override
+    public boolean hasCacheInSlot(int slot) {
+        return cacheRecipe[slot];
     }
 
     @Override
@@ -598,6 +615,39 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
 
     public Reference2ObjectMap<RecipeCapability<?>, IMERecipeHandlerTrait<?>> getMERecipeHandlerMap() {
         return recipeHandler.getMERecipeHandlerMap();
+    }
+
+    @Override
+    public void saveCustomPersistedData(@NotNull CompoundTag tag, boolean forDrop) {
+        super.saveCustomPersistedData(tag, forDrop);
+        if (!gtRecipeCacheMap.isEmpty()) {
+            CompoundTag recipeCacheTag = new CompoundTag();
+            for (var entry : Int2ObjectMaps.fastIterable(gtRecipeCacheMap)) {
+                GTRecipe recipe = entry.getValue();
+                if (recipe != null) {
+                    recipeCacheTag.put(String.valueOf(entry.getIntKey()), GTLUtil.serializeNBT(recipe));
+                }
+            }
+            tag.put("gtRecipeCache", recipeCacheTag);
+        }
+    }
+
+    @Override
+    public void loadCustomPersistedData(@NotNull CompoundTag tag) {
+        super.loadCustomPersistedData(tag);
+        if (tag.contains("gtRecipeCache")) {
+            gtRecipeCacheMap.clear();
+            CompoundTag recipeCacheTag = tag.getCompound("gtRecipeCache");
+            for (String key : recipeCacheTag.getAllKeys()) {
+                int slotIndex = Integer.parseInt(key);
+                Tag recipeTag = recipeCacheTag.get(key);
+                GTRecipe recipe = GTLUtil.deserializeNBT(recipeTag);
+                if (recipe != null && slotIndex >= 0 && slotIndex < maxPatternCount) {
+                    gtRecipeCacheMap.put(slotIndex, recipe);
+                    cacheRecipe[slotIndex] = true;
+                }
+            }
+        }
     }
 
     /**
@@ -630,8 +680,6 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
 
         @Getter
         private final int slotIndex;
-        @Getter
-        private GTRecipe recipe;
 
         public InternalSlot(int slotIndex) {
             this.slotIndex = slotIndex;
@@ -649,11 +697,6 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
             } else {
                 return hasPatternArray[slotIndex] && !fluidInventory.isEmpty();
             }
-        }
-
-        public void setRecipe(GTRecipe recipe) {
-            this.recipe = recipe;
-            cacheRecipe[slotIndex] = this.recipe != null;
         }
 
         private void add(AEKey what, long amount) {
@@ -808,8 +851,6 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
         public CompoundTag serializeNBT() {
             CompoundTag tag = new CompoundTag();
 
-            if (this.recipe != null) tag.put("recipe", GTLUtil.serializeNBT(this.recipe));
-
             ListTag itemsTag = new ListTag();
             for (var it = itemInventory.object2LongEntrySet().fastIterator(); it.hasNext();) {
                 var entry = it.next();
@@ -836,8 +877,6 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
         public void deserializeNBT(CompoundTag tag) {
             itemInventory.clear();
             fluidInventory.clear();
-
-            this.setRecipe(GTLUtil.deserializeNBT(tag.getCompound("recipe")));
 
             ListTag items = tag.getList("inventory", Tag.TAG_COMPOUND);
             for (Tag t : items) {

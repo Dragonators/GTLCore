@@ -143,6 +143,10 @@ public class MERecipeHandlePart implements IRecipeHandlePart {
                 meHandler.initMEHandleContents(recipe, content, simulate);
                 if (!meHandler.meHandleRecipe(recipe, simulate, trySlot)) return false;
             }
+            // 当取出再原地放回样板时，RecipeHandle侧的slotMap会先从该方法尝试handle原slot
+            // 此时会handle成功，导致对应slot的cache永远无法更新(只在meHandleRecipe这一方法中更新)
+            // 因此在此处特别添加判断，防止此类情形
+            if (!machine.hasCacheInSlot(trySlot)) machine.setRecipe(trySlot, recipe);
             return true;
         }
         return false;

@@ -21,6 +21,7 @@ import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 
 import net.minecraft.network.chat.Component;
 
+import com.google.common.collect.Iterators;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import lombok.Getter;
@@ -136,11 +137,13 @@ public abstract class RecipeLogicMixin implements ILockRecipe, IRecipeStatus {
     @Overwrite(remap = false)
     protected Iterator<GTRecipe> searchRecipe() {
         if (this.machine instanceof IRecipeCapabilityMachine rlm) {
-            if (!rlm.getMERecipeHandleParts().isEmpty()) {
-                List<GTRecipe> recipes = new ObjectArrayList<>();
-                rlm.getMERecipeHandleParts().forEach(m -> recipes.addAll(m.getMachine().getRecipe()));
-                var list = recipes.stream().filter(Objects::nonNull).toList();
-                if (!list.isEmpty()) return list.listIterator();
+            var parts = rlm.getMERecipeHandleParts();
+            if (!parts.isEmpty()) {
+                List<GTRecipe> meRecipes = new ObjectArrayList<>();
+                for (var part : parts) {
+                    meRecipes.addAll(part.getMachine().getCachedGTRecipe());
+                }
+                if (!meRecipes.isEmpty()) return Iterators.concat(this.machine.getRecipeType().searchRecipe(this.machine), meRecipes.iterator());
             }
         }
         return this.machine.getRecipeType().searchRecipe(this.machine);
