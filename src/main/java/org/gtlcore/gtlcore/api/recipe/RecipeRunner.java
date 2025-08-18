@@ -99,9 +99,9 @@ public class RecipeRunner {
         }
 
         if (capIO == IO.IN) {
-            if (tryHandleWithPart(recipeHandlePart, machine, recipeContent)) {
-                return true;
-            }
+            if (recipeHandlePart instanceof MERecipeHandlePart meRecipeHandlePart)
+                if (meRecipeHandlePart.meHandleCacheRecipe(recipe, recipeContent, simulated))
+                    return true;
 
             if (!machine.getMERecipeHandleParts().isEmpty()) {
                 var parts = machine.getMERecipeHandleParts();
@@ -115,6 +115,12 @@ public class RecipeRunner {
             }
 
             if (machine.isDistinct()) {
+                if (recipeHandlePart instanceof RecipeHandlePart rht) {
+                    var result = rht.handleRecipe(IO.IN, recipe, recipeContent, simulated);
+                    if (result.isEmpty()) {
+                        return true;
+                    }
+                }
                 var inHandlers = machine.getCapabilities().getOrDefault(IO.IN, Collections.emptyList());
                 if (inHandlers.isEmpty()) return false;
                 for (var handler : inHandlers) {
@@ -128,8 +134,11 @@ public class RecipeRunner {
                 List<Object> itemContent = recipeContent.getOrDefault(ItemRecipeCapability.CAP, Collections.emptyList());
                 if (!itemContent.isEmpty()) {
                     Map<RecipeCapability<?>, List<Object>> itemsOnly = Collections.singletonMap(ItemRecipeCapability.CAP, itemContent);
-                    if (tryHandleWithPart(recipeHandlePart, machine, itemsOnly)) {
-                        itemContent.clear();
+                    if (this.recipeHandlePart instanceof RecipeHandlePart rht) {
+                        var result = rht.handleRecipe(IO.IN, recipe, itemsOnly, simulated);
+                        if (result.isEmpty()) {
+                            itemContent.clear();
+                        }
                     }
                     if (!itemContent.isEmpty()) {
                         for (var part : machine.getCapabilities().getOrDefault(IO.IN, Collections.emptyList())) {
