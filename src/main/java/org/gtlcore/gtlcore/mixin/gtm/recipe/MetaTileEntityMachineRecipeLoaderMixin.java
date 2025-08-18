@@ -281,7 +281,7 @@ public abstract class MetaTileEntityMachineRecipeLoaderMixin {
                     .inputItems(HULL[UV], 1)
                     .inputItems(SENSOR_UV, 2)
                     .inputItems(CustomTags.UHV_CIRCUITS, 1)
-                    .inputItems(Registries.getItemStack("gtceu:entangled_singularity", 2))
+                    .inputItems(Registries.getItemStack("kubejs:entangled_singularity", 2))
                     .inputItems(AEBlocks.QUANTUM_LINK.asItem(), 1)
                     .inputItems(AEBlocks.QUANTUM_RING.asItem(), 8)
                     .inputItems(wireFine, EnrichedNaquadahTriniumEuropiumDuranide, 32)
