@@ -92,6 +92,14 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
                 .collect(Collectors.toList());
     }
 
+    private List<Integer> getActiveAndUnCachedSlots(MEPatternBufferPartMachine.InternalSlot[] slots, RecipeCapability<?> recipeCapability) {
+        var machine = getMachine();
+        return IntStream.range(0, slots.length)
+                .filter(i -> slots[i].isActive(recipeCapability) && !machine.gtRecipeCacheMap.containsKey(i))
+                .boxed()
+                .collect(Collectors.toList());
+    }
+
     public class MEItemInputHandler extends NotifiableMERecipeHandlerTrait<Ingredient> {
 
         @Getter
@@ -126,12 +134,16 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
             return MEPatternBufferRecipeHandlerTrait.this.getActiveSlots(getMachine().getInternalInventory(), recipeCapability);
         }
 
+        private List<Integer> getActiveAndUnCachedSlots() {
+            return MEPatternBufferRecipeHandlerTrait.this.getActiveAndUnCachedSlots(getMachine().getInternalInventory(), ItemRecipeCapability.CAP);
+        }
+
         @Override
-        public Int2ObjectMap<List<Object>> getActiveSlotsLimitContentsMap() {
+        public Int2ObjectMap<List<Object>> getActiveAndUnCachedSlotsLimitContentsMap() {
             var map = new Int2ObjectArrayMap<List<Object>>();
             var machine = getMachine();
             var shared = machine.getShareInventory().getContents();
-            for (int slot : getActiveSlots(ItemRecipeCapability.CAP)) {
+            for (int slot : getActiveAndUnCachedSlots()) {
                 var inputs = machine.getInternalInventory()[slot].getLimitItemStackInput();
 
                 // 通过统一方法获取该槽位的电路（可能来自样板或总成配置）
@@ -216,12 +228,16 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
             return MEPatternBufferRecipeHandlerTrait.this.getActiveSlots(getMachine().getInternalInventory(), recipeCapability);
         }
 
+        private List<Integer> getActiveAndUnCachedSlots() {
+            return MEPatternBufferRecipeHandlerTrait.this.getActiveAndUnCachedSlots(getMachine().getInternalInventory(), FluidRecipeCapability.CAP);
+        }
+
         @Override
-        public Int2ObjectMap<List<Object>> getActiveSlotsLimitContentsMap() {
+        public Int2ObjectMap<List<Object>> getActiveAndUnCachedSlotsLimitContentsMap() {
             var map = new Int2ObjectArrayMap<List<Object>>();
             var machine = getMachine();
             var shared = machine.getShareTank().getContents();
-            for (int slot : getActiveSlots(FluidRecipeCapability.CAP)) {
+            for (int slot : getActiveAndUnCachedSlots()) {
                 var inputs = machine.getInternalInventory()[slot].getLimitFluidStackInput();
                 inputs.addAll(shared);
                 map.put(slot, inputs);

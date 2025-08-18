@@ -40,9 +40,9 @@ public class MEPatternBufferProxyRecipeHandler<T> extends NotifiableMERecipeHand
     }
 
     @Override
-    public Int2ObjectMap<List<Object>> getActiveSlotsLimitContentsMap() {
+    public Int2ObjectMap<List<Object>> getActiveAndUnCachedSlotsLimitContentsMap() {
         if (handler != null) {
-            return handler.getActiveSlotsLimitContentsMap();
+            return handler.getActiveAndUnCachedSlotsLimitContentsMap();
         }
         return Int2ObjectMaps.emptyMap();
     }

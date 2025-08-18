@@ -38,7 +38,7 @@ public interface IMERecipeHandler<T> extends IFilteredHandler<T> {
     // ==================== Content Management ====================
 
     /**
-     * 获取所有激活slot -> 与handler对应内容的映射
+     * 获取所有激活且未缓存GTRecipe的slot -> 与handler对应内容的映射
      * 查询GTRecipe使用，所有Content缩限到单个元素与Int.MAX上限
      * Object类型说明:
      * - Ingredient -> ItemStack
@@ -46,7 +46,7 @@ public interface IMERecipeHandler<T> extends IFilteredHandler<T> {
      *
      * @return slot到限制内容列表的映射
      */
-    Int2ObjectMap<List<Object>> getActiveSlotsLimitContentsMap();
+    Int2ObjectMap<List<Object>> getActiveAndUnCachedSlotsLimitContentsMap();
 
     /**
      * 获取指定slot中所有与handler对应内容 -> amount的映射

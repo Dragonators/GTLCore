@@ -39,6 +39,7 @@ import net.minecraft.world.phys.BlockHitResult;
 
 import com.mojang.datafixers.util.Pair;
 import lombok.Getter;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
@@ -164,9 +165,22 @@ public class MEPatternBufferProxyPartMachine extends TieredIOPartMachine impleme
     }
 
     @Override
-    public List<GTRecipe> getRecipe() {
-        if (this.buffer == null) return Collections.emptyList();
-        return this.buffer.getRecipe();
+    public void setRecipe(int index, GTRecipe recipe) {
+        if (buffer != null) {
+            buffer.setRecipe(index, recipe);
+        }
+    }
+
+    @Override
+    public @NotNull List<@NotNull GTRecipe> getCachedGTRecipe() {
+        if (buffer == null) return Collections.emptyList();
+        return buffer.getCachedGTRecipe();
+    }
+
+    @Override
+    public boolean hasCacheInSlot(int slot) {
+        if (buffer == null) return false;
+        return buffer.hasCacheInSlot(slot);
     }
 
     @Override
