@@ -1,6 +1,7 @@
 package org.gtlcore.gtlcore.mixin.gtm.recipe;
 
 import org.gtlcore.gtlcore.common.data.GTLMachines;
+import org.gtlcore.gtlcore.utils.Registries;
 
 import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.api.GTCEuAPI;
@@ -28,20 +29,14 @@ import org.spongepowered.asm.mixin.Shadow;
 
 import java.util.function.Consumer;
 
-import static com.gregtechceu.gtceu.api.GTValues.EV;
-import static com.gregtechceu.gtceu.api.GTValues.HV;
-import static com.gregtechceu.gtceu.api.GTValues.IV;
-import static com.gregtechceu.gtceu.api.GTValues.L;
-import static com.gregtechceu.gtceu.api.GTValues.LuV;
-import static com.gregtechceu.gtceu.api.GTValues.VA;
-import static com.gregtechceu.gtceu.api.GTValues.ZPM;
-import static com.gregtechceu.gtceu.api.data.tag.TagPrefix.wireFine;
+import static com.gregtechceu.gtceu.api.GTValues.*;
+import static com.gregtechceu.gtceu.api.data.tag.TagPrefix.*;
 import static com.gregtechceu.gtceu.common.data.GTItems.*;
-import static com.gregtechceu.gtceu.common.data.GTItems.SENSOR_LuV;
 import static com.gregtechceu.gtceu.common.data.GTMachines.*;
 import static com.gregtechceu.gtceu.common.data.GTMaterials.*;
-import static com.gregtechceu.gtceu.common.data.GTMaterials.Lubricant;
 import static com.gregtechceu.gtceu.common.data.GTRecipeTypes.*;
+import static com.hepdd.gtmthings.data.CustomMachines.HUGE_INPUT_DUAL_HATCH;
+import static org.gtlcore.gtlcore.common.data.GTLMaterials.*;
 
 @Mixin(MetaTileEntityMachineRecipeLoader.class)
 public abstract class MetaTileEntityMachineRecipeLoaderMixin {
@@ -242,38 +237,61 @@ public abstract class MetaTileEntityMachineRecipeLoaderMixin {
                     .duration(300).EUt(VA[IV])
                     .save(provider);
 
-            ASSEMBLY_LINE_RECIPES.recipeBuilder("me_pattern_buffer")
-                    .inputItems(DUAL_IMPORT_HATCH[LuV], 1)
-                    .inputItems(EMITTER_LuV, 1)
+            ASSEMBLY_LINE_RECIPES.recipeBuilder("me_mini_pattern_buffer")
+                    .inputItems(HUGE_INPUT_DUAL_HATCH[IV], 1)
+                    .inputItems(EMITTER_IV, 1)
                     .inputItems(CustomTags.LuV_CIRCUITS, 4)
                     .inputItems(AEBlocks.PATTERN_PROVIDER.asItem(), 3)
                     .inputItems(AEBlocks.INTERFACE.asItem(), 3)
-                    .inputItems(AEItems.SPEED_CARD.asItem(), 4)
-                    .inputItems(AEItems.CAPACITY_CARD.asItem(), 2)
-                    .inputItems(wireFine, Europium, 32)
-                    .inputItems(wireFine, Europium, 32)
-                    .inputItems(wireFine, Europium, 32)
+                    .inputItems(AEItems.SPEED_CARD.asItem(), 3)
+                    .inputItems(AEItems.CAPACITY_CARD.asItem(), 4)
+                    .inputItems(plateDouble, Trinium, 2)
+                    .inputItems(wireGtSingle, UraniumTriplatinum, 24)
                     .inputFluids(SolderingAlloy.getFluid(L * 4))
                     .inputFluids(Lubricant.getFluid(500))
-                    .outputItems(GTLMachines.GTAEMachines.ME_PATTERN_BUFFER)
-                    .scannerResearch(b -> b.researchStack(DUAL_IMPORT_HATCH[LuV].asStack())
-                            .duration(1200)
-                            .EUt(VA[LuV]))
-                    .duration(600).EUt(VA[LuV]).save(provider);
+                    .outputItems(GTLMachines.GTAEMachines.ME_MINI_PATTERN_BUFFER)
+                    .duration(600).EUt(VA[IV])
+                    .scannerResearch(b -> b.researchStack(HUGE_INPUT_DUAL_HATCH[IV].asStack())
+                            .duration(600)
+                            .EUt(VA[IV]))
+                    .save(provider);
+
+            ASSEMBLY_LINE_RECIPES.recipeBuilder("me_extend_pattern_buffer")
+                    .inputItems(HUGE_INPUT_DUAL_HATCH[UV], 1)
+                    .inputItems(EMITTER_UV, 1)
+                    .inputItems(CustomTags.UHV_CIRCUITS, 4)
+                    .inputItems(AEBlocks.PATTERN_PROVIDER.asItem(), 3)
+                    .inputItems(AEBlocks.INTERFACE.asItem(), 3)
+                    .inputItems(AEItems.SPEED_CARD.asItem(), 6)
+                    .inputItems(AEItems.CAPACITY_CARD.asItem(), 4)
+                    .inputItems(plate, Neutronium, 8)
+                    .inputItems(plate, Neutronium, 8)
+                    .inputItems(wireFine, EnrichedNaquadahTriniumEuropiumDuranide, 32)
+                    .inputItems(wireFine, EnrichedNaquadahTriniumEuropiumDuranide, 32)
+                    .inputItems(wireFine, EnrichedNaquadahTriniumEuropiumDuranide, 32)
+                    .inputFluids(SolderingAlloy.getFluid(L * 4))
+                    .inputFluids(Lubricant.getFluid(500))
+                    .inputFluids(Highurabilityompoundteel.getFluid(L * 4))
+                    .outputItems(GTLMachines.GTAEMachines.ME_EXTEND_PATTERN_BUFFER)
+                    .stationResearch(b -> b.researchStack(HUGE_INPUT_DUAL_HATCH[UV].asStack())
+                            .CWUt(96))
+                    .duration(600).EUt(VA[UV]).save(provider);
+
             ASSEMBLY_LINE_RECIPES.recipeBuilder("me_pattern_buffer_proxy")
-                    .inputItems(HULL[LuV], 1)
-                    .inputItems(SENSOR_LuV, 2)
-                    .inputItems(CustomTags.LuV_CIRCUITS, 1)
+                    .inputItems(HULL[UV], 1)
+                    .inputItems(SENSOR_UV, 2)
+                    .inputItems(CustomTags.UHV_CIRCUITS, 1)
+                    .inputItems(Registries.getItemStack("gtceu:entangled_singularity", 2))
                     .inputItems(AEBlocks.QUANTUM_LINK.asItem(), 1)
-                    .inputItems(AEBlocks.QUANTUM_RING.asItem(), 2)
-                    .inputItems(wireFine, Europium, 32)
-                    .inputItems(wireFine, Europium, 32)
+                    .inputItems(AEBlocks.QUANTUM_RING.asItem(), 8)
+                    .inputItems(wireFine, EnrichedNaquadahTriniumEuropiumDuranide, 32)
+                    .inputItems(wireFine, EnrichedNaquadahTriniumEuropiumDuranide, 32)
                     .inputFluids(SolderingAlloy.getFluid(L * 4))
                     .inputFluids(Lubricant.getFluid(500))
                     .outputItems(GTLMachines.GTAEMachines.ME_PATTERN_BUFFER_PROXY)
-                    .stationResearch(b -> b.researchStack(GTLMachines.GTAEMachines.ME_PATTERN_BUFFER.asStack())
-                            .CWUt(32))
-                    .duration(600).EUt(VA[ZPM]).save(provider);
+                    .stationResearch(b -> b.researchStack(DUAL_IMPORT_HATCH[UV].asStack())
+                            .CWUt(48))
+                    .duration(600).EUt(VA[UV]).save(provider);
         }
     }
 }

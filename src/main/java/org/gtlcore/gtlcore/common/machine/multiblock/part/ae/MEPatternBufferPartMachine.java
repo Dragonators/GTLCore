@@ -65,7 +65,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 
 import appeng.api.crafting.IPatternDetails;
-import appeng.api.crafting.PatternDetailsHelper;
 import appeng.api.implementations.blockentities.PatternContainerGroup;
 import appeng.api.inventories.InternalInventory;
 import appeng.api.networking.IGrid;
@@ -100,6 +99,8 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
     protected final int maxPatternCount;
 
     private final boolean[] hasPatternArray;
+    @DescSynced
+    private final boolean[] cacheRecipe;
 
     private final InternalInventory internalPatternInventory = new InternalInventory() {
 
@@ -110,11 +111,6 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
 
         @Override
         public ItemStack getStackInSlot(int slotIndex) {
-            // 返回原始样板（如果有的话），否则返回存储的样板
-            var internalSlot = internalInventory[slotIndex];
-            if (!internalSlot.getOriginalPattern().isEmpty()) {
-                return internalSlot.getOriginalPattern();
-            }
             return patternInventory.getStackInSlot(slotIndex);
         }
 
@@ -149,10 +145,9 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
 
     @Getter
     @Persisted
-    @DescSynced
     protected final InternalSlot[] internalInventory;
 
-    private final BiMap<IPatternDetails, InternalSlot> detailsSlotMap;
+    private final BiMap<IPatternDetails, Integer> patternSlotMap;
 
     private boolean needPatternSync;
 
@@ -178,12 +173,13 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
         this.maxPatternCount = maxPatternCount;
 
         // Initialize arrays with calculated size
-        this.hasPatternArray = new boolean[this.maxPatternCount];
-        this.internalInventory = new InternalSlot[this.maxPatternCount];
-        this.detailsSlotMap = HashBiMap.create(this.maxPatternCount);
+        this.hasPatternArray = new boolean[maxPatternCount];
+        this.cacheRecipe = new boolean[maxPatternCount];
+        this.internalInventory = new InternalSlot[maxPatternCount];
+        this.patternSlotMap = HashBiMap.create(maxPatternCount);
 
         // Initialize inventories
-        this.patternInventory = new ItemStackTransfer(this.maxPatternCount);
+        this.patternInventory = new ItemStackTransfer(maxPatternCount);
         this.patternInventory.setFilter(stack -> stack.getItem() instanceof ProcessingPatternItem);
         Arrays.setAll(internalInventory, InternalSlot::new);
         getMainNode().addService(ICraftingProvider.class, this);
@@ -218,9 +214,9 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
             serverLevel.getServer().tell(new TickTask(1, () -> {
                 for (int i = 0; i < patternInventory.getSlots(); i++) {
                     var pattern = patternInventory.getStackInSlot(i);
-                    var patternDetails = PatternDetailsHelper.decodePattern(pattern, getLevel());
-                    if (patternDetails != null) {
-                        this.detailsSlotMap.put(patternDetails, this.internalInventory[i]);
+                    var realPattern = getRealPattern(i, pattern);
+                    if (realPattern != null) {
+                        this.patternSlotMap.forcePut(realPattern, i);
                         hasPatternArray[i] = true;
                     }
                 }
@@ -262,25 +258,23 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
 
         var internalInv = internalInventory[index];
         var newPattern = patternInventory.getStackInSlot(index);
-        var newPatternDetails = PatternDetailsHelper.decodePattern(newPattern, getLevel());
-        var oldPatternDetails = detailsSlotMap.inverse().get(internalInv);
+        var newPatternDetailsWithOutCircuit = getRealPattern(index, newPattern);
+        var oldPatternDetails = patternSlotMap.inverse().get(index);
 
         // Update pattern mapping and tracking
-        if (newPatternDetails != null) {
-            detailsSlotMap.forcePut(newPatternDetails, internalInv);
-            setPattern(index, newPattern);
+        if (newPatternDetailsWithOutCircuit != null) {
+            patternSlotMap.forcePut(newPatternDetailsWithOutCircuit, index);
             hasPatternArray[index] = true;
         } else {
-            detailsSlotMap.inverse().remove(internalInv);
+            patternSlotMap.inverse().remove(index);
             internalInv.setRecipe(null);
             hasPatternArray[index] = false;
         }
 
         // remove old pattern cache
-        if (oldPatternDetails != null && !oldPatternDetails.equals(newPatternDetails)) {
+        if (oldPatternDetails != null && !oldPatternDetails.equals(newPatternDetailsWithOutCircuit)) {
             // 样板更换时清理缓存的电路和原始样板
             internalInv.storedCircuit = ItemStack.EMPTY;
-            internalInv.originalPattern = ItemStack.EMPTY;
             internalInv.cacheManager.clearAllCaches();
             refundSlot(internalInv);
             pendingRefundData.reFunds();
@@ -448,9 +442,8 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
                         })
                         .setChangeListener(() -> onPatternChange(finalI))
                         .setOnAddedTooltips((s, l) -> {
-                            if (internalInventory[finalI].getRecipe() != null) {
+                            if (cacheRecipe[finalI])
                                 l.add(Component.translatable("gtceu.machine.pattern.recipe.cache"));
-                            }
                         })
                         .setBackground(GuiTextures.SLOT, GuiTextures.PATTERN_OVERLAY);
                 group.addWidget(slot);
@@ -464,20 +457,13 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
     // CIRCUIT HANDLING
     // ========================================
 
-    private void setPattern(int slot, ItemStack stack) {
-        ItemStack realStack;
-        // 如果放入的是包含电路的样板，需要处理
-        if (!stack.isEmpty() && circuitHandler.shouldUsePatternCircuit()) {
+    private IPatternDetails getRealPattern(int slot, ItemStack stack) {
+        if (!stack.isEmpty()) {
             var internalSlot = internalInventory[slot];
-            var result = circuitHandler.processPatternWithCircuit(
-                    stack, getLevel(),
-                    circuit -> internalSlot.storedCircuit = circuit,
-                    pattern -> internalSlot.originalPattern = pattern);
-            realStack = result.processedPattern();
-        } else {
-            realStack = stack;
+            return circuitHandler.processPatternWithCircuit(
+                    stack, circuit -> internalSlot.storedCircuit = circuit, getLevel());
         }
-        patternInventory.setStackInSlot(slot, realStack);
+        return null;
     }
 
     /**
@@ -496,18 +482,18 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
 
     @Override
     public List<IPatternDetails> getAvailablePatterns() {
-        return detailsSlotMap.keySet().stream().filter(Objects::nonNull).toList();
+        return patternSlotMap.keySet().stream().filter(Objects::nonNull).toList();
     }
 
     @Override
     public boolean pushPattern(IPatternDetails patternDetails, KeyCounter[] inputHolder) {
-        if (!getMainNode().isActive() || !detailsSlotMap.containsKey(patternDetails) || !checkInput(inputHolder)) {
+        if (!getMainNode().isActive() || !patternSlotMap.containsKey(patternDetails) || !checkInput(inputHolder)) {
             return false;
         }
 
-        var slot = detailsSlotMap.get(patternDetails);
-        if (slot != null) {
-            slot.pushPattern(patternDetails, inputHolder);
+        var slotIndex = patternSlotMap.get(patternDetails);
+        if (slotIndex != null && slotIndex >= 0) {
+            internalInventory[slotIndex].pushPattern(patternDetails, inputHolder);
             recipeHandler.onChanged();
             return true;
         }
@@ -574,13 +560,13 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
         } else {
             if (!customName.isEmpty()) {
                 return new PatternContainerGroup(
-                        AEItemKey.of(GTLMachines.GTAEMachines.ME_PATTERN_BUFFER.getItem()),
+                        AEItemKey.of(GTLMachines.GTAEMachines.ME_EXTEND_PATTERN_BUFFER.getItem()),
                         Component.literal(customName),
                         Collections.emptyList());
             } else {
                 return new PatternContainerGroup(
-                        AEItemKey.of(GTLMachines.GTAEMachines.ME_PATTERN_BUFFER.getItem()),
-                        GTLMachines.GTAEMachines.ME_PATTERN_BUFFER.get().getDefinition().getItem().getDescription(),
+                        AEItemKey.of(GTLMachines.GTAEMachines.ME_EXTEND_PATTERN_BUFFER.getItem()),
+                        GTLMachines.GTAEMachines.ME_EXTEND_PATTERN_BUFFER.get().getDefinition().getItem().getDescription(),
                         Collections.emptyList());
             }
         }
@@ -595,8 +581,7 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
         List<GTRecipe> recipes = new ObjectArrayList<>();
         for (int i = 0; i < this.maxPatternCount; i++) {
             var slot = this.internalInventory[i];
-            var r = slot.getRecipe();
-            if (slot.isActive() && r != null) recipes.add(r);
+            if (slot.isActive() && cacheRecipe[i]) recipes.add(slot.getRecipe());
         }
         return recipes;
     }
@@ -638,8 +623,6 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
 
         @Getter
         private ItemStack storedCircuit = ItemStack.EMPTY;
-        @Getter
-        private ItemStack originalPattern = ItemStack.EMPTY;
 
         @Persisted
         @Getter
@@ -670,7 +653,7 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
 
         public void setRecipe(GTRecipe recipe) {
             this.recipe = recipe;
-            hasPatternArray[slotIndex] = this.recipe != null;
+            cacheRecipe[slotIndex] = this.recipe != null;
         }
 
         private void add(AEKey what, long amount) {
@@ -845,7 +828,6 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
             if (!fluidsTag.isEmpty()) tag.put("fluidInventory", fluidsTag);
 
             if (!storedCircuit.isEmpty()) tag.put("storedCircuit", storedCircuit.save(new CompoundTag()));
-            if (!originalPattern.isEmpty()) tag.put("originalPattern", originalPattern.save(new CompoundTag()));
 
             return tag;
         }
@@ -878,7 +860,6 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
             }
 
             this.storedCircuit = ItemStack.of(tag.getCompound("storedCircuit"));
-            this.originalPattern = ItemStack.of(tag.getCompound("originalPattern"));
         }
     }
 

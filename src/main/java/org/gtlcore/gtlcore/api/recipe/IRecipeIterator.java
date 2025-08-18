@@ -14,6 +14,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 public interface IRecipeIterator {
 
@@ -61,6 +62,6 @@ public interface IRecipeIterator {
                     ((RecipeIteratorAccessor) iterator).getRecipeMap().getLookup().getLookup(),
                     ((RecipeIteratorAccessor) iterator).getCanHandle(), recipeSet);
         }
-        return recipeSet;
+        return recipeSet.stream().filter(Objects::nonNull).collect(Collectors.toSet());
     }
 }

@@ -2,6 +2,7 @@ package org.gtlcore.gtlcore.common.machine.trait;
 
 import org.gtlcore.gtlcore.api.machine.multiblock.ParallelMachine;
 import org.gtlcore.gtlcore.api.machine.trait.ILockRecipe;
+import org.gtlcore.gtlcore.api.machine.trait.IRecipeCapabilityMachine;
 import org.gtlcore.gtlcore.api.recipe.IRecipeIterator;
 
 import com.gregtechceu.gtceu.api.capability.recipe.*;
@@ -17,6 +18,7 @@ import com.gregtechceu.gtceu.data.recipe.builder.GTRecipeBuilder;
 import net.minecraft.nbt.CompoundTag;
 
 import com.google.common.primitives.Ints;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import lombok.Getter;
 
 import java.util.*;
@@ -104,8 +106,16 @@ public class MultipleRecipesLogic extends RecipeLogic implements ILockRecipe {
                     .find(machine, this::checkRecipe));
             else if (!checkRecipe(this.getLockRecipe())) return Collections.emptyIterator();
             return Collections.singleton(this.getLockRecipe()).iterator();
-        } else
-            return IRecipeIterator.findIteratorRecipeCollection(machine.getRecipeType().getLookup().getRecipeIterator(machine, this::checkRecipe)).iterator();
+        } else if (this.machine instanceof IRecipeCapabilityMachine rlm) {
+            if (!rlm.getMERecipeHandleParts().isEmpty()) {
+                List<GTRecipe> recipes = new ObjectArrayList<>();
+                rlm.getMERecipeHandleParts().forEach(m -> recipes.addAll(m.getMachine().getRecipe()));
+                var list = recipes.stream().filter(Objects::nonNull).toList();
+                if (!list.isEmpty()) return list.listIterator();
+            }
+        }
+        return IRecipeIterator.findIteratorRecipeCollection(
+                machine.getRecipeType().getLookup().getRecipeIterator(machine, this::checkRecipe)).iterator();
     }
 
     private boolean checkRecipe(GTRecipe recipe) {
