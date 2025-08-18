@@ -3,7 +3,6 @@ package org.gtlcore.gtlcore.common.machine.multiblock.electric;
 import org.gtlcore.gtlcore.common.data.GTLBlocks;
 import org.gtlcore.gtlcore.common.data.GTLRecipeModifiers;
 import org.gtlcore.gtlcore.common.data.machines.AdvancedMultiBlockMachine;
-import org.gtlcore.gtlcore.utils.NumberUtils;
 
 import com.gregtechceu.gtceu.api.GTValues;
 import com.gregtechceu.gtceu.api.capability.GTCapabilityHelper;
@@ -156,6 +155,6 @@ public class SpaceElevatorModuleMachine extends WorkableElectricMultiblockMachin
         }
         textList.add(Component.translatable("gtceu.multiblock.parallel", Component.literal(FormattingUtil.formatNumbers(Math.pow(4, ModuleTier - 1))).withStyle(ChatFormatting.DARK_PURPLE)).withStyle(ChatFormatting.GRAY));
         textList.add(Component.literal((SpaceElevatorTier < 1 ? "未" : "已") + "连接正在运行的太空电梯"));
-        textList.add(Component.translatable("gtceu.machine.duration_multiplier.tooltip", NumberUtils.formatDouble(Math.pow(0.8, SpaceElevatorTier - 1))));
+        textList.add(Component.translatable("gtceu.machine.duration_multiplier.tooltip", FormattingUtil.formatPercent(Math.pow(0.8, SpaceElevatorTier - 1))));
     }
 }

@@ -7,13 +7,14 @@ import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.objects.*;
 
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /**
- * ME样板总成配方处理接口
- * 支持基于slot的配方处理和内容管理
- * 
+ * @author Dragonators
+ *
+ *         ME样板总成配方处理接口
+ *         支持基于slot的配方处理和内容管理
+ *
  * @param <T> Ingredient/FluidIngredient
  */
 public interface IMERecipeHandler<T> extends IFilteredHandler<T> {
@@ -28,7 +29,7 @@ public interface IMERecipeHandler<T> extends IFilteredHandler<T> {
     /**
      * 获取激活的slot列表
      * 意味着该slot拥有样板且样板包含CAP
-     * 
+     *
      * @param cap 配方能力类型
      * @return 激活的slot index[]
      */
@@ -50,7 +51,7 @@ public interface IMERecipeHandler<T> extends IFilteredHandler<T> {
     /**
      * 获取指定slot中所有与handler对应内容 -> amount的映射
      * 计算并行使用，amount不缩限
-     * 
+     *
      * @param slots 要查询的slot列表
      * @return 内容到数量的映射
      */
@@ -58,7 +59,7 @@ public interface IMERecipeHandler<T> extends IFilteredHandler<T> {
 
     /**
      * 获取单个slot中所有与handler对应内容 -> amount的映射
-     * 
+     *
      * @param slot 要查询的slot
      * @return 内容到数量的映射
      */
@@ -75,7 +76,7 @@ public interface IMERecipeHandler<T> extends IFilteredHandler<T> {
     /**
      * 尝试使用指定slot处理配方
      * 注意: 在调用此方法前必须先调用initMEHandleContents为ME样板总成的Handler初始化待处理Map
-     * 
+     *
      * @param recipe   要处理的配方
      * @param simulate 是否模拟
      * @param trySlot  尝试使用的slot
@@ -88,7 +89,7 @@ public interface IMERecipeHandler<T> extends IFilteredHandler<T> {
     /**
      * ME配方处理的内部实现
      * 由具体实现类提供处理逻辑
-     * 
+     *
      * @param recipe           配方
      * @param preparedContents 准备好的内容映射
      * @param simulate         是否模拟
@@ -103,7 +104,7 @@ public interface IMERecipeHandler<T> extends IFilteredHandler<T> {
      * 初始化ME处理内容
      * 将配方待处理内容List<?>转换为ME样板总成处理器内部处理的Map形式
      * 同时预处理催化剂/电路相关内容，在后续Map中只存在实际消耗的物品
-     * 
+     *
      * @param recipe       配方
      * @param leftContents 配方待处理内容
      * @param simulate     是否模拟
@@ -130,7 +131,7 @@ public interface IMERecipeHandler<T> extends IFilteredHandler<T> {
 
     /**
      * 获取准备好的ME处理内容
-     * 
+     *
      * @return 准备好的内容映射
      */
     Object2LongMap<T> getPreparedMEHandleContents();

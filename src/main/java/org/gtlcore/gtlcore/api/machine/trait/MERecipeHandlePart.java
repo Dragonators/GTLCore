@@ -19,12 +19,16 @@ public class MERecipeHandlePart implements IRecipeHandlePart {
     private final Object2IntMap<GTRecipe> slotMap = new Object2IntOpenHashMap<>();
     @Getter
     private final Reference2ObjectOpenHashMap<RecipeCapability<?>, IMERecipeHandler<?>> meHandlerMap = new Reference2ObjectOpenHashMap<>();
+    @Getter
+    private final IMEPatternPartMachine machine;
 
-    public MERecipeHandlePart() {}
+    public MERecipeHandlePart(IMEPatternPartMachine machine) {
+        this.machine = machine;
+    }
 
-    public static MERecipeHandlePart of(Iterable<IMERecipeHandlerTrait<?>> handlers) {
-        MERecipeHandlePart rhl = new MERecipeHandlePart();
-        rhl.addMEHandlers(handlers);
+    public static MERecipeHandlePart of(IMEPatternPartMachine machine) {
+        MERecipeHandlePart rhl = new MERecipeHandlePart(machine);
+        rhl.addMEHandlers(machine.getMERecipeHandlerTraits());
         return rhl;
     }
 
@@ -118,6 +122,7 @@ public class MERecipeHandlePart implements IRecipeHandlePart {
             }
 
             if (allSuccess) {
+                this.machine.setRecipe(slot, recipe);
                 return slot;
             }
         }
@@ -125,7 +130,10 @@ public class MERecipeHandlePart implements IRecipeHandlePart {
         return -1;
     }
 
-    public boolean meHandleCacheRecipe(GTRecipe recipe, Reference2ObjectMap<RecipeCapability<?>, List<Object>> contents, int trySlot, boolean simulate) {
+    public boolean meHandleCacheRecipe(GTRecipe recipe,
+                                       Reference2ObjectMap<RecipeCapability<?>, List<Object>> contents,
+                                       boolean simulate) {
+        int trySlot = this.slotMap.getOrDefault(recipe, -1);
         if (!getMeHandlerMap().isEmpty() && trySlot >= 0) {
             for (var it = Reference2ObjectMaps.fastIterator(contents); it.hasNext();) {
                 var entry = it.next();
