@@ -37,7 +37,7 @@ public class RecipeRunner {
                         Map<RecipeCapability<?>, Object2IntMap<?>> chanceCaches, boolean simulated) {
         IRecipeHandlePart recipeHandlePart = null;
         if (io == IO.IN && holder instanceof IRecipeCapabilityMachine machine) {
-            recipeHandlePart = machine.getCachedRecipeHandle(recipe);
+            recipeHandlePart = machine.getRecipeHandleMap().get(recipe);
         }
         this.recipeHandlePart = recipeHandlePart;
         this.recipe = recipe;
@@ -112,7 +112,6 @@ public class RecipeRunner {
                         return true;
                     }
                 }
-                return false;
             }
 
             if (machine.isDistinct()) {
@@ -178,7 +177,7 @@ public class RecipeRunner {
                                       Map<RecipeCapability<?>, List<Object>> contents) {
         if (part == null) return false;
         if (part instanceof MERecipeHandlePart meRecipeHandlePart) {
-            return meRecipeHandlePart.meHandleCacheRecipe(recipe, recipeContent, meRecipeHandlePart.getSlotMap().getInt(recipe), simulated);
+            return meRecipeHandlePart.meHandleCacheRecipe(recipe, recipeContent, simulated);
         } else if (part instanceof RecipeHandlePart handlePart) {
             var result = handlePart.handleRecipe(IO.IN, recipe, contents, simulated);
             if (result.isEmpty()) {

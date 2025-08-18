@@ -62,6 +62,7 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
     private List<RecipeHandlePart> recipeHandleParts = new ObjectArrayList<>();
     @Getter
     private List<MERecipeHandlePart> mERecipeHandleParts = new ObjectArrayList<>();
+    @Getter
     private Map<GTRecipe, IRecipeHandlePart> recipeHandleMap = new Object2ObjectOpenHashMap<>();
     @Getter
     protected Map<IO, List<RecipeHandlePart>> capabilities = new EnumMap<>(IO.class);
@@ -121,11 +122,6 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
         this.recipeHandleMap.put(recipe, hatch);
     }
 
-    @Override
-    public IRecipeHandlePart getCachedRecipeHandle(GTRecipe recipe) {
-        return recipeHandleMap.get(recipe);
-    }
-
     public void upDate() {
         capabilities.clear();
         capabilitiesFlat.clear();
@@ -158,7 +154,7 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
                     for (IMERecipeHandlerTrait<?> meHandlerTrait : meHandlers) {
                         traitSubscriptions.add(meHandlerTrait.addChangedListener(recipeLogic::updateTickSubscription));
                     }
-                    mERecipeHandleParts.add(MERecipeHandlePart.of(meHandlers));
+                    mERecipeHandleParts.add(MERecipeHandlePart.of(mePart));
                     continue;
                 }
                 List<IRecipeHandler<?>> hatch = new ObjectArrayList<>();

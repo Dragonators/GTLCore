@@ -1,6 +1,7 @@
 package org.gtlcore.gtlcore.mixin.gtm.api.machine;
 
 import org.gtlcore.gtlcore.api.machine.trait.ILockRecipe;
+import org.gtlcore.gtlcore.api.machine.trait.IRecipeCapabilityMachine;
 import org.gtlcore.gtlcore.api.machine.trait.IRecipeStatus;
 import org.gtlcore.gtlcore.api.recipe.RecipeResult;
 import org.gtlcore.gtlcore.api.recipe.RecipeRunnerHelper;
@@ -21,6 +22,7 @@ import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import net.minecraft.network.chat.Component;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import lombok.Getter;
 import lombok.Setter;
 import org.jetbrains.annotations.Nullable;
@@ -80,9 +82,6 @@ public abstract class RecipeLogicMixin implements ILockRecipe, IRecipeStatus {
     protected abstract void handleSearchingRecipes(Iterator<GTRecipe> matches);
 
     @Shadow(remap = false)
-    protected abstract Iterator<GTRecipe> searchRecipe();
-
-    @Shadow(remap = false)
     public abstract void markLastRecipeDirty();
 
     @Shadow(remap = false)
@@ -128,6 +127,23 @@ public abstract class RecipeLogicMixin implements ILockRecipe, IRecipeStatus {
     protected boolean handleRecipeIO(GTRecipe recipe, IO io) {
         if (!(this.machine.hasProxies() && io != IO.BOTH)) return false;
         return RecipeRunnerHelper.handleRecipeInput(this.machine, recipe);
+    }
+
+    /**
+     * @author .
+     * @reason .
+     */
+    @Overwrite(remap = false)
+    protected Iterator<GTRecipe> searchRecipe() {
+        if (this.machine instanceof IRecipeCapabilityMachine rlm) {
+            if (!rlm.getMERecipeHandleParts().isEmpty()) {
+                List<GTRecipe> recipes = new ObjectArrayList<>();
+                rlm.getMERecipeHandleParts().forEach(m -> recipes.addAll(m.getMachine().getRecipe()));
+                var list = recipes.stream().filter(Objects::nonNull).toList();
+                if (!list.isEmpty()) return list.listIterator();
+            }
+        }
+        return this.machine.getRecipeType().searchRecipe(this.machine);
     }
 
     /**

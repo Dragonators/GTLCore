@@ -60,7 +60,7 @@ public interface IRecipeCapabilityMachine {
 
     List<RecipeHandlePart> getRecipeHandleParts();
 
-    IRecipeHandlePart getCachedRecipeHandle(GTRecipe recipe);
+    Map<GTRecipe, IRecipeHandlePart> getRecipeHandleMap();
 
     void setRecipeHandleMap(RecipeHandlePart hatch, GTRecipe recipe);
 

@@ -1,5 +1,7 @@
 package org.gtlcore.gtlcore.integration.jade;
 
+import org.gtlcore.gtlcore.integration.jade.provider.MEPatternBufferProvider;
+import org.gtlcore.gtlcore.integration.jade.provider.MEPatternBufferProxyProvider;
 import org.gtlcore.gtlcore.integration.jade.provider.TickTimeProvider;
 import org.gtlcore.gtlcore.integration.jade.provider.WirelessOpticalDataHatchProvide;
 
@@ -24,11 +26,15 @@ public class GTLJadePlugin implements IWailaPlugin {
     public void register(IWailaCommonRegistration registration) {
         registration.registerBlockDataProvider(new WirelessOpticalDataHatchProvide(), BlockEntity.class);
         registration.registerBlockDataProvider(new TickTimeProvider(), MetaMachineBlockEntity.class);
+        registration.registerBlockDataProvider(new MEPatternBufferProvider(), BlockEntity.class);
+        registration.registerBlockDataProvider(new MEPatternBufferProxyProvider(), BlockEntity.class);
     }
 
     @Override
     public void registerClient(IWailaClientRegistration registration) {
         registration.registerBlockComponent(new WirelessOpticalDataHatchProvide(), Block.class);
         registration.registerBlockComponent(new TickTimeProvider(), MetaMachineBlock.class);
+        registration.registerBlockComponent(new MEPatternBufferProvider(), Block.class);
+        registration.registerBlockComponent(new MEPatternBufferProxyProvider(), Block.class);
     }
 }

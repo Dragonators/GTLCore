@@ -5,6 +5,9 @@ import com.gregtechceu.gtceu.api.capability.recipe.RecipeCapability;
 
 import it.unimi.dsi.fastutil.objects.Object2LongMap;
 
+/**
+ * @author Dragonators
+ */
 public interface IRecipeHandlePart {
 
     IO getHandlerIO();
