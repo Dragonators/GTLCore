@@ -476,6 +476,8 @@
     "block.gtceu.zpm_naquadah_reactor": "§c精英硅岩反应堆§r",
     "block.gtceu.zpm_neutron_accelerator": "§cZPM 中子加速器§r",
     "block.gtceu.zpm_world_data_scanner": "§c精英世界信息扫描仪 III§r",
+    "block.gtceu.me_mini_pattern_buffer": "小型ME样板总成",
+    "block.gtceu.me_extend_pattern_buffer": "扩展ME样板总成",
     "gtceu.advanced_hyper_reactor": "进阶超能反应",
     "gtceu.aggregation_device": "聚合装置",
     "gtceu.annihilate_generator": "湮灭发电机",

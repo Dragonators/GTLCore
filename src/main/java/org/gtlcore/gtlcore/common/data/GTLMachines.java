@@ -686,14 +686,29 @@ public class GTLMachines {
                 .compassNode("fluid_hatch")
                 .register();
 
-        public static final MachineDefinition ME_PATTERN_BUFFER = REGISTRATE
-                .machine("me_pattern_buffer", (h) -> new MEPatternBufferPartMachine(h, 36))
-                .tier(6)
+        public static final MachineDefinition ME_MINI_PATTERN_BUFFER = REGISTRATE
+                .machine("me_mini_pattern_buffer", (h) -> new MEPatternBufferPartMachine(h, 9))
+                .tier(5)
                 .rotationState(RotationState.ALL)
-                .abilities(PartAbility.IMPORT_ITEMS, PartAbility.IMPORT_FLUIDS, PartAbility.EXPORT_FLUIDS, PartAbility.EXPORT_ITEMS)
+                .abilities(PartAbility.IMPORT_ITEMS, PartAbility.IMPORT_FLUIDS)
+                .rotationState(RotationState.ALL)
+                .overlayTieredHullRenderer("me_mini_pattern_buffer")
+                .langValue("ME Mini Pattern Buffer")
+                .tooltips(Component.translatable("block.gtceu.pattern_buffer.desc.0"),
+                        Component.translatable("block.gtceu.pattern_buffer.desc.1"),
+                        Component.translatable("block.gtceu.pattern_buffer.desc.2"),
+                        Component.translatable("gtceu.universal.enabled"))
+                .tooltipBuilder(GTL_ADD)
+                .register();
+
+        public static final MachineDefinition ME_EXTEND_PATTERN_BUFFER = REGISTRATE
+                .machine("me_extend_pattern_buffer", (h) -> new MEPatternBufferPartMachine(h, 36))
+                .tier(8)
+                .rotationState(RotationState.ALL)
+                .abilities(PartAbility.IMPORT_ITEMS, PartAbility.IMPORT_FLUIDS)
                 .rotationState(RotationState.ALL)
                 .overlayTieredHullRenderer("me_pattern_buffer")
-                .langValue("ME Pattern Buffer")
+                .langValue("ME Extend Pattern Buffer")
                 .tooltips(Component.translatable("block.gtceu.pattern_buffer.desc.0"),
                         Component.translatable("block.gtceu.pattern_buffer.desc.1"),
                         Component.translatable("block.gtceu.pattern_buffer.desc.2"),
@@ -703,7 +718,7 @@ public class GTLMachines {
 
         public static final MachineDefinition ME_PATTERN_BUFFER_PROXY = REGISTRATE
                 .machine("me_pattern_buffer_proxy", MEPatternBufferProxyPartMachine::new)
-                .tier(6)
+                .tier(8)
                 .rotationState(RotationState.ALL)
                 .abilities(PartAbility.IMPORT_ITEMS, PartAbility.IMPORT_FLUIDS, PartAbility.EXPORT_FLUIDS, PartAbility.EXPORT_ITEMS)
                 .rotationState(RotationState.ALL)
