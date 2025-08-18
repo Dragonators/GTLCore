@@ -134,7 +134,7 @@ public interface IParallelLogic {
                     }
                 }
                 // other handlers
-                for (var it : machine.getCapabilities().get(IO.IN)) {
+                for (var it : machine.getCapabilities().getOrDefault(IO.IN, Collections.emptyList())) {
                     for (var obj = it.getContent(ItemRecipeCapability.CAP).object2LongEntrySet().fastIterator(); obj.hasNext();) {
                         var entry = obj.next();
                         map.computeLong((ItemStack) entry.getKey(), (k, v) -> v == null ? entry.getLongValue() : v + entry.getLongValue());
