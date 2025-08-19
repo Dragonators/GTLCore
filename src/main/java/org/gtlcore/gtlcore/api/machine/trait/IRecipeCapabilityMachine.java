@@ -56,6 +56,8 @@ public interface IRecipeCapabilityMachine {
 
     void setMERecipeHandleMap(MERecipeHandlePart hatch, GTRecipe recipe, int slot);
 
+    boolean hasCachedRecipeAvailable();
+
     // endregion
 
     List<RecipeHandlePart> getRecipeHandleParts();

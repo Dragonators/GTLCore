@@ -46,6 +46,7 @@ import com.lowdragmc.lowdraglib.syncdata.annotation.DescSynced;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -100,6 +101,8 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
     protected final int maxPatternCount;
 
     private final boolean[] hasPatternArray;
+    private final long[] lastNotifyTickBySlot;
+    private final ItemStack[] lastSnapshotBySlot;
     @DescSynced
     private final boolean[] cacheRecipe;
 
@@ -180,10 +183,13 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
         this.cacheRecipe = new boolean[maxPatternCount];
         this.internalInventory = new InternalSlot[maxPatternCount];
         this.patternSlotMap = HashBiMap.create(maxPatternCount);
+        this.lastNotifyTickBySlot = new long[maxPatternCount];
+        this.lastSnapshotBySlot = new ItemStack[maxPatternCount];
 
         // Initialize inventories
         this.patternInventory = new ItemStackTransfer(maxPatternCount);
         this.patternInventory.setFilter(stack -> stack.getItem() instanceof ProcessingPatternItem);
+        Arrays.fill(lastNotifyTickBySlot, Long.MIN_VALUE);
         Arrays.setAll(internalInventory, InternalSlot::new);
         getMainNode().addService(ICraftingProvider.class, this);
 
@@ -444,7 +450,7 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
                             }
                             return stack;
                         })
-                        .setChangeListener(() -> onPatternChange(finalI))
+                        .setChangeListener(debounceAndFilter(finalI, () -> this.onPatternChange(finalI)))
                         .setOnAddedTooltips((s, l) -> {
                             if (cacheRecipe[finalI])
                                 l.add(Component.translatable("gtceu.machine.pattern.recipe.cache"));
@@ -455,6 +461,45 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
         }
 
         return group;
+    }
+
+    // ========================================
+    // PERFORMANCE OPTIMIZATION UTILITIES
+    // ========================================
+
+    private Runnable debounceAndFilter(int slotIndex, Runnable delegate) {
+        return () -> {
+            long now = getGameTick();
+            if (lastNotifyTickBySlot[slotIndex] == now) {
+                return;
+            }
+
+            ItemStack cur = this.patternInventory.getStackInSlot(slotIndex);
+            ItemStack prev = lastSnapshotBySlot[slotIndex];
+            if (sameStack(prev, cur)) {
+                lastNotifyTickBySlot[slotIndex] = now;
+                return;
+            }
+
+            lastNotifyTickBySlot[slotIndex] = now;
+            lastSnapshotBySlot[slotIndex] = cur.isEmpty() ? ItemStack.EMPTY : cur.copy();
+
+            delegate.run();
+        };
+    }
+
+    private static boolean sameStack(@Nullable ItemStack a, @Nullable ItemStack b) {
+        if (a == b) return true;
+        if (a == null || b == null) return false;
+        if (a.isEmpty() && b.isEmpty()) return true;
+        if (a.isEmpty() ^ b.isEmpty()) return false;
+        return ItemStack.isSameItemSameTags(a, b) && a.getCount() == b.getCount();
+    }
+
+    private static long getGameTick() {
+        var mc = Minecraft.getInstance();
+        var level = mc.level;
+        return level != null ? level.getGameTime() : System.nanoTime();
     }
 
     // ========================================
@@ -702,9 +747,9 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
 
         public boolean isActive(RecipeCapability<?> recipeCapability) {
             if (recipeCapability == ItemRecipeCapability.CAP) {
-                return hasPatternArray[slotIndex] && (!itemInventory.isEmpty() || !storedCircuit.isEmpty());
+                return hasPatternArray[slotIndex] && (!itemInventory.isEmpty() || !storedCircuit.isEmpty() || !shareInventory.isEmpty());
             } else {
-                return hasPatternArray[slotIndex] && !fluidInventory.isEmpty();
+                return hasPatternArray[slotIndex] && (!fluidInventory.isEmpty() || !shareTank.isEmpty());
             }
         }
 
