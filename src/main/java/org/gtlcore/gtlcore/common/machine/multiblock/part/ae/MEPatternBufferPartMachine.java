@@ -1,8 +1,6 @@
 package org.gtlcore.gtlcore.common.machine.multiblock.part.ae;
 
-import org.gtlcore.gtlcore.api.machine.trait.IMEPatternPartMachine;
-import org.gtlcore.gtlcore.api.machine.trait.IMERecipeHandlerTrait;
-import org.gtlcore.gtlcore.api.machine.trait.NotifiableCircuitItemStackHandler;
+import org.gtlcore.gtlcore.api.machine.trait.*;
 import org.gtlcore.gtlcore.common.data.GTLMachines;
 import org.gtlcore.gtlcore.utils.GTLUtil;
 
@@ -600,6 +598,17 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
         if (recipe != null) {
             gtRecipeCacheMap.put(index, recipe);
             cacheRecipe[index] = true;
+        }
+    }
+
+    @Override
+    public void setCache(Map<GTRecipe, IRecipeHandlePart> map, MERecipeHandlePart mePart) {
+        if (this.gtRecipeCacheMap.isEmpty()) return;
+        for (var it = Int2ObjectMaps.fastIterator(gtRecipeCacheMap); it.hasNext();) {
+            var entry = it.next();
+            var r = entry.getValue();
+            mePart.getSlotMap().put(r, entry.getIntKey());
+            map.put(r, mePart);
         }
     }
 

@@ -11,7 +11,7 @@ import it.unimi.dsi.fastutil.objects.*;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
+import java.util.*;
 
 public class MERecipeHandlePart implements IRecipeHandlePart {
 
@@ -63,6 +63,10 @@ public class MERecipeHandlePart implements IRecipeHandlePart {
 
     public @NotNull IMERecipeHandler<?> getMECapability(RecipeCapability<?> cap) {
         return getMeHandlerMap().getOrDefault(cap, null);
+    }
+
+    public void setMachineCache(Map<GTRecipe, IRecipeHandlePart> map) {
+        this.machine.setCache(map, this);
     }
 
     public int meHandleRecipe(GTRecipe recipe,
@@ -121,7 +125,9 @@ public class MERecipeHandlePart implements IRecipeHandlePart {
                 }
             }
 
-            if (allSuccess) {
+            if (this.machine.hasCacheInSlot(slot)) {
+                return slot;
+            } else if (allSuccess) {
                 this.machine.setRecipe(slot, recipe);
                 return slot;
             }
@@ -146,7 +152,9 @@ public class MERecipeHandlePart implements IRecipeHandlePart {
             // 当取出再原地放回样板时，RecipeHandle侧的slotMap会先从该方法尝试handle原slot
             // 此时会handle成功，导致对应slot的cache永远无法更新(只在meHandleRecipe这一方法中更新)
             // 因此在此处特别添加判断，防止此类情形
-            if (!machine.hasCacheInSlot(trySlot)) machine.setRecipe(trySlot, recipe);
+            if (!machine.hasCacheInSlot(trySlot)) {
+                machine.setRecipe(trySlot, recipe);
+            }
             return true;
         }
         return false;
