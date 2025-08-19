@@ -282,7 +282,6 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
         // remove old pattern cache
         if (oldPatternDetails != null && !oldPatternDetails.equals(newPatternDetailsWithOutCircuit)) {
             // 样板更换时清理缓存的电路和原始样板
-            internalInv.storedCircuit = ItemStack.EMPTY;
             internalInv.cacheManager.clearAllCaches();
             cacheRecipe[index] = false;
             gtRecipeCacheMap.remove(index);
@@ -510,7 +509,7 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
         if (!stack.isEmpty()) {
             var internalSlot = internalInventory[slot];
             return circuitHandler.processPatternWithCircuit(
-                    stack, circuit -> internalSlot.storedCircuit = circuit, getLevel());
+                    stack, circuit -> internalSlot.cacheManager.setCircuitCache(circuit), getLevel());
         }
         return null;
     }
@@ -522,7 +521,7 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
      * @return 电路ItemStack，可能为空
      */
     public ItemStack getCircuitForRecipe(int slotIndex) {
-        return circuitHandler.getCircuitForRecipe(internalInventory[slotIndex].getStoredCircuit());
+        return circuitHandler.getCircuitForRecipe(internalInventory[slotIndex].cacheManager.getCircuitStack());
     }
 
     // ========================================
@@ -725,9 +724,6 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
         @Getter
         private final Object2LongOpenHashMap<AEFluidKey> fluidInventory = new Object2LongOpenHashMap<>();
 
-        @Getter
-        private ItemStack storedCircuit = ItemStack.EMPTY;
-
         @Persisted
         @Getter
         private final SlotCacheManager cacheManager = new SlotCacheManager();
@@ -747,7 +743,7 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
 
         public boolean isActive(RecipeCapability<?> recipeCapability) {
             if (recipeCapability == ItemRecipeCapability.CAP) {
-                return hasPatternArray[slotIndex] && (!itemInventory.isEmpty() || !storedCircuit.isEmpty() || !shareInventory.isEmpty());
+                return hasPatternArray[slotIndex] && (!itemInventory.isEmpty() || !(cacheManager.getCircuitCache() < 0) || !shareInventory.isEmpty());
             } else {
                 return hasPatternArray[slotIndex] && (!fluidInventory.isEmpty() || !shareTank.isEmpty());
             }
@@ -825,8 +821,8 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
                 long needAmount = entry.getLongValue();
                 if (needAmount <= 0) continue;
 
-                AEItemKey bestMatch = cacheManager.getBestItemMatch(ingredient, itemInventory, needAmount);
-                if (bestMatch == null) {
+                var bestMatch = cacheManager.getBestItemMatch(ingredient, itemInventory, needAmount);
+                if (bestMatch.match() == null) {
                     return false;
                 }
             }
@@ -842,14 +838,19 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
                     }
 
                     var bestMatch = cacheManager.getBestItemMatch(ingredient, itemInventory, needAmount);
-                    if (bestMatch != null) {
-                        long amount = itemInventory.getLong(bestMatch);
+                    if (bestMatch.isCircuit()) {
+                        it.remove();
+                        continue;
+                    }
+                    var match = bestMatch.match();
+                    if (match != null) {
+                        long amount = itemInventory.getLong(match);
                         long except = amount - needAmount;
                         if (except <= 0) {
-                            itemInventory.removeLong(bestMatch);
-                            continue;
+                            itemInventory.removeLong(match);
+                        } else {
+                            itemInventory.put(match, except);
                         }
-                        itemInventory.put(bestMatch, except);
                         it.remove();
                     }
                 }
@@ -889,9 +890,9 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
                         long except = amount - needAmount;
                         if (except <= 0) {
                             fluidInventory.removeLong(bestMatch);
-                            continue;
+                        } else {
+                            fluidInventory.put(bestMatch, except);
                         }
-                        fluidInventory.put(bestMatch, except);
                         it.remove();
                     }
                 }
@@ -922,8 +923,6 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
             }
             if (!fluidsTag.isEmpty()) tag.put("fluidInventory", fluidsTag);
 
-            if (!storedCircuit.isEmpty()) tag.put("storedCircuit", storedCircuit.save(new CompoundTag()));
-
             return tag;
         }
 
@@ -951,8 +950,6 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
                     fluidInventory.put(key, amount);
                 }
             }
-
-            this.storedCircuit = ItemStack.of(tag.getCompound("storedCircuit"));
         }
     }
 

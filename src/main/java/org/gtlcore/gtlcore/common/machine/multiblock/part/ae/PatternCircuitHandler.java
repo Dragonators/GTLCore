@@ -3,6 +3,7 @@ package org.gtlcore.gtlcore.common.machine.multiblock.part.ae;
 import org.gtlcore.gtlcore.api.machine.trait.NotifiableCircuitItemStackHandler;
 
 import com.gregtechceu.gtceu.common.data.GTItems;
+import com.gregtechceu.gtceu.common.item.IntCircuitBehaviour;
 
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -34,12 +35,10 @@ public class PatternCircuitHandler {
     }
 
     /**
-     * 全局判断是否应该使用样板中的电路
-     *
-     * @return true 如果样板缓存器没有配置电路，需要使用样板中的电路
+     * @return ME样板总成是否配置有共享电路
      */
-    public boolean shouldUsePatternCircuit() {
-        return mePatternCircuitInventory.storage.getStackInSlot(0).isEmpty();
+    public boolean haveSharedPatternCircuit() {
+        return !mePatternCircuitInventory.storage.getStackInSlot(0).isEmpty();
     }
 
     /**
@@ -49,11 +48,11 @@ public class PatternCircuitHandler {
      * @param storedCircuit        存储电路的引用
      * @return 处理结果，包含无电路样板和提取的电路
      */
-    public IPatternDetails processPatternWithCircuit(ItemStack originalPatternStack, Consumer<ItemStack> storedCircuit, Level level) {
+    public IPatternDetails processPatternWithCircuit(ItemStack originalPatternStack, Consumer<Integer> storedCircuit, Level level) {
         if (PatternDetailsHelper.decodePattern(originalPatternStack, level) instanceof AEProcessingPattern processingPattern) {
             // 提取电路
-            ItemStack extractedCircuit = extractCircuitFromPattern(processingPattern);
-            if (extractedCircuit.isEmpty()) {
+            int extractedCircuit = extractCircuitFromPattern(processingPattern);
+            if (extractedCircuit < 0) {
                 return processingPattern; // 没有电路，直接返回
             }
 
@@ -73,29 +72,32 @@ public class PatternCircuitHandler {
      * @return 电路ItemStack，可能为空
      */
     public ItemStack getCircuitForRecipe(ItemStack storedCircuit) {
-        if (shouldUsePatternCircuit()) {
-            return storedCircuit; // 直接返回缓存的电路对象
-        } else {
-            return mePatternCircuitInventory.storage.getStackInSlot(0); // 返回配置的电路
+        if (storedCircuit == ItemStack.EMPTY || storedCircuit == null) {
+            if (haveSharedPatternCircuit()) {
+                return mePatternCircuitInventory.storage.getStackInSlot(0); // 返回配置的电路
+            } else {
+                return ItemStack.EMPTY;
+            }
         }
+        return storedCircuit;
     }
 
     /**
      * 从样板中提取电路
      *
      * @param processingPattern 处理样板
-     * @return 提取的电路，如果没有则返回空
+     * @return 提取的电路，如果没有则返回-1
      */
-    private ItemStack extractCircuitFromPattern(AEProcessingPattern processingPattern) {
+    private int extractCircuitFromPattern(AEProcessingPattern processingPattern) {
         for (var input : Arrays.stream(processingPattern.getSparseInputs()).filter(Objects::nonNull).toList()) {
             if (input.what() instanceof AEItemKey itemKey) {
                 ItemStack itemStack = itemKey.toStack();
-                if (itemStack.getItem() == GTItems.INTEGRATED_CIRCUIT.asItem()) {
-                    return itemStack.copy();
+                if (IntCircuitBehaviour.isIntegratedCircuit(itemStack)) {
+                    return IntCircuitBehaviour.getCircuitConfiguration(itemStack);
                 }
             }
         }
-        return ItemStack.EMPTY;
+        return -1;
     }
 
     /**
