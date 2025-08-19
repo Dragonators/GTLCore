@@ -94,106 +94,133 @@ public class RecipeRunner {
         if (!(holder instanceof IRecipeCapabilityMachine machine)) {
             return false;
         }
-        if (machine.getRecipeHandleParts().isEmpty() && machine.getMERecipeHandleParts().isEmpty()) {
+
+        // Cache collections to avoid repeated method calls
+        var recipeHandleParts = machine.getRecipeHandleParts();
+        var meRecipeHandleParts = machine.getMERecipeHandleParts();
+
+        if (recipeHandleParts.isEmpty() && meRecipeHandleParts.isEmpty()) {
             return false;
         }
 
         if (capIO == IO.IN) {
-            if (recipeHandlePart instanceof MERecipeHandlePart meRecipeHandlePart)
-                if (meRecipeHandlePart.meHandleCacheRecipe(recipe, recipeContent, simulated))
+            // Handle ME cache recipe first (highest priority)
+            if (recipeHandlePart instanceof MERecipeHandlePart meRecipeHandlePart) {
+                if (meRecipeHandlePart.meHandleCacheRecipe(recipe, recipeContent, simulated)) {
                     return true;
+                }
+            }
 
-            if (!machine.getMERecipeHandleParts().isEmpty()) {
-                var parts = machine.getMERecipeHandleParts();
-                for (var p : parts) {
-                    var slot = p.meHandleRecipe(recipe, recipeContent, simulated);
+            // Handle ME recipe parts
+            if (!meRecipeHandleParts.isEmpty()) {
+                for (var part : meRecipeHandleParts) {
+                    var slot = part.meHandleRecipe(recipe, recipeContent, simulated);
                     if (slot >= 0) {
-                        if (simulated) machine.setMERecipeHandleMap(p, recipe, slot);
+                        if (simulated) machine.setMERecipeHandleMap(part, recipe, slot);
                         return true;
                     }
                 }
             }
 
+            // Cache input handlers to avoid repeated getCapabilities() calls
+            var inHandlers = machine.getCapabilities().getOrDefault(IO.IN, Collections.emptyList());
+
             if (machine.isDistinct()) {
+                // Handle specific recipe handler first
                 if (recipeHandlePart instanceof RecipeHandlePart rht) {
                     var result = rht.handleRecipe(IO.IN, recipe, recipeContent, simulated);
                     if (result.isEmpty()) {
                         return true;
                     }
                 }
-                var inHandlers = machine.getCapabilities().getOrDefault(IO.IN, Collections.emptyList());
-                if (inHandlers.isEmpty()) return false;
-                for (var handler : inHandlers) {
-                    var result = handler.handleRecipe(IO.IN, recipe, recipeContent, simulated);
-                    if (result.isEmpty()) {
-                        if (simulated) machine.setRecipeHandleMap(handler, recipe);
-                        return true;
+
+                // Handle remaining input handlers
+                if (!inHandlers.isEmpty()) {
+                    for (var handler : inHandlers) {
+                        var result = handler.handleRecipe(IO.IN, recipe, recipeContent, simulated);
+                        if (result.isEmpty()) {
+                            if (simulated) machine.setRecipeHandleMap(handler, recipe);
+                            return true;
+                        }
                     }
                 }
             } else {
-                List<Object> itemContent = recipeContent.getOrDefault(ItemRecipeCapability.CAP, Collections.emptyList());
-                if (!itemContent.isEmpty()) {
-                    Map<RecipeCapability<?>, List<Object>> itemsOnly = Collections.singletonMap(ItemRecipeCapability.CAP, itemContent);
-                    if (this.recipeHandlePart instanceof RecipeHandlePart rht) {
-                        var result = rht.handleRecipe(IO.IN, recipe, itemsOnly, simulated);
-                        if (result.isEmpty()) {
-                            itemContent.clear();
-                        }
-                    }
-                    if (!itemContent.isEmpty()) {
-                        for (var part : machine.getCapabilities().getOrDefault(IO.IN, Collections.emptyList())) {
-                            var result = part.handleRecipe(IO.IN, recipe, itemsOnly, simulated);
-                            if (result.isEmpty()) {
-                                if (simulated) machine.setRecipeHandleMap(part, recipe);
-                                itemContent.clear();
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                List<?> fluidContent = recipeContent.getOrDefault(FluidRecipeCapability.CAP, Collections.emptyList());
-                if (!fluidContent.isEmpty()) {
-                    for (var fluid : machine.getCapabilitiesFlat(IO.IN, FluidRecipeCapability.CAP)) {
-                        var result = fluid.handleRecipe(IO.IN, recipe, fluidContent, null, simulated);
-                        if (result == null) {
-                            fluidContent = Collections.emptyList();
-                            break;
-                        } else {
-                            fluidContent = result;
-                        }
-                    }
-                }
-
-                return itemContent.isEmpty() && fluidContent.isEmpty();
+                return handleNonDistinctInput(machine, inHandlers);
             }
         } else {
-            var handlers = machine.getCapabilities().getOrDefault(IO.OUT, Collections.emptyList());
-            if (handlers.isEmpty()) return false;
-            handlers.sort(RecipeHandlePart.COMPARATOR.reversed());
-            for (var handler : handlers) {
-                recipeContent = handler.handleRecipe(capIO, recipe, recipeContent, simulated);
-                if (recipeContent.isEmpty()) {
-                    return true;
-                }
-            }
+            return handleOutput(machine);
         }
+
         return false;
     }
 
-    private boolean tryHandleWithPart(IRecipeHandlePart part,
-                                      IRecipeCapabilityMachine machine,
-                                      Map<RecipeCapability<?>, List<Object>> contents) {
-        if (part == null) return false;
-        if (part instanceof MERecipeHandlePart meRecipeHandlePart) {
-            return meRecipeHandlePart.meHandleCacheRecipe(recipe, recipeContent, simulated);
-        } else if (part instanceof RecipeHandlePart handlePart) {
-            var result = handlePart.handleRecipe(IO.IN, recipe, contents, simulated);
-            if (result.isEmpty()) {
-                if (simulated) machine.setRecipeHandleMap(handlePart, recipe);
+    private boolean handleNonDistinctInput(IRecipeCapabilityMachine machine, List<RecipeHandlePart> inHandlers) {
+        // Handle items
+        List<Object> itemContent = recipeContent.getOrDefault(ItemRecipeCapability.CAP, Collections.emptyList());
+        boolean itemsHandled = itemContent.isEmpty();
+
+        if (!itemsHandled) {
+            // Create single-entry map only when needed
+            Map<RecipeCapability<?>, List<Object>> itemsOnly = Map.of(ItemRecipeCapability.CAP, itemContent);
+
+            // Try specific recipe handler first
+            if (recipeHandlePart instanceof RecipeHandlePart rht) {
+                var result = rht.handleRecipe(IO.IN, recipe, itemsOnly, simulated);
+                if (result.isEmpty()) {
+                    itemContent.clear();
+                    itemsHandled = true;
+                }
+            }
+
+            // Try other input handlers if items still not handled
+            if (!itemsHandled && !inHandlers.isEmpty()) {
+                for (var part : inHandlers) {
+                    var result = part.handleRecipe(IO.IN, recipe, itemsOnly, simulated);
+                    if (result.isEmpty()) {
+                        if (simulated) machine.setRecipeHandleMap(part, recipe);
+                        itemContent.clear();
+                        itemsHandled = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Handle fluids
+        List<?> fluidContent = recipeContent.getOrDefault(FluidRecipeCapability.CAP, Collections.emptyList());
+        boolean fluidsHandled = fluidContent.isEmpty();
+
+        if (!fluidsHandled) {
+            var fluidHandlers = machine.getCapabilitiesFlat(IO.IN, FluidRecipeCapability.CAP);
+            for (var fluidHandler : fluidHandlers) {
+                var result = fluidHandler.handleRecipe(IO.IN, recipe, fluidContent, null, simulated);
+                if (result == null) {
+                    fluidsHandled = true;
+                    break;
+                } else {
+                    fluidContent = result;
+                }
+            }
+        }
+
+        return itemsHandled && fluidsHandled;
+    }
+
+    private boolean handleOutput(IRecipeCapabilityMachine machine) {
+        var handlers = machine.getCapabilities().getOrDefault(IO.OUT, Collections.emptyList());
+        if (handlers.isEmpty()) return false;
+
+        // Sort only if not already sorted (assuming handlers list is stable)
+        // Consider caching sorted handlers in machine if this becomes a bottleneck
+        handlers.sort(RecipeHandlePart.COMPARATOR.reversed());
+
+        for (var handler : handlers) {
+            recipeContent = handler.handleRecipe(IO.OUT, recipe, recipeContent, simulated);
+            if (recipeContent.isEmpty()) {
                 return true;
             }
         }
+
         return false;
     }
 }
