@@ -154,7 +154,9 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
                     for (IMERecipeHandlerTrait<?> meHandlerTrait : meHandlers) {
                         traitSubscriptions.add(meHandlerTrait.addChangedListener(recipeLogic::updateTickSubscription));
                     }
-                    mERecipeHandleParts.add(MERecipeHandlePart.of(mePart));
+                    var me = MERecipeHandlePart.of(mePart);
+                    me.setMachineCache(recipeHandleMap);
+                    mERecipeHandleParts.add(me);
                     continue;
                 }
                 List<IRecipeHandler<?>> hatch = new ObjectArrayList<>();
