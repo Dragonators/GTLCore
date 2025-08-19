@@ -2,8 +2,6 @@ package org.gtlcore.gtlcore.common.machine.trait;
 
 import org.gtlcore.gtlcore.api.machine.multiblock.ParallelMachine;
 import org.gtlcore.gtlcore.api.machine.trait.ILockRecipe;
-import org.gtlcore.gtlcore.api.machine.trait.IRecipeCapabilityMachine;
-import org.gtlcore.gtlcore.api.recipe.IRecipeIterator;
 
 import com.gregtechceu.gtceu.api.capability.recipe.*;
 import com.gregtechceu.gtceu.api.machine.feature.IRecipeLogicMachine;
@@ -17,9 +15,7 @@ import com.gregtechceu.gtceu.data.recipe.builder.GTRecipeBuilder;
 
 import net.minecraft.nbt.CompoundTag;
 
-import com.google.common.collect.Iterators;
 import com.google.common.primitives.Ints;
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import lombok.Getter;
 
 import java.util.*;
@@ -103,26 +99,12 @@ public class MultipleRecipesLogic extends RecipeLogic implements ILockRecipe {
 
     private Iterator<GTRecipe> lookupRecipeIterator() {
         if (this.isLock()) {
-            if (this.getLockRecipe() == null) this.setLockRecipe(machine.getRecipeType().getLookup()
-                    .find(machine, this::checkRecipe));
-            else if (!checkRecipe(this.getLockRecipe())) return Collections.emptyIterator();
+            if (this.getLockRecipe() == null) {
+                this.setLockRecipe(machine.getRecipeType().getLookup()
+                        .find(machine, this::checkRecipe));
+            } else if (!checkRecipe(this.getLockRecipe())) return Collections.emptyIterator();
             return Collections.singleton(this.getLockRecipe()).iterator();
-        }
-
-        if (this.machine instanceof IRecipeCapabilityMachine rlm) {
-            var parts = rlm.getMERecipeHandleParts();
-            if (!parts.isEmpty()) {
-                List<GTRecipe> meRecipes = new ObjectArrayList<>();
-                for (var part : parts) {
-                    meRecipes.addAll(part.getMachine().getCachedGTRecipe());
-                }
-                if (!meRecipes.isEmpty()) return Iterators.concat(IRecipeIterator.findIteratorRecipeCollection(
-                        machine.getRecipeType().getLookup().getRecipeIterator(machine, this::checkRecipe)).iterator(),
-                        meRecipes.iterator());
-            }
-        }
-        return IRecipeIterator.findIteratorRecipeCollection(
-                machine.getRecipeType().getLookup().getRecipeIterator(machine, this::checkRecipe)).iterator();
+        } else return machine.getRecipeType().getLookup().getRecipeIterator(machine, this::checkRecipe);
     }
 
     private boolean checkRecipe(GTRecipe recipe) {

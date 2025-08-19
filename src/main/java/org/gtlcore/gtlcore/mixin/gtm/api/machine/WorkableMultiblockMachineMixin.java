@@ -187,4 +187,12 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
             this.addHandlerList(recipeHandle);
         }
     }
+
+    @Override
+    public boolean hasCachedRecipeAvailable() {
+        for (MERecipeHandlePart mERecipeHandlePart : mERecipeHandleParts) {
+            if (!mERecipeHandlePart.getMachine().getCachedGTRecipe().isEmpty()) return true;
+        }
+        return false;
+    }
 }

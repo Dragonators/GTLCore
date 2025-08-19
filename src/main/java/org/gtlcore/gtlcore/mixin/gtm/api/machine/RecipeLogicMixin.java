@@ -1,7 +1,6 @@
 package org.gtlcore.gtlcore.mixin.gtm.api.machine;
 
 import org.gtlcore.gtlcore.api.machine.trait.ILockRecipe;
-import org.gtlcore.gtlcore.api.machine.trait.IRecipeCapabilityMachine;
 import org.gtlcore.gtlcore.api.machine.trait.IRecipeStatus;
 import org.gtlcore.gtlcore.api.recipe.RecipeResult;
 import org.gtlcore.gtlcore.api.recipe.RecipeRunnerHelper;
@@ -21,9 +20,7 @@ import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 
 import net.minecraft.network.chat.Component;
 
-import com.google.common.collect.Iterators;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import lombok.Getter;
 import lombok.Setter;
 import org.jetbrains.annotations.Nullable;
@@ -83,6 +80,9 @@ public abstract class RecipeLogicMixin implements ILockRecipe, IRecipeStatus {
     protected abstract void handleSearchingRecipes(Iterator<GTRecipe> matches);
 
     @Shadow(remap = false)
+    protected abstract Iterator<GTRecipe> searchRecipe();
+
+    @Shadow(remap = false)
     public abstract void markLastRecipeDirty();
 
     @Shadow(remap = false)
@@ -128,25 +128,6 @@ public abstract class RecipeLogicMixin implements ILockRecipe, IRecipeStatus {
     protected boolean handleRecipeIO(GTRecipe recipe, IO io) {
         if (!(this.machine.hasProxies() && io != IO.BOTH)) return false;
         return RecipeRunnerHelper.handleRecipeInput(this.machine, recipe);
-    }
-
-    /**
-     * @author .
-     * @reason .
-     */
-    @Overwrite(remap = false)
-    protected Iterator<GTRecipe> searchRecipe() {
-        if (this.machine instanceof IRecipeCapabilityMachine rlm) {
-            var parts = rlm.getMERecipeHandleParts();
-            if (!parts.isEmpty()) {
-                List<GTRecipe> meRecipes = new ObjectArrayList<>();
-                for (var part : parts) {
-                    meRecipes.addAll(part.getMachine().getCachedGTRecipe());
-                }
-                if (!meRecipes.isEmpty()) return Iterators.concat(this.machine.getRecipeType().searchRecipe(this.machine), meRecipes.iterator());
-            }
-        }
-        return this.machine.getRecipeType().searchRecipe(this.machine);
     }
 
     /**

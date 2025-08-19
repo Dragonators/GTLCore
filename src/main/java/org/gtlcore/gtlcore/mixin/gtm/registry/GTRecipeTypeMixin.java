@@ -136,6 +136,7 @@ public class GTRecipeTypeMixin {
                     (recipex) -> RecipeRunnerHelper.matchRecipe(holder, recipex) && recipex.matchTickRecipe(holder).isSuccess());
             boolean any = false;
             GTRecipe recipe = null;
+
             while (iterator.hasNext()) {
                 recipe = iterator.next();
                 if (recipe != null) {
@@ -143,6 +144,7 @@ public class GTRecipeTypeMixin {
                     break;
                 }
             }
+
             if (any) {
                 iterator.reset();
                 return Collections.singleton(recipe).iterator();

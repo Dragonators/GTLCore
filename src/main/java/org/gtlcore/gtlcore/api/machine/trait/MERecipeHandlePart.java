@@ -126,7 +126,7 @@ public class MERecipeHandlePart implements IRecipeHandlePart {
             }
 
             if (allSuccess) {
-                if (this.machine.hasCacheInSlot(slot)) this.machine.setRecipe(slot, recipe);
+                if (!this.machine.hasCacheInSlot(slot)) this.machine.setRecipe(slot, recipe);
                 return slot;
             }
         }
