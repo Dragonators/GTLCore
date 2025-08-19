@@ -184,13 +184,8 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
             // 处理共享库存
             getMachine().getShareInventory().handleRecipeInner(IO.IN, recipe, left, null, simulate);
 
-            // 从剩余需求中过滤掉电路，避免从AE网络抽取
-            // 处理样板内置电路（如果总成没有配置电路）
-            if (getMachine().getCircuitHandler().shouldUsePatternCircuit()) {
-                setPreparedMEHandleContents(ingredientsToAEKeyMapExcludingCircuits(left));
-            } else {
-                setPreparedMEHandleContents(ingredientsToAEKeyMap(left));
-            }
+            // 电路需要每个Slot单独处理
+            setPreparedMEHandleContents(ingredientsToAEKeyMap(left));
         }
     }
 
@@ -294,19 +289,8 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
             if (items.length == 0 || items[0].isEmpty()) {
                 continue;
             }
-            result.addTo(ingredient, items[0].getCount());
-        }
-        return result;
-    }
-
-    private static Object2LongMap<Ingredient> ingredientsToAEKeyMapExcludingCircuits(List<Ingredient> ingredients) {
-        var result = new Object2LongOpenHashMap<Ingredient>();
-        for (Ingredient ingredient : ingredients) {
-            var items = ingredient.getItems();
-            if (items.length == 0 || items[0].isEmpty()) {
-                continue;
-            }
-            if (items[0].getItem() == GTItems.INTEGRATED_CIRCUIT.asItem()) {
+            if (GTItems.INTEGRATED_CIRCUIT.is(items[0].getItem())) {
+                result.addTo(ingredient, 1);
                 continue;
             }
             result.addTo(ingredient, items[0].getCount());

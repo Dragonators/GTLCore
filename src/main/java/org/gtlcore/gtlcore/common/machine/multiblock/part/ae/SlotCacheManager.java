@@ -3,18 +3,22 @@ package org.gtlcore.gtlcore.common.machine.multiblock.part.ae;
 import org.gtlcore.gtlcore.api.recipe.ingredient.CacheHashStrategies;
 
 import com.gregtechceu.gtceu.api.recipe.ingredient.FluidIngredient;
+import com.gregtechceu.gtceu.common.item.IntCircuitBehaviour;
 
 import com.lowdragmc.lowdraglib.syncdata.ITagSerializable;
+import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 
 import appeng.api.stacks.AEFluidKey;
 import appeng.api.stacks.AEItemKey;
 import com.google.gson.JsonParser;
 import it.unimi.dsi.fastutil.objects.*;
+import lombok.Getter;
 
 /**
  * 负责管理单个槽位的所有缓存数据，包括：
@@ -26,6 +30,18 @@ public class SlotCacheManager implements ITagSerializable<CompoundTag> {
     private final Object2ObjectMap<Ingredient, AEItemKey> itemBestMatchCache = new Object2ObjectOpenCustomHashMap<>(CacheHashStrategies.IngredientHashStrategy.INSTANCE);
     private final Object2ObjectMap<FluidIngredient, AEFluidKey> fluidBestMatchCache = new Object2ObjectOpenCustomHashMap<>(CacheHashStrategies.FluidIngredientHashStrategy.INSTANCE);
 
+    public void setCircuitCache(int circuitCache) {
+        this.circuitCache = circuitCache;
+        this.circuitStack = IntCircuitBehaviour.stack(circuitCache);
+    }
+
+    @Getter
+    @Persisted
+    private int circuitCache = -1;
+    @Getter
+    @Persisted
+    private ItemStack circuitStack = ItemStack.EMPTY;
+
     /**
      * 获取或计算item的最佳匹配
      *
@@ -34,17 +50,20 @@ public class SlotCacheManager implements ITagSerializable<CompoundTag> {
      * @param needAmount 需要的数量
      * @return 最佳匹配的AEItemKey，如果没有足够库存则返回null
      */
-    public AEItemKey getBestItemMatch(Ingredient ingredient, Object2LongMap<AEItemKey> inventory, long needAmount) {
+    public ItemMatchResult getBestItemMatch(Ingredient ingredient, Object2LongMap<AEItemKey> inventory, long needAmount) {
         AEItemKey cached = itemBestMatchCache.get(ingredient);
-        if (cached != null && inventory.getLong(cached) >= needAmount) {
-            return cached;
+
+        if (cached != null) {
+            if (IntCircuitBehaviour.getCircuitConfiguration(cached.toStack()) == circuitCache) {
+                return new ItemMatchResult(cached, true);
+            } else if (inventory.getLong(cached) >= needAmount) return new ItemMatchResult(cached, false);
         }
 
-        AEItemKey bestMatch = findBestItemMatch(ingredient, inventory, needAmount);
+        AEItemKey bestMatch = findBestItemMatch(ingredient, inventory, needAmount, circuitCache);
         if (bestMatch != null) {
             itemBestMatchCache.put(ingredient, bestMatch);
         }
-        return bestMatch;
+        return new ItemMatchResult(bestMatch, false);
     }
 
     /**
@@ -68,11 +87,15 @@ public class SlotCacheManager implements ITagSerializable<CompoundTag> {
         return bestMatch;
     }
 
-    private static AEItemKey findBestItemMatch(Ingredient ingredient, Object2LongMap<AEItemKey> inventory, long needAmount) {
+    private static AEItemKey findBestItemMatch(Ingredient ingredient, Object2LongMap<AEItemKey> inventory, long needAmount, int circuitCache) {
         var items = ingredient.getItems();
         for (var item : items) {
             if (!item.isEmpty()) {
                 AEItemKey aeKey = AEItemKey.of(item);
+
+                if (IntCircuitBehaviour.getCircuitConfiguration(item) == circuitCache) {
+                    return aeKey;
+                }
                 if (inventory.getLong(aeKey) >= needAmount) {
                     return aeKey;
                 }
@@ -97,6 +120,8 @@ public class SlotCacheManager implements ITagSerializable<CompoundTag> {
     public void clearAllCaches() {
         itemBestMatchCache.clear();
         fluidBestMatchCache.clear();
+        circuitCache = -1;
+        circuitStack = ItemStack.EMPTY;
     }
 
     @Override
@@ -192,4 +217,6 @@ public class SlotCacheManager implements ITagSerializable<CompoundTag> {
             return null;
         }
     }
+
+    public record ItemMatchResult(AEItemKey match, boolean isCircuit) {}
 }
