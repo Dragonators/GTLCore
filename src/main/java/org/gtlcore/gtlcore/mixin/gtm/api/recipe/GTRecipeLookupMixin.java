@@ -1,16 +1,20 @@
 package org.gtlcore.gtlcore.mixin.gtm.api.recipe;
 
+import org.gtlcore.gtlcore.api.machine.multiblock.CoilWorkableElectricMultipleRecipesMachine;
 import org.gtlcore.gtlcore.api.machine.trait.IRecipeCapabilityMachine;
 import org.gtlcore.gtlcore.api.machine.trait.MERecipeHandlePart;
 import org.gtlcore.gtlcore.api.machine.trait.RecipeHandlePart;
+import org.gtlcore.gtlcore.api.recipe.IAdditionalRecipeIterator;
 import org.gtlcore.gtlcore.api.recipe.IRecipeIterator;
 import org.gtlcore.gtlcore.api.recipe.RecipeResult;
+import org.gtlcore.gtlcore.common.machine.multiblock.electric.WorkableElectricMultipleRecipesMachine;
 
 import com.gregtechceu.gtceu.api.capability.recipe.*;
 import com.gregtechceu.gtceu.api.machine.WorkableTieredMachine;
 import com.gregtechceu.gtceu.api.machine.feature.IRecipeLogicMachine;
 import com.gregtechceu.gtceu.api.machine.steam.SteamWorkableMachine;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
+import com.gregtechceu.gtceu.api.recipe.GTRecipeType;
 import com.gregtechceu.gtceu.api.recipe.lookup.*;
 import com.gregtechceu.gtceu.common.machine.multiblock.electric.research.ResearchStationMachine;
 import com.gregtechceu.gtceu.common.machine.multiblock.primitive.PrimitiveWorkableMachine;
@@ -30,6 +34,10 @@ import java.util.function.Predicate;
 
 @Mixin(GTRecipeLookup.class)
 public abstract class GTRecipeLookupMixin {
+
+    @Shadow(remap = false)
+    @Final
+    private GTRecipeType recipeType;
 
     @Unique
     private IRecipeCapabilityHolder gtlcore$machine;
@@ -69,7 +77,6 @@ public abstract class GTRecipeLookupMixin {
             List<List<AbstractMapIngredient>> list = new ObjectArrayList<>(machine.getRecipeHandleParts().size() + machine.getMERecipeHandleParts().size());
             list.addAll(this.gtlcore$fromHolder(machine));
             if (list.isEmpty()) {
-                RecipeResult.of((IRecipeLogicMachine) holder, RecipeResult.FAIL_NO_INPUT);
                 return null;
             }
             return list;
@@ -84,7 +91,7 @@ public abstract class GTRecipeLookupMixin {
         if (recipeHandleParts.isEmpty() && meRecipeHandleParts.isEmpty()) return Collections.emptyList();
         List<List<AbstractMapIngredient>> list = new ObjectArrayList<>(recipeHandleParts.size() + meRecipeHandleParts.size());
 
-        // region ME Pattern
+        // region ME Pattern, search for uncached slots
         if (!meRecipeHandleParts.isEmpty()) {
             for (var part : meRecipeHandleParts) {
                 Int2ObjectArrayMap<Reference2ObjectArrayMap<RecipeCapability<?>, List<Object>>> finalMap = new Int2ObjectArrayMap<>();
@@ -243,5 +250,72 @@ public abstract class GTRecipeLookupMixin {
     @Shadow(remap = false)
     protected static @NotNull Map<AbstractMapIngredient, Either<GTRecipe, Branch>> determineRootNodes(@NotNull AbstractMapIngredient ingredient, @NotNull Branch branchMap) {
         throw new RuntimeException();
+    }
+
+    @Shadow(remap = false)
+    private GTRecipe recurseIngredientTreeFindRecipe(@NotNull List<List<AbstractMapIngredient>> ingredients,
+                                                     @NotNull Branch branchRoot,
+                                                     @NotNull Predicate<GTRecipe> canHandle) {
+        throw new RuntimeException();
+    }
+
+    @Shadow(remap = false)
+    @Final
+    private Branch lookup;
+
+    /**
+     * @author Dragons
+     * @reason 跨配方并行机器的lock功能修复
+     */
+    @Overwrite(remap = false)
+    @Nullable
+    public GTRecipe find(@NotNull IRecipeCapabilityHolder holder, @NotNull Predicate<GTRecipe> canHandle) {
+        // find Cached Recipe in MEHandlers First
+        if (holder instanceof IRecipeCapabilityMachine rlm) {
+            var parts = rlm.getMERecipeHandleParts();
+            for (var part : parts) {
+                var cachedMERecipes = part.getMachine().getCachedGTRecipe();
+                if (!cachedMERecipes.isEmpty()) {
+                    return cachedMERecipes.get(0);
+                }
+            }
+        }
+        List<List<AbstractMapIngredient>> list = prepareRecipeFind(holder);
+        // couldn't build any inputs to use for search, so no recipe could be found
+        if (list == null) return null;
+        return recurseIngredientTreeFindRecipe(list, this.lookup, canHandle);
+    }
+
+    /**
+     * @author Dragons
+     * @reason 为RecipeIterator添加ME配方缓存支持
+     */
+    @Overwrite(remap = false)
+    public @NotNull RecipeIterator getRecipeIterator(@NotNull IRecipeCapabilityHolder holder, @NotNull Predicate<GTRecipe> canHandle) {
+        List<List<AbstractMapIngredient>> list = this.prepareRecipeFind(holder);
+        RecipeIterator iterator = RecipeIteratorAccessor.newRecipeIterator(this.recipeType, list, canHandle);
+
+        // 检查是否有ME配方缓存需要合并
+        if (holder instanceof IRecipeCapabilityMachine rlm) {
+            var parts = rlm.getMERecipeHandleParts();
+            if (!parts.isEmpty()) {
+                List<GTRecipe> meRecipes = new ObjectArrayList<>();
+                for (var part : parts) {
+                    meRecipes.addAll(part.getMachine().getCachedGTRecipe());
+                }
+                if (!meRecipes.isEmpty()) {
+                    ((IAdditionalRecipeIterator) iterator).setAdditionalRecipes(meRecipes);
+                }
+            }
+
+            if (holder instanceof WorkableElectricMultipleRecipesMachine || holder instanceof CoilWorkableElectricMultipleRecipesMachine) {
+                ((IAdditionalRecipeIterator) iterator).setUseDiveIngredientTreeFind(true);
+            }
+            if (holder instanceof IRecipeLogicMachine irl) {
+                if (!iterator.hasNext()) RecipeResult.of(irl, RecipeResult.FAIL_NO_INPUT);
+            }
+        }
+
+        return iterator;
     }
 }

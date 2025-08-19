@@ -56,8 +56,6 @@ public class GTLUtil {
         CompoundTag tag = new CompoundTag();
         tag.putString("id", recipe.id.toString());
         tag.put("recipe", GTRecipeSerializer.CODEC.encodeStart(NbtOps.INSTANCE, recipe).result().orElse(new CompoundTag()));
-        tag.putInt("parallel", recipe.parallels);
-        tag.putInt("ocTier", recipe.ocTier);
         return tag;
     }
 
@@ -67,8 +65,6 @@ public class GTLUtil {
             var recipe = GTRecipeSerializer.CODEC.parse(NbtOps.INSTANCE, ctag.get("recipe")).result().orElse(null);
             if (recipe == null || id == null) return null;
             recipe.setId(id);
-            recipe.parallels = ctag.getInt("parallel");
-            recipe.ocTier = ctag.getInt("ocTier");
             return recipe;
         }
         return null;

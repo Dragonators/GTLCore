@@ -8,6 +8,7 @@ import com.gregtechceu.gtceu.api.recipe.lookup.RecipeIterator;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
+import org.spongepowered.asm.mixin.gen.Invoker;
 
 import java.util.List;
 import java.util.function.Predicate;
@@ -15,14 +16,14 @@ import java.util.function.Predicate;
 @Mixin(RecipeIterator.class)
 public interface RecipeIteratorAccessor {
 
-    @Accessor(value = "ingredients", remap = false)
-    List<List<AbstractMapIngredient>> getIngredients();
+    @Accessor(value = "index", remap = false)
+    int getIndex();
 
-    @Accessor(value = "recipeMap", remap = false)
-    @NotNull
-    GTRecipeType getRecipeMap();
+    @Accessor(value = "index", remap = false)
+    void setIndex(int index);
 
-    @Accessor(value = "canHandle", remap = false)
-    @NotNull
-    Predicate<GTRecipe> getCanHandle();
+    @Invoker("<init>")
+    static RecipeIterator newRecipeIterator(@NotNull GTRecipeType recipeMap, List<List<AbstractMapIngredient>> ingredients, @NotNull Predicate<GTRecipe> canHandle) {
+        throw new AssertionError();
+    }
 }
