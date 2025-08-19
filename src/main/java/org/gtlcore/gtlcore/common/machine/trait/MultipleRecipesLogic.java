@@ -116,7 +116,9 @@ public class MultipleRecipesLogic extends RecipeLogic implements ILockRecipe {
                 for (var part : parts) {
                     meRecipes.addAll(part.getMachine().getCachedGTRecipe());
                 }
-                if (!meRecipes.isEmpty()) return Iterators.concat(IRecipeIterator.findIteratorRecipeCollection(machine.getRecipeType().getLookup().getRecipeIterator(machine, this::checkRecipe)).iterator(), meRecipes.iterator());
+                if (!meRecipes.isEmpty()) return Iterators.concat(IRecipeIterator.findIteratorRecipeCollection(
+                        machine.getRecipeType().getLookup().getRecipeIterator(machine, this::checkRecipe)).iterator(),
+                        meRecipes.iterator());
             }
         }
         return IRecipeIterator.findIteratorRecipeCollection(

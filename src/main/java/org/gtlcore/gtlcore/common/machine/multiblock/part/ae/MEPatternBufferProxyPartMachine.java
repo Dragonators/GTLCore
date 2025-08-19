@@ -1,7 +1,6 @@
 package org.gtlcore.gtlcore.common.machine.multiblock.part.ae;
 
-import org.gtlcore.gtlcore.api.machine.trait.IMEPatternPartMachine;
-import org.gtlcore.gtlcore.api.machine.trait.IMERecipeHandlerTrait;
+import org.gtlcore.gtlcore.api.machine.trait.*;
 
 import com.gregtechceu.gtceu.api.GTValues;
 import com.gregtechceu.gtceu.api.capability.recipe.FluidRecipeCapability;
@@ -42,8 +41,7 @@ import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public class MEPatternBufferProxyPartMachine extends TieredIOPartMachine implements IMachineLife, IMEPatternPartMachine, IInteractedMachine, IDistinctPart {
 
@@ -169,6 +167,12 @@ public class MEPatternBufferProxyPartMachine extends TieredIOPartMachine impleme
         if (buffer != null) {
             buffer.setRecipe(index, recipe);
         }
+    }
+
+    @Override
+    public void setCache(Map<GTRecipe, IRecipeHandlePart> map, MERecipeHandlePart mePart) {
+        if (this.buffer == null) return;
+        this.buffer.setCache(map, mePart);
     }
 
     @Override

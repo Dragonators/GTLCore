@@ -81,7 +81,7 @@ public class MEPatternBufferProvider implements IBlockComponentProvider, IServer
             if (fluid != null && amount > 0) {
                 iTooltip.add(GTElementHelper.smallFluid(JadeFluidObject.of(fluid)));
                 Component text = Component.literal(" ")
-                        .append(NumberUtils.formatLong(amount) + (amount < 1000L ? "mB" : "B"))
+                        .append(NumberUtils.formatLong(amount / 1000) + (amount < 1000L ? "mB" : "B"))
                         .withStyle(ChatFormatting.DARK_PURPLE)
                         .append(Component.literal(" ").withStyle(ChatFormatting.WHITE))
                         .append(fluid.getFluidType().getDescription().copy().withStyle(ChatFormatting.DARK_AQUA));
@@ -112,7 +112,7 @@ public class MEPatternBufferProvider implements IBlockComponentProvider, IServer
                     var fluid = fluidKey.toStack(Ints.saturatedCast(count));
                     iTooltip.add(GTElementHelper.smallFluid(JadeFluidObject.of(fluid.getFluid(), count)));
                     Component text = Component.literal(" ")
-                            .append(NumberUtils.formatLong(count) + (count < 1000L ? "mB" : "B"))
+                            .append(NumberUtils.formatLong(count / 1000) + (count < 1000L ? "mB" : "B"))
                             .append(" ")
                             .append(wrapInSquareBrackets(fluid.getDisplayName()).withStyle(ChatFormatting.WHITE))
                             .withStyle(ChatFormatting.WHITE);
