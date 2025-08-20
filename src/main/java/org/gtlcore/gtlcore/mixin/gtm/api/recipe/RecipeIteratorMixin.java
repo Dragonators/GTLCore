@@ -92,7 +92,7 @@ public class RecipeIteratorMixin implements IAdditionalRecipeIterator {
     /**
      * @author Dragons
      * @reason 使其可以找全每个HandlePart对应List<AbstractMapIngredient>中的所有配方，优化单配方模式性能
-     * 不会返回null
+     *         不会返回null
      */
     @Overwrite(remap = false)
     @NotNull
