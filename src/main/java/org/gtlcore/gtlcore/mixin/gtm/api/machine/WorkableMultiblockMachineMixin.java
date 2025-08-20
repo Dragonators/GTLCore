@@ -118,7 +118,7 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
 
     @Override
     public void setMERecipeHandleMap(MERecipeHandlePart hatch, GTRecipe recipe, int slot) {
-        hatch.getSlotMap().put(recipe, slot);
+        hatch.getSlotMap().forcePut(recipe, slot);
         this.recipeHandleMap.put(recipe, hatch);
     }
 

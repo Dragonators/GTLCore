@@ -651,7 +651,7 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
         for (var it = Int2ObjectMaps.fastIterator(gtRecipeCacheMap); it.hasNext();) {
             var entry = it.next();
             var r = entry.getValue();
-            mePart.getSlotMap().put(r, entry.getIntKey());
+            mePart.getSlotMap().forcePut(r, entry.getIntKey());
             map.put(r, mePart);
         }
     }

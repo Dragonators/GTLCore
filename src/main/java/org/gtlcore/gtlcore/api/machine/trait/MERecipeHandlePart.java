@@ -6,6 +6,8 @@ import com.gregtechceu.gtceu.api.capability.recipe.IO;
 import com.gregtechceu.gtceu.api.capability.recipe.RecipeCapability;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.objects.*;
 import lombok.Getter;
@@ -16,7 +18,7 @@ import java.util.*;
 public class MERecipeHandlePart implements IRecipeHandlePart {
 
     @Getter
-    private final Object2IntMap<GTRecipe> slotMap = new Object2IntOpenHashMap<>();
+    private final BiMap<GTRecipe, Integer> slotMap = HashBiMap.create();
     @Getter
     private final Reference2ObjectOpenHashMap<RecipeCapability<?>, IMERecipeHandler<?>> meHandlerMap = new Reference2ObjectOpenHashMap<>();
     @Getter
