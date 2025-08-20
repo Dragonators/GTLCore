@@ -24,6 +24,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMaps;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectArrayMap;
+import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.*;
@@ -37,6 +38,7 @@ public abstract class GTRecipeLookupMixin {
 
     @Shadow(remap = false)
     @Final
+    @Getter
     private GTRecipeType recipeType;
 
     @Unique
