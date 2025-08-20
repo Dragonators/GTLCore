@@ -30,7 +30,9 @@ import com.gregtechceu.gtceu.common.data.GTRecipeModifiers;
 import com.lowdragmc.lowdraglib.side.fluid.FluidStack;
 
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.level.material.Fluid;
 
+import it.unimi.dsi.fastutil.objects.Object2LongMaps;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -115,45 +117,9 @@ public class GTLRecipeModifiers {
             List<Content> fluidList = recipe.inputs.getOrDefault(FluidRecipeCapability.CAP, null);
             FluidStack fluidStack1 = FluidRecipeCapability.CAP.of(fluidList.get(0).getContent()).getStacks()[0];
             FluidStack fluidStack2 = FluidRecipeCapability.CAP.of(fluidList.get(1).getContent()).getStacks()[0];
-            long a = 0, b = 0;
-            if (workmachine instanceof IRecipeCapabilityMachine rcm) {
-                var handlePart = rcm.getRecipeHandleMap().get(recipe);
-                if (handlePart != null) {
-                    if (handlePart instanceof RecipeHandlePart rhp) {
-                        for (var p : rhp.getCapability(FluidRecipeCapability.CAP)) {
-                            for (var contents : p.getContents()) {
-                                if (contents instanceof FluidStack fluidStack) {
-                                    if (fluidStack.getFluid() == fluidStack1.getFluid()) a += fluidStack.getAmount();
-                                    if (fluidStack.getFluid() == fluidStack2.getFluid()) b += fluidStack.getAmount();
-                                }
-                            }
-                        }
-                    } else if (handlePart instanceof MERecipeHandlePart merhp) {
-                        var inventory = merhp.getMachine().getInternalInventory();
-                        int anInt = merhp.getSlotMap().getInt(recipe);
-                        if (inventory != null && anInt <= inventory.length) {
-                            for (var it = inventory[anInt].getFluidInventory().object2LongEntrySet().fastIterator(); it.hasNext();) {
-                                var f = it.next();
-                                if (fluidStack1.getFluid() == f.getKey().getFluid()) a += f.getLongValue();
-                                if (fluidStack2.getFluid() == f.getKey().getFluid()) b += f.getLongValue();
-                            }
-                        }
-                    }
-                } else {
-                    for (var part : workmachine.getParts()) {
-                        for (var handler : part.getRecipeHandlers()) {
-                            if (handler.getHandlerIO() == IO.IN) {
-                                for (var contents : handler.getContents()) {
-                                    if (contents instanceof FluidStack fluidStack) {
-                                        if (fluidStack.getFluid() == fluidStack1.getFluid()) a += fluidStack.getAmount();
-                                        if (fluidStack.getFluid() == fluidStack2.getFluid()) b += fluidStack.getAmount();
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+
+            FluidAmounts amounts = countFluidAmounts(workmachine, recipe, fluidStack1.getFluid(), fluidStack2.getFluid());
+            long a = amounts.first(), b = amounts.second();
             if (b == 0) return null;
             GTRecipe hatchedParallel = GTRecipeModifiers.hatchParallel(machine, recipe, false, params, result);
             if (hatchedParallel == null) return null;
@@ -224,4 +190,75 @@ public class GTLRecipeModifiers {
                 List.of(new Content((long) resultVoltage, ChanceLogic.getMaxChancedValue(), ChanceLogic.getMaxChancedValue(), 0, null, null)));
         return recipe1;
     }
+
+    private static FluidAmounts countFluidAmounts(WorkableElectricMultiblockMachine workmachine, GTRecipe recipe, Fluid fluid1, Fluid fluid2) {
+        long a = 0, b = 0;
+
+        if (workmachine instanceof IRecipeCapabilityMachine rcm) {
+            var handlePart = rcm.getRecipeHandleMap().get(recipe);
+            if (handlePart != null) {
+                if (handlePart instanceof RecipeHandlePart rhp) {
+                    FluidAmounts amounts = countFluidInRecipeHandlePart(rhp, fluid1, fluid2);
+                    a += amounts.first();
+                    b += amounts.second();
+                } else if (handlePart instanceof MERecipeHandlePart merhp) {
+                    FluidAmounts amounts = countFluidInMERecipeHandlePart(merhp, recipe, fluid1, fluid2);
+                    a += amounts.first();
+                    b += amounts.second();
+                }
+            } else {
+                FluidAmounts amounts = countFluidInParts(workmachine, fluid1, fluid2);
+                a += amounts.first();
+                b += amounts.second();
+            }
+        }
+
+        return new FluidAmounts(a, b);
+    }
+
+    private static FluidAmounts countFluidInRecipeHandlePart(RecipeHandlePart rhp, Fluid fluid1, Fluid fluid2) {
+        long a = 0, b = 0;
+        for (var p : rhp.getCapability(FluidRecipeCapability.CAP)) {
+            for (var contents : p.getContents()) {
+                if (contents instanceof FluidStack fluidStack) {
+                    if (fluidStack.getFluid() == fluid1) a += fluidStack.getAmount();
+                    if (fluidStack.getFluid() == fluid2) b += fluidStack.getAmount();
+                }
+            }
+        }
+        return new FluidAmounts(a, b);
+    }
+
+    private static FluidAmounts countFluidInMERecipeHandlePart(MERecipeHandlePart merhp, GTRecipe recipe, Fluid fluid1, Fluid fluid2) {
+        long a = 0, b = 0;
+        int slotIndex = merhp.getSlotMap().get(recipe);
+        var inventory = merhp.<FluidStack>getMEContent(FluidRecipeCapability.CAP, List.of(slotIndex));
+        if (inventory != null) {
+            for (var it = Object2LongMaps.fastIterator(inventory); it.hasNext();) {
+                var entry = it.next();
+                if (fluid1 == entry.getKey().getFluid()) a += entry.getLongValue();
+                if (fluid2 == entry.getKey().getFluid()) b += entry.getLongValue();
+            }
+        }
+        return new FluidAmounts(a, b);
+    }
+
+    private static FluidAmounts countFluidInParts(WorkableElectricMultiblockMachine workmachine, Fluid fluid1, Fluid fluid2) {
+        long a = 0, b = 0;
+        for (var part : workmachine.getParts()) {
+            for (var handler : part.getRecipeHandlers()) {
+                if (handler.getHandlerIO() == IO.IN) {
+                    for (var contents : handler.getContents()) {
+                        if (contents instanceof FluidStack fluidStack) {
+                            if (fluidStack.getFluid() == fluid1) a += fluidStack.getAmount();
+                            if (fluidStack.getFluid() == fluid2) b += fluidStack.getAmount();
+                        }
+                    }
+                }
+            }
+        }
+        return new FluidAmounts(a, b);
+    }
+
+    private record FluidAmounts(long first, long second) {}
 }
