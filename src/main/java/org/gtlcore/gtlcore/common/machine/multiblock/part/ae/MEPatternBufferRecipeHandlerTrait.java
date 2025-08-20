@@ -25,6 +25,7 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -60,12 +61,12 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
         listeners.forEach(Runnable::run);
     }
 
-    public List<IMERecipeHandlerTrait<?>> getMERecipeHandlers() {
+    public List<IMERecipeHandlerTrait<? extends Predicate<?>, ?>> getMERecipeHandlers() {
         return List.of(itemInputHandler, fluidInputHandler);
     }
 
-    public Reference2ObjectMap<RecipeCapability<?>, IMERecipeHandlerTrait<?>> getMERecipeHandlerMap() {
-        Reference2ObjectMap<RecipeCapability<?>, IMERecipeHandlerTrait<?>> map = new Reference2ObjectArrayMap<>();
+    public Reference2ObjectMap<RecipeCapability<?>, IMERecipeHandlerTrait<? extends Predicate<?>, ?>> getMERecipeHandlerMap() {
+        Reference2ObjectMap<RecipeCapability<?>, IMERecipeHandlerTrait<? extends Predicate<?>, ?>> map = new Reference2ObjectArrayMap<>();
         map.put(ItemRecipeCapability.CAP, itemInputHandler);
         map.put(FluidRecipeCapability.CAP, fluidInputHandler);
         return map;
@@ -100,7 +101,7 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
                 .collect(Collectors.toList());
     }
 
-    public class MEItemInputHandler extends NotifiableMERecipeHandlerTrait<Ingredient> {
+    public class MEItemInputHandler extends NotifiableMERecipeHandlerTrait<Ingredient, ItemStack> {
 
         @Getter
         @Setter
@@ -189,7 +190,7 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
         }
     }
 
-    public class MEFluidInputHandler extends NotifiableMERecipeHandlerTrait<FluidIngredient> {
+    public class MEFluidInputHandler extends NotifiableMERecipeHandlerTrait<FluidIngredient, FluidStack> {
 
         @Getter
         @Setter
@@ -241,7 +242,7 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
         }
 
         @Override
-        public Object2LongMap<?> getCustomSlotsStackMap(List<Integer> list) {
+        public Object2LongMap<FluidStack> getCustomSlotsStackMap(List<Integer> list) {
             Object2LongOpenHashMap<FluidStack> map = new Object2LongOpenHashMap<>();
             for (int i : list) {
                 var slot = getMachine().getInternalInventory()[i];

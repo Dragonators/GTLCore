@@ -90,6 +90,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.function.Predicate;
 
 public class MEPatternBufferPartMachine extends MEBusPartMachine
                                         implements ICraftingProvider, PatternContainer, IMEPatternPartMachine, IInteractedMachine {
@@ -240,7 +241,7 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
     }
 
     @Override
-    public void onMainNodeStateChanged(IGridNodeListener.State reason) {
+    public void onMainNodeStateChanged(IGridNodeListener.@NotNull State reason) {
         super.onMainNodeStateChanged(reason);
         this.updateSubscription();
     }
@@ -298,6 +299,7 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
     }
 
     @Override
+    @NotNull
     public ManagedFieldHolder getFieldHolder() {
         return MANAGED_FIELD_HOLDER;
     }
@@ -507,7 +509,7 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
         if (!stack.isEmpty()) {
             var internalSlot = internalInventory[slot];
             return circuitHandler.processPatternWithCircuit(
-                    stack, circuit -> internalSlot.cacheManager.setCircuitCache(circuit), getLevel());
+                    stack, internalSlot.cacheManager::setCircuitCache, getLevel());
         }
         return null;
     }
@@ -660,11 +662,11 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
     }
 
     @Override
-    public List<IMERecipeHandlerTrait<?>> getMERecipeHandlerTraits() {
+    public Iterable<IMERecipeHandlerTrait<?, ?>> getMERecipeHandlerTraits() {
         return recipeHandler.getMERecipeHandlers();
     }
 
-    public Reference2ObjectMap<RecipeCapability<?>, IMERecipeHandlerTrait<?>> getMERecipeHandlerMap() {
+    public Reference2ObjectMap<RecipeCapability<?>, IMERecipeHandlerTrait<? extends Predicate<?>, ?>> getMERecipeHandlerMap() {
         return recipeHandler.getMERecipeHandlerMap();
     }
 

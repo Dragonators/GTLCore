@@ -28,9 +28,6 @@ import java.util.function.*;
 @Mixin(GTRecipeType.class)
 public class GTRecipeTypeMixin {
 
-    @Shadow
-    @Final
-    private GTRecipeLookup lookup;
     @Shadow(remap = false)
     private GTRecipeBuilder recipeBuilder;
 
@@ -153,15 +150,13 @@ public class GTRecipeTypeMixin {
                 iterator.reset();
                 return Collections.singleton(recipe).iterator();
             } else {
-                Iterator var7 = this.customRecipeLogicRunners.iterator();
-                do {
-                    if (!var7.hasNext()) {
-                        return Collections.emptyIterator();
-                    }
-                    GTRecipeType.ICustomRecipeLogic logic = (GTRecipeType.ICustomRecipeLogic) var7.next();
+                for (GTRecipeType.ICustomRecipeLogic logic : this.customRecipeLogicRunners) {
                     recipe = logic.createCustomRecipe(holder);
-                } while (recipe == null);
-                return Collections.singleton(recipe).iterator();
+                    if (recipe != null) {
+                        return Collections.singleton(recipe).iterator();
+                    }
+                }
+                return Collections.emptyIterator();
             }
         }
     }

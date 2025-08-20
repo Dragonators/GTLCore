@@ -14,13 +14,14 @@ import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+import java.util.function.Predicate;
 
 public class MERecipeHandlePart implements IRecipeHandlePart {
 
     @Getter
     private final BiMap<GTRecipe, Integer> slotMap = HashBiMap.create();
     @Getter
-    private final Reference2ObjectOpenHashMap<RecipeCapability<?>, IMERecipeHandler<?>> meHandlerMap = new Reference2ObjectOpenHashMap<>();
+    private final Reference2ObjectOpenHashMap<RecipeCapability<?>, IMERecipeHandler<? extends Predicate<?>, ?>> meHandlerMap = new Reference2ObjectOpenHashMap<>();
     @Getter
     private final IMEPatternPartMachine machine;
 
@@ -34,38 +35,24 @@ public class MERecipeHandlePart implements IRecipeHandlePart {
         return rhl;
     }
 
-    public void addMEHandlers(Iterable<IMERecipeHandlerTrait<?>> handlers) {
+    public void addMEHandlers(Iterable<IMERecipeHandlerTrait<? extends Predicate<?>, ?>> handlers) {
         for (var handler : handlers) {
             getMeHandlerMap().putIfAbsent(handler.getCapability(), handler);
         }
     }
 
     @NotNull
-    public <T> Object2LongMap<T> getMEContent(RecipeCapability<?> cap) {
+    public <T extends Predicate<S>, S> Object2LongMap<S> getMEContent(RecipeCapability<T> cap) {
         return getMEContent(cap, this.getMECapability(cap).getActiveSlots(cap));
     }
 
     @NotNull
-    public <T> Object2LongMap<T> getMEContent(RecipeCapability<?> cap, List<Integer> slots) {
-        return (Object2LongMap<T>) this.getMECapability(cap).getCustomSlotsStackMap(slots);
+    @SuppressWarnings("unchecked")
+    public <T extends Predicate<S>, S> Object2LongMap<S> getMEContent(RecipeCapability<T> cap, List<Integer> slots) {
+        return ((IMERecipeHandlerTrait<T, S>) (this.getMECapability(cap))).getCustomSlotsStackMap(slots);
     }
 
-    public <T> Object2LongMap<T> getMEContentSafe(RecipeCapability<?> cap, Class<T> expectedType) {
-        return getMEContentSafe(cap, this.getMECapability(cap).getActiveSlots(cap), expectedType);
-    }
-
-    public <T> Object2LongMap<T> getMEContentSafe(RecipeCapability<?> cap, List<Integer> slots, Class<T> expectedType) {
-        @SuppressWarnings("unchecked")
-        var map = (Object2LongMap<T>) this.getMECapability(cap).getCustomSlotsStackMap(slots);
-        for (var it = Object2LongMaps.fastIterator(map); it.hasNext();) {
-            if (!expectedType.isInstance(it.next().getKey())) {
-                it.remove();
-            }
-        }
-        return map;
-    }
-
-    public @NotNull IMERecipeHandler<?> getMECapability(RecipeCapability<?> cap) {
+    public @NotNull IMERecipeHandler<? extends Predicate<?>, ?> getMECapability(RecipeCapability<?> cap) {
         return getMeHandlerMap().getOrDefault(cap, null);
     }
 
@@ -81,7 +68,7 @@ public class MERecipeHandlePart implements IRecipeHandlePart {
         }
 
         // Array for 1-2 handler
-        IMERecipeHandler<?>[] handlers = new IMERecipeHandler<?>[contents.size()];
+        IMERecipeHandler<?, ?>[] handlers = new IMERecipeHandler[contents.size()];
         List<Object>[] contentArrays = new List[contents.size()];
         int handlerCount = 0;
 
@@ -168,7 +155,7 @@ public class MERecipeHandlePart implements IRecipeHandlePart {
     }
 
     @Override
-    public Object2LongMap<?> getContent(RecipeCapability<?> cap) {
+    public <T extends Predicate<S>, S> Object2LongMap<S> getContent(RecipeCapability<T> cap) {
         return getMEContent(cap);
     }
 }
