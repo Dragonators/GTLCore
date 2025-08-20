@@ -83,7 +83,7 @@ public class RecipeHandlePart implements IRecipeHandlePart {
 
     public void addHandlers(Iterable<IRecipeHandler<?>> handlers) {
         for (var handler : handlers) {
-            getHandlerMap().computeIfAbsent(handler.getCapability(), c -> new ArrayList<>()).add(handler);
+            getHandlerMap().computeIfAbsent(handler.getCapability(), c -> new ObjectArrayList<>()).add(handler);
             allHandlers.add(handler);
         }
         if (handlerIO == IO.OUT) sort();

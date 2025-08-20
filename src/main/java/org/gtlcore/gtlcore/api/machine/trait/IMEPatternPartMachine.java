@@ -1,5 +1,7 @@
 package org.gtlcore.gtlcore.api.machine.trait;
 
+import org.gtlcore.gtlcore.common.machine.multiblock.part.ae.MEPatternBufferPartMachine;
+
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 
 import org.jetbrains.annotations.NotNull;
@@ -15,6 +17,8 @@ public interface IMEPatternPartMachine {
     void setRecipe(int index, GTRecipe recipe);
 
     void setCache(Map<GTRecipe, IRecipeHandlePart> map, MERecipeHandlePart mePart);
+
+    MEPatternBufferPartMachine.InternalSlot[] getInternalInventory();
 
     boolean hasCacheInSlot(int slot);
 
