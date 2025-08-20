@@ -176,6 +176,12 @@ public class MEPatternBufferProxyPartMachine extends TieredIOPartMachine impleme
     }
 
     @Override
+    public MEPatternBufferPartMachine.InternalSlot[] getInternalInventory() {
+        if (this.buffer != null) return this.buffer.getInternalInventory();
+        return null;
+    }
+
+    @Override
     public @NotNull List<@NotNull GTRecipe> getCachedGTRecipe() {
         if (buffer == null) return Collections.emptyList();
         return buffer.getCachedGTRecipe();

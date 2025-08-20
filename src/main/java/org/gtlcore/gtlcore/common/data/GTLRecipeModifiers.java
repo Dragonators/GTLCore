@@ -1,5 +1,8 @@
 package org.gtlcore.gtlcore.common.data;
 
+import org.gtlcore.gtlcore.api.machine.trait.IRecipeCapabilityMachine;
+import org.gtlcore.gtlcore.api.machine.trait.MERecipeHandlePart;
+import org.gtlcore.gtlcore.api.machine.trait.RecipeHandlePart;
 import org.gtlcore.gtlcore.api.recipe.RecipeResult;
 import org.gtlcore.gtlcore.common.machine.multiblock.electric.StorageMachine;
 import org.gtlcore.gtlcore.common.machine.multiblock.steam.LargeSteamParallelMultiblockMachine;
@@ -12,7 +15,6 @@ import com.gregtechceu.gtceu.api.machine.MetaMachine;
 import com.gregtechceu.gtceu.api.machine.feature.IOverclockMachine;
 import com.gregtechceu.gtceu.api.machine.feature.IRecipeLogicMachine;
 import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMultiController;
-import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMultiPart;
 import com.gregtechceu.gtceu.api.machine.multiblock.CoilWorkableElectricMultiblockMachine;
 import com.gregtechceu.gtceu.api.machine.multiblock.WorkableElectricMultiblockMachine;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
@@ -109,21 +111,43 @@ public class GTLRecipeModifiers {
 
     public static GTRecipe dissolvingTankOverclock(MetaMachine machine, @NotNull GTRecipe recipe, @NotNull OCParams params,
                                                    @NotNull OCResult result) {
-        if (machine instanceof WorkableElectricMultiblockMachine workableElectricMultiblockMachine) {
+        if (machine instanceof WorkableElectricMultiblockMachine workmachine) {
             List<Content> fluidList = recipe.inputs.getOrDefault(FluidRecipeCapability.CAP, null);
             FluidStack fluidStack1 = FluidRecipeCapability.CAP.of(fluidList.get(0).getContent()).getStacks()[0];
             FluidStack fluidStack2 = FluidRecipeCapability.CAP.of(fluidList.get(1).getContent()).getStacks()[0];
             long a = 0, b = 0;
-            for (IMultiPart part : workableElectricMultiblockMachine.getParts()) {
-                for (var handler : part.getRecipeHandlers()) {
-                    if (handler.getHandlerIO() == IO.IN) {
-                        for (Object contents : handler.getContents()) {
-                            if (contents instanceof FluidStack fluidStack) {
-                                if (fluidStack.getFluid() == fluidStack1.getFluid()) {
-                                    a += fluidStack.getAmount();
+            if (workmachine instanceof IRecipeCapabilityMachine rcm) {
+                var handlePart = rcm.getRecipeHandleMap().get(recipe);
+                if (handlePart != null) {
+                    if (handlePart instanceof RecipeHandlePart rhp) {
+                        for (var p : rhp.getCapability(FluidRecipeCapability.CAP)) {
+                            for (var contents : p.getContents()) {
+                                if (contents instanceof FluidStack fluidStack) {
+                                    if (fluidStack.getFluid() == fluidStack1.getFluid()) a += fluidStack.getAmount();
+                                    if (fluidStack.getFluid() == fluidStack2.getFluid()) b += fluidStack.getAmount();
                                 }
-                                if (fluidStack.getFluid() == fluidStack2.getFluid()) {
-                                    b += fluidStack.getAmount();
+                            }
+                        }
+                    } else if (handlePart instanceof MERecipeHandlePart merhp) {
+                        var inventory = merhp.getMachine().getInternalInventory();
+                        int anInt = merhp.getSlotMap().getInt(recipe);
+                        if (inventory != null && anInt <= inventory.length) {
+                            for (var it = inventory[anInt].getFluidInventory().object2LongEntrySet().fastIterator(); it.hasNext();) {
+                                var f = it.next();
+                                if (fluidStack1.getFluid() == f.getKey().getFluid()) a += f.getLongValue();
+                                if (fluidStack2.getFluid() == f.getKey().getFluid()) b += f.getLongValue();
+                            }
+                        }
+                    }
+                } else {
+                    for (var part : workmachine.getParts()) {
+                        for (var handler : part.getRecipeHandlers()) {
+                            if (handler.getHandlerIO() == IO.IN) {
+                                for (var contents : handler.getContents()) {
+                                    if (contents instanceof FluidStack fluidStack) {
+                                        if (fluidStack.getFluid() == fluidStack1.getFluid()) a += fluidStack.getAmount();
+                                        if (fluidStack.getFluid() == fluidStack2.getFluid()) b += fluidStack.getAmount();
+                                    }
                                 }
                             }
                         }
@@ -133,7 +157,7 @@ public class GTLRecipeModifiers {
             if (b == 0) return null;
             GTRecipe hatchedParallel = GTRecipeModifiers.hatchParallel(machine, recipe, false, params, result);
             if (hatchedParallel == null) return null;
-            GTRecipe recipe1 = RecipeHelper.applyOverclock(OverclockingLogic.NON_PERFECT_OVERCLOCK_SUBTICK, hatchedParallel, workableElectricMultiblockMachine.getOverclockVoltage(), params, result);
+            GTRecipe recipe1 = RecipeHelper.applyOverclock(OverclockingLogic.NON_PERFECT_OVERCLOCK_SUBTICK, hatchedParallel, workmachine.getOverclockVoltage(), params, result);
             if (a / b != fluidStack1.getAmount() / fluidStack2.getAmount()) {
                 RecipeResult.ofWorking((IRecipeLogicMachine) machine, RecipeResult.fail(Component.translatable("gtceu.recipe.fail.no.ratio")));
                 recipe1.outputs.clear();
