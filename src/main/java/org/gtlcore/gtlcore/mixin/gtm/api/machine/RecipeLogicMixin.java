@@ -77,9 +77,6 @@ public abstract class RecipeLogicMixin implements ILockRecipe, IRecipeStatus {
     protected long totalContinuousRunningTime;
 
     @Shadow(remap = false)
-    protected abstract void handleSearchingRecipes(Iterator<GTRecipe> matches);
-
-    @Shadow(remap = false)
     protected abstract Iterator<GTRecipe> searchRecipe();
 
     @Shadow(remap = false)
@@ -155,12 +152,27 @@ public abstract class RecipeLogicMixin implements ILockRecipe, IRecipeStatus {
     }
 
     /**
+     * @author Dragons
+     * @reason 删除lastFailedMatches操作
+     */
+    @Overwrite(remap = false)
+    private void handleSearchingRecipes(Iterator<GTRecipe> matches) {
+        while (matches != null && matches.hasNext()) {
+            GTRecipe match = matches.next();
+            if (match != null) {
+                if (this.checkMatchedRecipeAvailable(match)) {
+                    return;
+                }
+            }
+        }
+    }
+
+    /**
      * @author .
      * @reason .
      */
     @Overwrite(remap = false)
     public void findAndHandleRecipe() {
-        this.lastFailedMatches = null;
         if (!this.recipeDirty && this.lastRecipe != null && gtlcore$checkLastRecipe(this.lastRecipe)) {
             GTRecipe recipe = this.lastRecipe;
             this.lastRecipe = null;
@@ -195,7 +207,6 @@ public abstract class RecipeLogicMixin implements ILockRecipe, IRecipeStatus {
             }
             if (this.lastRecipe != null && this.getStatus() == RecipeLogic.Status.WORKING) {
                 this.lastOriginRecipe = match;
-                this.lastFailedMatches = null;
                 if (this.isLock) this.lockRecipe = match;
                 return true;
             }

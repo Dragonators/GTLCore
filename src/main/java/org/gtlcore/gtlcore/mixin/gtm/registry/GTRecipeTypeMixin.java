@@ -1,7 +1,9 @@
 package org.gtlcore.gtlcore.mixin.gtm.registry;
 
+import org.gtlcore.gtlcore.api.recipe.IAdditionalRecipeIterator;
 import org.gtlcore.gtlcore.api.recipe.RecipeRunnerHelper;
 import org.gtlcore.gtlcore.common.data.GTLMaterials;
+import org.gtlcore.gtlcore.mixin.gtm.api.recipe.GTRecipeLookupAccessor;
 
 import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.api.GTValues;
@@ -26,6 +28,9 @@ import java.util.function.*;
 @Mixin(GTRecipeType.class)
 public class GTRecipeTypeMixin {
 
+    @Shadow
+    @Final
+    private GTRecipeLookup lookup;
     @Shadow(remap = false)
     private GTRecipeBuilder recipeBuilder;
 
@@ -134,18 +139,17 @@ public class GTRecipeTypeMixin {
         } else {
             RecipeIterator iterator = this.getLookup().getRecipeIterator(holder,
                     (recipex) -> RecipeRunnerHelper.matchRecipe(holder, recipex) && recipex.matchTickRecipe(holder).isSuccess());
-            boolean any = false;
-            GTRecipe recipe = null;
 
-            while (iterator.hasNext()) {
-                recipe = iterator.next();
-                if (recipe != null) {
-                    any = true;
-                    break;
-                }
+            if (((IAdditionalRecipeIterator) iterator).hasAdditionalRecipes()) {
+                ((IAdditionalRecipeIterator) iterator).setAdditionalRecipesCanHandle(recipe -> recipe.recipeType == ((GTRecipeLookupAccessor) this.getLookup()).getRecipeType());
             }
 
-            if (any) {
+            GTRecipe recipe = null;
+            if (iterator.hasNext()) {
+                recipe = iterator.next();
+            }
+
+            if (recipe != null) {
                 iterator.reset();
                 return Collections.singleton(recipe).iterator();
             } else {
