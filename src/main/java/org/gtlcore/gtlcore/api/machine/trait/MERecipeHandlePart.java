@@ -40,10 +40,12 @@ public class MERecipeHandlePart implements IRecipeHandlePart {
         }
     }
 
+    @NotNull
     public <T> Object2LongMap<T> getMEContent(RecipeCapability<?> cap) {
         return getMEContent(cap, this.getMECapability(cap).getActiveSlots(cap));
     }
 
+    @NotNull
     public <T> Object2LongMap<T> getMEContent(RecipeCapability<?> cap, List<Integer> slots) {
         return (Object2LongMap<T>) this.getMECapability(cap).getCustomSlotsStackMap(slots);
     }
