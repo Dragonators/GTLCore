@@ -46,7 +46,6 @@ import com.lowdragmc.lowdraglib.syncdata.annotation.DescSynced;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -495,9 +494,8 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
         return ItemStack.isSameItemSameTags(a, b) && a.getCount() == b.getCount();
     }
 
-    private static long getGameTick() {
-        var mc = Minecraft.getInstance();
-        var level = mc.level;
+    private long getGameTick() {
+        var level = getLevel();
         return level != null ? level.getGameTime() : System.nanoTime();
     }
 
