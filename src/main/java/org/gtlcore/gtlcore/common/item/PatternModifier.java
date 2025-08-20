@@ -1,7 +1,9 @@
 package org.gtlcore.gtlcore.common.item;
 
 import org.gtlcore.gtlcore.api.item.tool.ae2.patternTool.Ae2BaseProcessingPattern;
+import org.gtlcore.gtlcore.common.machine.multiblock.part.ae.MEPatternBufferPartMachine;
 
+import com.gregtechceu.gtceu.api.blockentity.MetaMachineBlockEntity;
 import com.gregtechceu.gtceu.api.gui.GuiTextures;
 import com.gregtechceu.gtceu.api.item.component.IItemUIFactory;
 import com.gregtechceu.gtceu.integration.ae2.gui.widget.AETextInputButtonWidget;
@@ -28,12 +30,11 @@ import net.minecraft.world.phys.Vec3;
 
 import appeng.api.inventories.InternalInventory;
 import appeng.api.parts.IPart;
-import appeng.blockentity.crafting.PatternProviderBlockEntity;
 import appeng.blockentity.networking.CableBusBlockEntity;
+import appeng.helpers.patternprovider.PatternProviderLogicHost;
 import appeng.parts.crafting.PatternProviderPart;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import lombok.Setter;
-
-import java.util.HashMap;
 
 @Setter
 public class PatternModifier implements IItemUIFactory {
@@ -125,10 +126,11 @@ public class PatternModifier implements IItemUIFactory {
                     IPart part = cable.getCableBus().selectPartLocal(hitInBlock).part;
                     internalInventory = (part instanceof PatternProviderPart providerPart) ?
                             providerPart.getLogic().getPatternInv() : null;
-                } else {
-                    internalInventory = (tile instanceof PatternProviderBlockEntity providerBlock) ?
-                            providerBlock.getLogic().getPatternInv() : null;
-                }
+                } else if (tile instanceof PatternProviderLogicHost providerBlock) {
+                    internalInventory = providerBlock.getLogic().getPatternInv();
+                } else if (tile instanceof MetaMachineBlockEntity mmbe && mmbe.getMetaMachine() instanceof MEPatternBufferPartMachine me) {
+                    internalInventory = me.getTerminalPatternInventory();
+                } else internalInventory = null;
 
                 if (internalInventory == null) {
                     serverPlayer.displayClientMessage(Component.literal("只能对着样板供应器使用")
@@ -137,16 +139,17 @@ public class PatternModifier implements IItemUIFactory {
                 }
 
                 for (int i = 0; i < Ae2PatternGeneratorAppliedNumber; ++i) {
-                    HashMap<Integer, ItemStack> newItemStackHashMap = new HashMap<>();
+                    var newItemStackHashMap = new Int2ObjectOpenHashMap<ItemStack>();
                     for (int slot = 0; slot < internalInventory.size(); slot++) {
                         ItemStack itemStack = internalInventory.getStackInSlot(slot);
                         if (!itemStack.isEmpty()) {
                             ItemStack patternItemStack = getNewPatternItemStack(serverPlayer, itemStack);
                             newItemStackHashMap.put(slot, patternItemStack);
                         }
-
                     }
-                    newItemStackHashMap.forEach((slot, itemStack) -> {
+                    newItemStackHashMap.int2ObjectEntrySet().fastForEach((entry) -> {
+                        int slot = entry.getIntKey();
+                        var itemStack = entry.getValue();
                         internalInventory.extractItem(slot, 1, false);
                         internalInventory.insertItem(slot, itemStack, false);
                     });

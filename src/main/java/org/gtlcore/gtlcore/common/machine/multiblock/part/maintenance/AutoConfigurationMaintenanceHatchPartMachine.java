@@ -33,7 +33,8 @@ import javax.annotation.ParametersAreNonnullByDefault;
 @Getter
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
-public class AutoConfigurationMaintenanceHatchPartMachine extends TieredPartMachine implements IMaintenanceMachine {
+public class AutoConfigurationMaintenanceHatchPartMachine extends TieredPartMachine
+                                                          implements IMaintenanceMachine, IAutoConfigurationMaintenanceHatch {
 
     protected static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(
             AutoConfigurationMaintenanceHatchPartMachine.class, MultiblockPartMachine.MANAGED_FIELD_HOLDER);
@@ -181,5 +182,12 @@ public class AutoConfigurationMaintenanceHatchPartMachine extends TieredPartMach
         }
         return Component.translatable("gtceu.maintenance.configurable_" + "duration", multiplier.get())
                 .setStyle(Style.EMPTY.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, tooltip)));
+    }
+
+    @Override
+    public void setDurationMultiplier(float count) {
+        if (count > MAX_DURATION_MULTIPLIER) durationMultiplier = MAX_DURATION_MULTIPLIER;
+        else if (count < MIN_DURATION_MULTIPLIER) durationMultiplier = MIN_DURATION_MULTIPLIER;
+        else durationMultiplier = count;
     }
 }
