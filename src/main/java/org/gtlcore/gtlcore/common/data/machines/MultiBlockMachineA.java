@@ -1099,7 +1099,6 @@ public class MultiBlockMachineA {
             .tooltips(Component.translatable("gtceu.machine.integrated_ore_processor.tooltip.6"))
             .tooltips(Component.translatable("gtceu.machine.integrated_ore_processor.tooltip.7"))
             .tooltips(Component.translatable("gtceu.multiblock.parallelizable.tooltip"))
-            .tooltips(Component.translatable("gtceu.multiblock.parallelizable.tooltip"))
             .tooltips(Component.translatable("gtceu.machine.available_recipe_map_1.tooltip",
                     Component.translatable("gtceu.integrated_ore_processor")))
             .tooltipBuilder(GTLMachines.GTL_ADD)
