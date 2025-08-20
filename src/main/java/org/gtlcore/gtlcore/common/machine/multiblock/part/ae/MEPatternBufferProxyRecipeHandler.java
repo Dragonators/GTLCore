@@ -14,11 +14,12 @@ import lombok.Setter;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Predicate;
 
-public class MEPatternBufferProxyRecipeHandler<T> extends NotifiableMERecipeHandlerTrait<T> {
+public class MEPatternBufferProxyRecipeHandler<T extends Predicate<S>, S> extends NotifiableMERecipeHandlerTrait<T, S> {
 
     @Setter
-    private IMERecipeHandlerTrait<T> handler;
+    private IMERecipeHandlerTrait<T, S> handler;
     private final RecipeCapability<T> capability;
 
     public MEPatternBufferProxyRecipeHandler(MetaMachine machine, RecipeCapability<T> capability) {
@@ -48,11 +49,11 @@ public class MEPatternBufferProxyRecipeHandler<T> extends NotifiableMERecipeHand
     }
 
     @Override
-    public Object2LongMap<?> getCustomSlotsStackMap(List<Integer> slots) {
+    public Object2LongMap<S> getCustomSlotsStackMap(List<Integer> slots) {
         if (handler != null) {
             return handler.getCustomSlotsStackMap(slots);
         }
-        return Object2LongMaps.EMPTY_MAP;
+        return Object2LongMaps.emptyMap();
     }
 
     @Override

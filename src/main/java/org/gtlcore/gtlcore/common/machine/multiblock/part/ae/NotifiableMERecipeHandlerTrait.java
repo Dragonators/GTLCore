@@ -11,8 +11,9 @@ import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 import java.util.List;
+import java.util.function.Predicate;
 
-public abstract class NotifiableMERecipeHandlerTrait<T> extends MachineTrait implements IMERecipeHandlerTrait<T> {
+public abstract class NotifiableMERecipeHandlerTrait<T extends Predicate<S>, S> extends MachineTrait implements IMERecipeHandlerTrait<T, S> {
 
     public static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(NotifiableMERecipeHandlerTrait.class);
     protected List<Runnable> listeners = new ObjectArrayList<>();
