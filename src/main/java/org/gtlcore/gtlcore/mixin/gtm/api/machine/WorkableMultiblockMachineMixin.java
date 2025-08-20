@@ -59,11 +59,11 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
     @Setter
     public boolean isDistinct = false;
     @Getter
-    private List<RecipeHandlePart> recipeHandleParts = new ObjectArrayList<>();
+    private final List<RecipeHandlePart> recipeHandleParts = new ObjectArrayList<>();
     @Getter
-    private List<MERecipeHandlePart> mERecipeHandleParts = new ObjectArrayList<>();
+    private final List<MERecipeHandlePart> mERecipeHandleParts = new ObjectArrayList<>();
     @Getter
-    private Map<GTRecipe, IRecipeHandlePart> recipeHandleMap = new Object2ObjectOpenHashMap<>();
+    private final Map<GTRecipe, IRecipeHandlePart> recipeHandleMap = new Object2ObjectOpenHashMap<>();
     @Getter
     protected Map<IO, List<RecipeHandlePart>> capabilities = new EnumMap<>(IO.class);
     @Getter
@@ -132,7 +132,7 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
 
         // ME Traits
         for (MachineTrait trait : this.getTraits()) {
-            if (trait instanceof IMERecipeHandlerTrait<?> meHandlerTrait) {
+            if (trait instanceof IMERecipeHandlerTrait<?, ?> meHandlerTrait) {
                 traitSubscriptions.add(meHandlerTrait.addChangedListener(recipeLogic::updateTickSubscription));
             }
         }
@@ -151,7 +151,7 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
                     MEOutPutHatch = true;
                 } else if (part instanceof IMEPatternPartMachine mePart) {
                     var meHandlers = mePart.getMERecipeHandlerTraits();
-                    for (IMERecipeHandlerTrait<?> meHandlerTrait : meHandlers) {
+                    for (IMERecipeHandlerTrait<?, ?> meHandlerTrait : meHandlers) {
                         traitSubscriptions.add(meHandlerTrait.addChangedListener(recipeLogic::updateTickSubscription));
                     }
                     var me = MERecipeHandlePart.of(mePart);

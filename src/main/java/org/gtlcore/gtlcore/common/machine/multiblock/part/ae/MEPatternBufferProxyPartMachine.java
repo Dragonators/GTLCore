@@ -19,6 +19,7 @@ import com.gregtechceu.gtceu.common.data.GTItems;
 import com.gregtechceu.gtceu.utils.ResearchManager;
 
 import com.lowdragmc.lowdraglib.gui.modular.ModularUI;
+import com.lowdragmc.lowdraglib.side.fluid.FluidStack;
 import com.lowdragmc.lowdraglib.syncdata.annotation.DescSynced;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
@@ -49,10 +50,10 @@ public class MEPatternBufferProxyPartMachine extends TieredIOPartMachine impleme
             MEPatternBufferProxyPartMachine.class, TieredIOPartMachine.MANAGED_FIELD_HOLDER);
 
     @Getter
-    protected MEPatternBufferProxyRecipeHandler<Ingredient> itemProxyHandler;
+    protected MEPatternBufferProxyRecipeHandler<Ingredient, ItemStack> itemProxyHandler;
 
     @Getter
-    protected MEPatternBufferProxyRecipeHandler<FluidIngredient> fluidProxyHandler;
+    protected MEPatternBufferProxyRecipeHandler<FluidIngredient, FluidStack> fluidProxyHandler;
 
     @Persisted
     @Getter
@@ -88,8 +89,8 @@ public class MEPatternBufferProxyPartMachine extends TieredIOPartMachine impleme
             machine.addProxy(this);
             if (!isRemote()) {
                 var map = machine.getMERecipeHandlerMap();
-                itemProxyHandler.setHandler((IMERecipeHandlerTrait<Ingredient>) map.get(ItemRecipeCapability.CAP));
-                fluidProxyHandler.setHandler((IMERecipeHandlerTrait<FluidIngredient>) map.get(FluidRecipeCapability.CAP));
+                itemProxyHandler.setHandler((IMERecipeHandlerTrait<Ingredient, ItemStack>) map.get(ItemRecipeCapability.CAP));
+                fluidProxyHandler.setHandler((IMERecipeHandlerTrait<FluidIngredient, FluidStack>) map.get(FluidRecipeCapability.CAP));
             }
         } else {
             buffer = null;
@@ -120,6 +121,7 @@ public class MEPatternBufferProxyPartMachine extends TieredIOPartMachine impleme
     }
 
     @Override
+    @NotNull
     public ManagedFieldHolder getFieldHolder() {
         return MANAGED_FIELD_HOLDER;
     }
@@ -188,7 +190,7 @@ public class MEPatternBufferProxyPartMachine extends TieredIOPartMachine impleme
     }
 
     @Override
-    public List<IMERecipeHandlerTrait<?>> getMERecipeHandlerTraits() {
+    public Iterable<IMERecipeHandlerTrait<?, ?>> getMERecipeHandlerTraits() {
         return List.of(itemProxyHandler, fluidProxyHandler);
     }
 

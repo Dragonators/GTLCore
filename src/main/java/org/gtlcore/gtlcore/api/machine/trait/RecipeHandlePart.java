@@ -14,6 +14,7 @@ import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+import java.util.function.Predicate;
 
 public class RecipeHandlePart implements IRecipeHandlePart {
 
@@ -45,14 +46,9 @@ public class RecipeHandlePart implements IRecipeHandlePart {
         return rhl;
     }
 
-    public Object2LongOpenHashMap<?> getContent(RecipeCapability<?> cap) {
-        if (cap == ItemRecipeCapability.CAP) {
-            itemContent = (Object2LongOpenHashMap<ItemStack>) this.initializeContent(cap);
-            return itemContent;
-        } else {
-            fluidContent = (Object2LongOpenHashMap<FluidStack>) this.initializeContent(cap);
-            return fluidContent;
-        }
+    @SuppressWarnings("unchecked")
+    public <T extends Predicate<S>, S> Object2LongMap<S> getContent(RecipeCapability<T> cap) {
+        return (Object2LongMap<S>) this.initializeContent(cap);
     }
 
     public Object2LongOpenHashMap<?> initializeContent(RecipeCapability<?> cap) {

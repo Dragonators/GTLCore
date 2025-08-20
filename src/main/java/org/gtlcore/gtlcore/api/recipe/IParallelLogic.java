@@ -115,29 +115,29 @@ public interface IParallelLogic {
             var handle = machine.getRecipeHandleMap().get(recipe);
             if (handle instanceof MERecipeHandlePart meRecipeHandlePart) {
                 // ME handler
-                for (var it = Object2LongMaps.fastIterator(meRecipeHandlePart.<ItemStack>getMEContent(ItemRecipeCapability.CAP, List.of(meRecipeHandlePart.getSlotMap().get(recipe)))); it.hasNext();) {
+                for (var it = Object2LongMaps.fastIterator(meRecipeHandlePart.getMEContent(ItemRecipeCapability.CAP, List.of(meRecipeHandlePart.getSlotMap().get(recipe)))); it.hasNext();) {
                     var entry = it.next();
                     ingredientStacks.addTo(entry.getKey(), entry.getLongValue());
                 }
             } else if (handle != null) {
                 for (var it = Object2LongMaps.fastIterator(handle.getContent(ItemRecipeCapability.CAP)); it.hasNext();) {
                     var entry = it.next();
-                    ingredientStacks.computeLong((ItemStack) entry.getKey(), (k, v) -> v == null ? entry.getLongValue() : v + entry.getLongValue());
+                    ingredientStacks.computeLong(entry.getKey(), (k, v) -> v == null ? entry.getLongValue() : v + entry.getLongValue());
                 }
             } else {
                 Object2LongOpenCustomHashMap<ItemStack> map = new Object2LongOpenCustomHashMap<>(ItemStackHashStrategy.comparingAllButCount());
                 // ME handlers, All Active Slots
                 for (MERecipeHandlePart part : machine.getMERecipeHandleParts()) {
-                    for (var it = Object2LongMaps.fastIterator(part.<ItemStack>getMEContent(ItemRecipeCapability.CAP)); it.hasNext();) {
+                    for (var it = Object2LongMaps.fastIterator(part.getMEContent(ItemRecipeCapability.CAP)); it.hasNext();) {
                         var entry = it.next();
                         map.addTo(entry.getKey(), entry.getLongValue());
                     }
                 }
                 // other handlers
                 for (var it : machine.getCapabilities().getOrDefault(IO.IN, Collections.emptyList())) {
-                    for (var obj = it.getContent(ItemRecipeCapability.CAP).object2LongEntrySet().fastIterator(); obj.hasNext();) {
+                    for (var obj = Object2LongMaps.fastIterator(it.getContent(ItemRecipeCapability.CAP)); obj.hasNext();) {
                         var entry = obj.next();
-                        map.computeLong((ItemStack) entry.getKey(), (k, v) -> v == null ? entry.getLongValue() : v + entry.getLongValue());
+                        map.computeLong(entry.getKey(), (k, v) -> v == null ? entry.getLongValue() : v + entry.getLongValue());
                     }
                 }
                 for (var obj : map.object2LongEntrySet()) {
@@ -165,14 +165,14 @@ public interface IParallelLogic {
             var recipeHandle = machine.getRecipeHandleMap().get(recipe);
             if (recipeHandle instanceof MERecipeHandlePart merecipeHandlePart) {
                 // ME handler
-                for (var it = Object2LongMaps.fastIterator(merecipeHandlePart.<FluidStack>getMEContent(FluidRecipeCapability.CAP, List.of(merecipeHandlePart.getSlotMap().get(recipe)))); it.hasNext();) {
+                for (var it = Object2LongMaps.fastIterator(merecipeHandlePart.getMEContent(FluidRecipeCapability.CAP, List.of(merecipeHandlePart.getSlotMap().get(recipe)))); it.hasNext();) {
                     var entry = it.next();
                     ingredientStacks.addTo(entry.getKey(), entry.getLongValue());
                 }
             } else if (recipeHandle != null && machine.isDistinct()) {
                 for (var it = Object2LongMaps.fastIterator(recipeHandle.getContent(FluidRecipeCapability.CAP)); it.hasNext();) {
                     var entry = it.next();
-                    ingredientStacks.computeLong((FluidStack) entry.getKey(), (k, v) -> v == null ? entry.getLongValue() : v + entry.getLongValue());
+                    ingredientStacks.computeLong(entry.getKey(), (k, v) -> v == null ? entry.getLongValue() : v + entry.getLongValue());
                 }
             } else {
                 for (var container : machine.getCapabilitiesFlat(IO.IN, FluidRecipeCapability.CAP)) {

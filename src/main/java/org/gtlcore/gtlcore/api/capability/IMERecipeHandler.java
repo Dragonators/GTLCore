@@ -8,6 +8,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.objects.*;
 
 import java.util.*;
+import java.util.function.Predicate;
 
 /**
  * @author Dragonators
@@ -17,7 +18,7 @@ import java.util.*;
  *
  * @param <T> Ingredient/FluidIngredient
  */
-public interface IMERecipeHandler<T> extends IFilteredHandler<T> {
+public interface IMERecipeHandler<T extends Predicate<S>, S> extends IFilteredHandler<T> {
 
     /**
      * @return ItemCAP/FluidCAP
@@ -55,7 +56,7 @@ public interface IMERecipeHandler<T> extends IFilteredHandler<T> {
      * @param slots 要查询的slot列表
      * @return 内容到数量的映射
      */
-    Object2LongMap<?> getCustomSlotsStackMap(List<Integer> slots);
+    Object2LongMap<S> getCustomSlotsStackMap(List<Integer> slots);
 
     /**
      * 获取单个slot中所有与handler对应内容 -> amount的映射
@@ -63,7 +64,7 @@ public interface IMERecipeHandler<T> extends IFilteredHandler<T> {
      * @param slot 要查询的slot
      * @return 内容到数量的映射
      */
-    default Object2LongMap<?> getSingleSlotStackMap(int slot) {
+    default Object2LongMap<S> getSingleSlotStackMap(int slot) {
         return getCustomSlotsStackMap(Collections.singletonList(slot));
     }
 
