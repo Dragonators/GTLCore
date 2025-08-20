@@ -232,13 +232,10 @@ public class GTLRecipeModifiers {
     private static FluidAmounts countFluidInMERecipeHandlePart(MERecipeHandlePart merhp, GTRecipe recipe, Fluid fluid1, Fluid fluid2) {
         long a = 0, b = 0;
         int slotIndex = merhp.getSlotMap().get(recipe);
-        var inventory = merhp.<FluidStack>getMEContent(FluidRecipeCapability.CAP, List.of(slotIndex));
-        if (inventory != null) {
-            for (var it = Object2LongMaps.fastIterator(inventory); it.hasNext();) {
-                var entry = it.next();
-                if (fluid1 == entry.getKey().getFluid()) a += entry.getLongValue();
-                if (fluid2 == entry.getKey().getFluid()) b += entry.getLongValue();
-            }
+        for (var it = Object2LongMaps.fastIterator(merhp.<FluidStack>getMEContent(FluidRecipeCapability.CAP, List.of(slotIndex))); it.hasNext();) {
+            var entry = it.next();
+            if (fluid1 == entry.getKey().getFluid()) a += entry.getLongValue();
+            if (fluid2 == entry.getKey().getFluid()) b += entry.getLongValue();
         }
         return new FluidAmounts(a, b);
     }
