@@ -38,16 +38,13 @@ public class RecipeIteratorMixin implements IAdditionalRecipeIterator {
     Predicate<GTRecipe> canHandle;
 
     @Unique
-    Predicate<GTRecipe> additionalCanHandle;
-
-    @Unique
-    private List<@NotNull GTRecipe> gtlcore$additionalRecipes = null;
+    private List<GTRecipe> gtlcore$additionalRecipes = null;
 
     @Unique
     private Iterator<GTRecipe> gtlcore$presentIndexGTRecipesIterator = null;
 
     @Unique
-    private int gtlcore$additionalIndex = 0;
+    private Iterator<GTRecipe> gtlcore$additionalIterator = null;
 
     @Unique
     private boolean gtlcore$useOriginal = true;
@@ -85,8 +82,8 @@ public class RecipeIteratorMixin implements IAdditionalRecipeIterator {
             gtlcore$useOriginal = false;
         }
 
-        // 检查额外配方，使用index遍历并应用canHandle测试
-        return gtlcore$hasValidAdditionalRecipe();
+        // 检查额外配方
+        return gtlcore$additionalIterator != null && gtlcore$additionalIterator.hasNext();
     }
 
     /**
@@ -112,7 +109,7 @@ public class RecipeIteratorMixin implements IAdditionalRecipeIterator {
             // dive模式：使用迭代器
             return gtlcore$presentIndexGTRecipesIterator.next();
         } else {
-            return gtlcore$getNextValidAdditionalRecipe();
+            return gtlcore$additionalIterator.next();
         }
     }
 
@@ -126,25 +123,21 @@ public class RecipeIteratorMixin implements IAdditionalRecipeIterator {
         this.gtlcore$singleRecipe = null;
         this.gtlcore$useOriginal = true;
         this.gtlcore$presentIndexGTRecipesIterator = null;
-        this.gtlcore$additionalIndex = 0;
+
+        if (gtlcore$additionalRecipes != null) {
+            this.gtlcore$additionalIterator = gtlcore$additionalRecipes.iterator();
+        } else {
+            this.gtlcore$additionalIterator = null;
+        }
     }
 
     @Override
     public void setAdditionalRecipes(@NotNull List<@NotNull GTRecipe> additionalRecipes) {
         if (!additionalRecipes.isEmpty()) {
             this.gtlcore$additionalRecipes = additionalRecipes;
-            this.gtlcore$additionalIndex = 0;
+            this.gtlcore$additionalIterator = additionalRecipes.iterator();
             this.gtlcore$useOriginal = true;
         }
-    }
-
-    public void setAdditionalRecipesCanHandle(@NotNull Predicate<GTRecipe> canHandle) {
-        additionalCanHandle = canHandle;
-    }
-
-    @Override
-    public boolean hasAdditionalRecipes() {
-        return gtlcore$additionalRecipes != null;
     }
 
     @Override
@@ -194,35 +187,5 @@ public class RecipeIteratorMixin implements IAdditionalRecipeIterator {
 
         gtlcore$presentIndexGTRecipesIterator = null;
         return false;
-    }
-
-    @Unique
-    private boolean gtlcore$hasValidAdditionalRecipe() {
-        if (gtlcore$additionalRecipes == null) return false;
-
-        while (gtlcore$additionalIndex < gtlcore$additionalRecipes.size()) {
-            GTRecipe recipe = gtlcore$additionalRecipes.get(gtlcore$additionalIndex);
-            if (canHandle.test(recipe) && (additionalCanHandle == null || additionalCanHandle.test(recipe))) {
-                return true;
-            }
-            gtlcore$additionalIndex++;
-        }
-        return false;
-    }
-
-    @Unique
-    private GTRecipe gtlcore$getNextValidAdditionalRecipe() {
-        if (gtlcore$additionalRecipes == null) {
-            throw new NoSuchElementException();
-        }
-
-        while (gtlcore$additionalIndex < gtlcore$additionalRecipes.size()) {
-            GTRecipe recipe = gtlcore$additionalRecipes.get(gtlcore$additionalIndex);
-            gtlcore$additionalIndex++;
-            if (canHandle.test(recipe) && (additionalCanHandle == null || additionalCanHandle.test(recipe))) {
-                return recipe;
-            }
-        }
-        throw new NoSuchElementException();
     }
 }
