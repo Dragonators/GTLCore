@@ -62,7 +62,6 @@
     "gtm.api.machine.MultiblockStateMixin",
     "gtm.api.machine.RecipeLogicMixin",
     "gtm.api.machine.WorkableMultiblockMachineMixin",
-    "gtm.api.recipe.GTRecipeLookupAccessor",
     "gtm.api.recipe.GTRecipeLookupMixin",
     "gtm.api.recipe.GTRecipeMixin",
     "gtm.api.recipe.ParallelLogicMixin",

@@ -743,7 +743,7 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
 
         public boolean isActive(RecipeCapability<?> recipeCapability) {
             if (recipeCapability == ItemRecipeCapability.CAP) {
-                return hasPatternArray[slotIndex] && (!itemInventory.isEmpty() || !(cacheManager.getCircuitCache() < 0) || !shareInventory.isEmpty());
+                return hasPatternArray[slotIndex] && (!itemInventory.isEmpty() || !shareInventory.isEmpty() || !circuitHandler.getCircuitForRecipe(cacheManager.getCircuitStack()).isEmpty());
             } else {
                 return hasPatternArray[slotIndex] && (!fluidInventory.isEmpty() || !shareTank.isEmpty());
             }
