@@ -33,9 +33,9 @@ public class MEPatternBufferProxyRecipeHandler<T extends Predicate<S>, S> extend
     }
 
     @Override
-    public List<Integer> getActiveSlots(RecipeCapability<?> recipeCapability) {
+    public List<Integer> getActiveSlots() {
         if (handler != null) {
-            return handler.getActiveSlots(recipeCapability);
+            return handler.getActiveSlots();
         }
         return Collections.emptyList();
     }
