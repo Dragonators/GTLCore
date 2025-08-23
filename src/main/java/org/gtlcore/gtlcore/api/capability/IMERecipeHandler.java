@@ -29,12 +29,11 @@ public interface IMERecipeHandler<T extends Predicate<S>, S> extends IFilteredHa
 
     /**
      * 获取激活的slot列表
-     * 意味着该slot拥有样板且样板包含CAP
+     * 意味着该slot拥有样板且样板包含对应CAP
      *
-     * @param cap 配方能力类型
      * @return 激活的slot index[]
      */
-    List<Integer> getActiveSlots(RecipeCapability<?> cap);
+    List<Integer> getActiveSlots();
 
     // ==================== Content Management ====================
 

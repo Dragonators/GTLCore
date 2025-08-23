@@ -131,8 +131,8 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
         }
 
         @Override
-        public List<Integer> getActiveSlots(RecipeCapability<?> recipeCapability) {
-            return MEPatternBufferRecipeHandlerTrait.this.getActiveSlots(getMachine().getInternalInventory(), recipeCapability);
+        public List<Integer> getActiveSlots() {
+            return MEPatternBufferRecipeHandlerTrait.this.getActiveSlots(getMachine().getInternalInventory(), ItemRecipeCapability.CAP);
         }
 
         private List<Integer> getActiveAndUnCachedSlots() {
@@ -179,6 +179,9 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
 
         @Override
         public void prepareMEHandleContents(GTRecipe recipe, List<Ingredient> left, boolean simulate) {
+            if (simulate) {
+
+            }
             // 处理总成配置的电路
             getMachine().getMePatternCircuitInventory().handleRecipeInner(IO.IN, recipe, left, null, simulate);
 
@@ -220,8 +223,8 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
         }
 
         @Override
-        public List<Integer> getActiveSlots(RecipeCapability<?> recipeCapability) {
-            return MEPatternBufferRecipeHandlerTrait.this.getActiveSlots(getMachine().getInternalInventory(), recipeCapability);
+        public List<Integer> getActiveSlots() {
+            return MEPatternBufferRecipeHandlerTrait.this.getActiveSlots(getMachine().getInternalInventory(), FluidRecipeCapability.CAP);
         }
 
         private List<Integer> getActiveAndUnCachedSlots() {

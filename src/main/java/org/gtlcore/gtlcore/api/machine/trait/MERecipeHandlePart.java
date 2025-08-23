@@ -13,6 +13,7 @@ import it.unimi.dsi.fastutil.objects.*;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
+import java.sql.Array;
 import java.util.*;
 import java.util.function.Predicate;
 
@@ -43,7 +44,7 @@ public class MERecipeHandlePart implements IRecipeHandlePart {
 
     @NotNull
     public <T extends Predicate<S>, S> Object2LongMap<S> getMEContent(RecipeCapability<T> cap) {
-        return getMEContent(cap, this.getMECapability(cap).getActiveSlots(cap));
+        return getMEContent(cap, this.getMECapability(cap).getActiveSlots());
     }
 
     @NotNull
@@ -69,7 +70,7 @@ public class MERecipeHandlePart implements IRecipeHandlePart {
 
         // Array for 1-2 handler
         IMERecipeHandler<?, ?>[] handlers = new IMERecipeHandler[contents.size()];
-        List<Object>[] contentArrays = new List[contents.size()];
+        List[] contentArrays = new List[contents.size()];
         int handlerCount = 0;
 
         // 单次遍历收集handlers和contents
@@ -84,8 +85,7 @@ public class MERecipeHandlePart implements IRecipeHandlePart {
         // 求取所有meHandler的activeSlots交集
         var intersectionSlots = new IntOpenHashSet();
         for (int i = 0; i < handlerCount; i++) {
-            var activeSlots = handlers[i].getActiveSlots(
-                    Reference2ObjectMaps.fastIterator(contents).next().getKey());
+            var activeSlots = handlers[i].getActiveSlots();
 
             if (activeSlots.isEmpty()) return -1;
 
