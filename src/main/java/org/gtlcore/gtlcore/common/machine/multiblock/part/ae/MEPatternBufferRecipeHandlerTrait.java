@@ -7,6 +7,7 @@ import com.gregtechceu.gtceu.api.machine.trait.MachineTrait;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.ingredient.FluidIngredient;
 import com.gregtechceu.gtceu.common.data.GTItems;
+import com.gregtechceu.gtceu.common.item.IntCircuitBehaviour;
 
 import com.lowdragmc.lowdraglib.side.fluid.FluidStack;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
@@ -25,6 +26,7 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -72,16 +74,22 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
         return map;
     }
 
-    public boolean handleItemInner(Object2LongMap<Ingredient> left, boolean simulate, int trySlot) {
+    private boolean handleItemInner(GTRecipe recipe, Object2LongMap<Ingredient> left, int circuit, boolean simulate, int trySlot) {
         var internalSlot = getMachine().getInternalInventory()[trySlot];
         if (internalSlot.isActive(ItemRecipeCapability.CAP)) {
-            return internalSlot.handleItemInternal(left, simulate);
+            if (simulate) {
+                if (!internalSlot.testCatalystItemInternal(recipe)) return false;
+            }
+            return internalSlot.handleItemInternal(left, circuit, simulate);
         } else return false;
     }
 
-    public boolean handleFluidInner(Object2LongMap<FluidIngredient> left, boolean simulate, int trySlot) {
+    private boolean handleFluidInner(GTRecipe recipe, Object2LongMap<FluidIngredient> left, boolean simulate, int trySlot) {
         var internalSlot = getMachine().getInternalInventory()[trySlot];
         if (internalSlot.isActive(FluidRecipeCapability.CAP)) {
+            if (simulate) {
+                if (!internalSlot.testCatalystFluidInternal(recipe)) return false;
+            }
             return internalSlot.handleFluidInternal(left, simulate);
         } else return false;
     }
@@ -106,6 +114,9 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
         @Getter
         @Setter
         private Object2LongMap<Ingredient> preparedMEHandleContents = new Object2LongOpenHashMap<>();
+
+        @Setter
+        private int preparedCircuitConfig = -1;
 
         public MEItemInputHandler(MEPatternBufferPartMachine machine) {
             super(machine);
@@ -174,22 +185,23 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
 
         @Override
         public boolean meHandleRecipeInner(GTRecipe recipe, Object2LongMap<Ingredient> left, boolean simulate, int trySlot) {
-            return handleItemInner(left, simulate, trySlot);
+            return handleItemInner(recipe, left, preparedCircuitConfig, simulate, trySlot);
         }
 
         @Override
         public void prepareMEHandleContents(GTRecipe recipe, List<Ingredient> left, boolean simulate) {
             if (simulate) {
+                // 处理总成配置的电路
+                getMachine().getMePatternCircuitInventory().handleRecipeInner(IO.IN, recipe, left, null, true);
 
+                // 处理共享库存
+                getMachine().getShareInventory().handleRecipeInner(IO.IN, recipe, left, null, true);
+
+                // simulate时left会包含Circuit
+                setPreparedMEHandleContents(ingredientsToAEKeyMapWithOutCircuit(left, this::setPreparedCircuitConfig));
+            } else {
+                setPreparedMEHandleContents(ingredientsToAEKeyMap(left));
             }
-            // 处理总成配置的电路
-            getMachine().getMePatternCircuitInventory().handleRecipeInner(IO.IN, recipe, left, null, simulate);
-
-            // 处理共享库存
-            getMachine().getShareInventory().handleRecipeInner(IO.IN, recipe, left, null, simulate);
-
-            // 电路需要每个Slot单独处理
-            setPreparedMEHandleContents(ingredientsToAEKeyMap(left));
         }
     }
 
@@ -259,7 +271,7 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
 
         @Override
         public boolean meHandleRecipeInner(GTRecipe recipe, Object2LongMap<FluidIngredient> left, boolean simulate, int trySlot) {
-            return handleFluidInner(left, simulate, trySlot);
+            return handleFluidInner(recipe, left, simulate, trySlot);
         }
 
         @Override
@@ -274,11 +286,11 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
         Object2LongOpenHashMap<Item> items = new Object2LongOpenHashMap<>();
         Object2LongOpenHashMap<Fluid> fluids = new Object2LongOpenHashMap<>();
         for (var internalSlot : Arrays.stream(internalSlots).filter(MEPatternBufferPartMachine.InternalSlot::isActive).toList()) {
-            for (var it = internalSlot.getItemInventory().object2LongEntrySet().fastIterator(); it.hasNext();) {
+            for (var it = Object2LongMaps.fastIterator(internalSlot.getItemInventory()); it.hasNext();) {
                 var entry = it.next();
                 items.addTo(entry.getKey().getItem(), entry.getLongValue());
             }
-            for (var it = internalSlot.getFluidInventory().object2LongEntrySet().fastIterator(); it.hasNext();) {
+            for (var it = Object2LongMaps.fastIterator(internalSlot.getFluidInventory()); it.hasNext();) {
                 var entry = it.next();
                 fluids.addTo(entry.getKey().getFluid(), entry.getLongValue());
             }
@@ -286,15 +298,28 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
         return new ImmutablePair<>(items, fluids);
     }
 
-    private static Object2LongMap<Ingredient> ingredientsToAEKeyMap(List<Ingredient> ingredients) {
+    private static Object2LongMap<Ingredient> ingredientsToAEKeyMapWithOutCircuit(List<Ingredient> ingredients, Consumer<Integer> consumer) {
         var result = new Object2LongOpenHashMap<Ingredient>();
+        consumer.accept(-1);
         for (Ingredient ingredient : ingredients) {
             var items = ingredient.getItems();
             if (items.length == 0 || items[0].isEmpty()) {
                 continue;
             }
             if (GTItems.INTEGRATED_CIRCUIT.is(items[0].getItem())) {
-                result.addTo(ingredient, 1);
+                consumer.accept(IntCircuitBehaviour.getCircuitConfiguration(items[0]));
+                continue;
+            }
+            result.addTo(ingredient, items[0].getCount());
+        }
+        return result;
+    }
+
+    private static Object2LongMap<Ingredient> ingredientsToAEKeyMap(List<Ingredient> ingredients) {
+        var result = new Object2LongOpenHashMap<Ingredient>();
+        for (Ingredient ingredient : ingredients) {
+            var items = ingredient.getItems();
+            if (items.length == 0 || items[0].isEmpty()) {
                 continue;
             }
             result.addTo(ingredient, items[0].getCount());

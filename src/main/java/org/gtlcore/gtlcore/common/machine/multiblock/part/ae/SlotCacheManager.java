@@ -50,20 +50,18 @@ public class SlotCacheManager implements ITagSerializable<CompoundTag> {
      * @param needAmount 需要的数量
      * @return 最佳匹配的AEItemKey，如果没有足够库存则返回null
      */
-    public ItemMatchResult getBestItemMatch(Ingredient ingredient, Object2LongMap<AEItemKey> inventory, long needAmount) {
+    public AEItemKey getBestItemMatch(Ingredient ingredient, Object2LongMap<AEItemKey> inventory, long needAmount) {
         AEItemKey cached = itemBestMatchCache.get(ingredient);
 
-        if (cached != null) {
-            if (IntCircuitBehaviour.getCircuitConfiguration(cached.toStack()) == circuitCache) {
-                return new ItemMatchResult(cached, true);
-            } else if (inventory.getLong(cached) >= needAmount) return new ItemMatchResult(cached, false);
+        if (cached != null && inventory.getLong(cached) >= needAmount) {
+            return cached;
         }
 
-        AEItemKey bestMatch = findBestItemMatch(ingredient, inventory, needAmount, circuitCache);
+        AEItemKey bestMatch = findBestItemMatch(ingredient, inventory, needAmount);
         if (bestMatch != null) {
             itemBestMatchCache.put(ingredient, bestMatch);
         }
-        return new ItemMatchResult(bestMatch, false);
+        return bestMatch;
     }
 
     /**
@@ -76,6 +74,7 @@ public class SlotCacheManager implements ITagSerializable<CompoundTag> {
      */
     public AEFluidKey getBestFluidMatch(FluidIngredient ingredient, Object2LongMap<AEFluidKey> inventory, long needAmount) {
         AEFluidKey cached = fluidBestMatchCache.get(ingredient);
+
         if (cached != null && inventory.getLong(cached) >= needAmount) {
             return cached;
         }
@@ -87,15 +86,11 @@ public class SlotCacheManager implements ITagSerializable<CompoundTag> {
         return bestMatch;
     }
 
-    private static AEItemKey findBestItemMatch(Ingredient ingredient, Object2LongMap<AEItemKey> inventory, long needAmount, int circuitCache) {
+    private static AEItemKey findBestItemMatch(Ingredient ingredient, Object2LongMap<AEItemKey> inventory, long needAmount) {
         var items = ingredient.getItems();
         for (var item : items) {
             if (!item.isEmpty()) {
                 AEItemKey aeKey = AEItemKey.of(item);
-
-                if (IntCircuitBehaviour.getCircuitConfiguration(item) == circuitCache) {
-                    return aeKey;
-                }
                 if (inventory.getLong(aeKey) >= needAmount) {
                     return aeKey;
                 }
@@ -110,6 +105,63 @@ public class SlotCacheManager implements ITagSerializable<CompoundTag> {
             if (!stack.isEmpty()) {
                 AEFluidKey aeKey = AEFluidKey.of(stack.getFluid());
                 if (inventory.getLong(aeKey) >= needAmount) {
+                    return aeKey;
+                }
+            }
+        }
+        return null;
+    }
+
+    // ========================================
+    // Simulate with Catalyst
+    // ========================================
+    public AEItemKey getBestItemMatchSimulate(Ingredient ingredient, Object2LongMap<AEItemKey> inventory, Object2LongMap<AEItemKey> catalystInventory, long needAmount) {
+        AEItemKey cached = itemBestMatchCache.get(ingredient);
+
+        if (cached != null && (inventory.getLong(cached) >= needAmount || catalystInventory.getLong(cached) >= needAmount)) {
+            return cached;
+        }
+
+        AEItemKey bestMatch = findBestItemMatchSimulate(ingredient, inventory, catalystInventory, needAmount);
+        if (bestMatch != null) {
+            itemBestMatchCache.put(ingredient, bestMatch);
+        }
+        return bestMatch;
+    }
+
+    public AEFluidKey getBestFluidMatchSimulate(FluidIngredient ingredient, Object2LongMap<AEFluidKey> inventory, Object2LongMap<AEFluidKey> catalystInventory, long needAmount) {
+        AEFluidKey cached = fluidBestMatchCache.get(ingredient);
+
+        if (cached != null && (inventory.getLong(cached) >= needAmount || catalystInventory.getLong(cached) >= needAmount)) {
+            return cached;
+        }
+
+        AEFluidKey bestMatch = findBestFluidMatchSimulate(ingredient, inventory, catalystInventory, needAmount);
+        if (bestMatch != null) {
+            fluidBestMatchCache.put(ingredient, bestMatch);
+        }
+        return bestMatch;
+    }
+
+    private static AEItemKey findBestItemMatchSimulate(Ingredient ingredient, Object2LongMap<AEItemKey> inventory, Object2LongMap<AEItemKey> catalystInventory, long needAmount) {
+        var items = ingredient.getItems();
+        for (var item : items) {
+            if (!item.isEmpty()) {
+                AEItemKey aeKey = AEItemKey.of(item);
+                if (inventory.getLong(aeKey) >= needAmount || catalystInventory.getLong(aeKey) >= needAmount) {
+                    return aeKey;
+                }
+            }
+        }
+        return null;
+    }
+
+    private static AEFluidKey findBestFluidMatchSimulate(FluidIngredient ingredient, Object2LongMap<AEFluidKey> inventory, Object2LongMap<AEFluidKey> catalystInventory, long needAmount) {
+        var stacks = ingredient.getStacks();
+        for (var stack : stacks) {
+            if (!stack.isEmpty()) {
+                AEFluidKey aeKey = AEFluidKey.of(stack.getFluid());
+                if (inventory.getLong(aeKey) >= needAmount || catalystInventory.getLong(aeKey) >= needAmount) {
                     return aeKey;
                 }
             }
@@ -217,6 +269,4 @@ public class SlotCacheManager implements ITagSerializable<CompoundTag> {
             return null;
         }
     }
-
-    public record ItemMatchResult(AEItemKey match, boolean isCircuit) {}
 }
