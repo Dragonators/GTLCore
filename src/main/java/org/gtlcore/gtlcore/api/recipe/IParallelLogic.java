@@ -115,7 +115,8 @@ public interface IParallelLogic {
             var handle = machine.getRecipeHandleMap().get(recipe);
             if (handle instanceof MERecipeHandlePart meRecipeHandlePart) {
                 // ME handler
-                for (var it = Object2LongMaps.fastIterator(meRecipeHandlePart.getMEContent(ItemRecipeCapability.CAP, List.of(meRecipeHandlePart.getSlotMap().get(recipe)))); it.hasNext();) {
+                for (var it = Object2LongMaps.fastIterator(meRecipeHandlePart.getMEContent(ItemRecipeCapability.CAP,
+                        Optional.ofNullable(meRecipeHandlePart.getSlotMap().get(recipe)).map(List::of).orElse(List.of()))); it.hasNext();) {
                     var entry = it.next();
                     ingredientStacks.addTo(entry.getKey(), entry.getLongValue());
                 }
@@ -165,7 +166,8 @@ public interface IParallelLogic {
             var recipeHandle = machine.getRecipeHandleMap().get(recipe);
             if (recipeHandle instanceof MERecipeHandlePart merecipeHandlePart) {
                 // ME handler
-                for (var it = Object2LongMaps.fastIterator(merecipeHandlePart.getMEContent(FluidRecipeCapability.CAP, List.of(merecipeHandlePart.getSlotMap().get(recipe)))); it.hasNext();) {
+                for (var it = Object2LongMaps.fastIterator(merecipeHandlePart.getMEContent(FluidRecipeCapability.CAP,
+                        Optional.ofNullable(merecipeHandlePart.getSlotMap().get(recipe)).map(List::of).orElse(List.of()))); it.hasNext();) {
                     var entry = it.next();
                     ingredientStacks.addTo(entry.getKey(), entry.getLongValue());
                 }
