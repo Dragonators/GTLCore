@@ -1,6 +1,7 @@
 package org.gtlcore.gtlcore.common.machine.multiblock.part.ae;
 
 import org.gtlcore.gtlcore.api.machine.trait.IMERecipeHandlerTrait;
+import org.gtlcore.gtlcore.api.recipe.ingredient.CacheHashStrategies;
 
 import com.gregtechceu.gtceu.api.capability.recipe.*;
 import com.gregtechceu.gtceu.api.machine.trait.MachineTrait;
@@ -299,7 +300,7 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
     }
 
     private static Object2LongMap<Ingredient> ingredientsToAEKeyMapWithOutCircuit(List<Ingredient> ingredients, Consumer<Integer> consumer) {
-        var result = new Object2LongOpenHashMap<Ingredient>();
+        var result = new Object2LongOpenCustomHashMap<>(CacheHashStrategies.IngredientHashStrategy.INSTANCE);
         consumer.accept(-1);
         for (Ingredient ingredient : ingredients) {
             var items = ingredient.getItems();
@@ -316,7 +317,7 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
     }
 
     private static Object2LongMap<Ingredient> ingredientsToAEKeyMap(List<Ingredient> ingredients) {
-        var result = new Object2LongOpenHashMap<Ingredient>();
+        var result = new Object2LongOpenCustomHashMap<>(CacheHashStrategies.IngredientHashStrategy.INSTANCE);
         for (Ingredient ingredient : ingredients) {
             var items = ingredient.getItems();
             if (items.length == 0 || items[0].isEmpty()) {
@@ -328,7 +329,7 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
     }
 
     private static Object2LongMap<FluidIngredient> fluidIngredientsToAEKeyMap(List<FluidIngredient> ingredients) {
-        var result = new Object2LongOpenHashMap<FluidIngredient>(ingredients.size());
+        var result = new Object2LongOpenCustomHashMap<>(CacheHashStrategies.FluidIngredientHashStrategy.INSTANCE);
         for (FluidIngredient ingredient : ingredients) {
             if (ingredient.isEmpty()) continue;
             result.addTo(ingredient, ingredient.getAmount());
