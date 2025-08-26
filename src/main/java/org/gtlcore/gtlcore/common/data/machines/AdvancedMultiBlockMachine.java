@@ -1384,7 +1384,7 @@ public class AdvancedMultiBlockMachine {
             .recipeType(GTLRecipeTypes.NANO_FORGE_RECIPES)
             .tooltips(Component.translatable("gtceu.machine.nano_forge.tooltip.0"))
             .tooltips(Component.translatable("gtceu.machine.nano_forge_1.tooltip.0"))
-            .tooltips(Component.translatable("gtceu.multiblock.laser.tooltip"))
+            .tooltips(Component.translatable("gtceu.multiblock.only.laser.tooltip"))
             .tooltips(Component.translatable("gtceu.machine.available_recipe_map_1.tooltip",
                     Component.translatable("gtceu.nano_forge")))
             .tooltipBuilder(GTLMachines.GTL_ADD)
@@ -1429,7 +1429,7 @@ public class AdvancedMultiBlockMachine {
             .tooltips(Component.translatable("gtceu.machine.nano_forge.tooltip.0"))
             .tooltips(Component.translatable("gtceu.machine.nano_forge_2.tooltip.0"))
             .tooltips(Component.translatable("gtceu.machine.nano_forge_2.tooltip.1"))
-            .tooltips(Component.translatable("gtceu.multiblock.laser.tooltip"))
+            .tooltips(Component.translatable("gtceu.multiblock.only.laser.tooltip"))
             .tooltips(Component.translatable("gtceu.machine.available_recipe_map_1.tooltip",
                     Component.translatable("gtceu.nano_forge")))
             .tooltipBuilder(GTLMachines.GTL_ADD)
@@ -1479,7 +1479,7 @@ public class AdvancedMultiBlockMachine {
             .tooltips(Component.translatable("gtceu.machine.nano_forge_3.tooltip.0"))
             .tooltips(Component.translatable("gtceu.machine.nano_forge_3.tooltip.1"))
             .tooltips(Component.translatable("gtceu.machine.nano_forge_3.tooltip.2"))
-            .tooltips(Component.translatable("gtceu.multiblock.laser.tooltip"))
+            .tooltips(Component.translatable("gtceu.multiblock.only.laser.tooltip"))
             .tooltips(Component.translatable("gtceu.machine.available_recipe_map_1.tooltip",
                     Component.translatable("gtceu.nano_forge")))
             .tooltipBuilder(GTLMachines.GTL_ADD)

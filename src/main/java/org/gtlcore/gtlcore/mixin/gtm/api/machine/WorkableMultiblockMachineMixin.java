@@ -151,7 +151,7 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
                     MEOutPutHatch = true;
                 } else if (part instanceof IMEPatternPartMachine mePart) {
                     var meHandlers = mePart.getMERecipeHandlerTraits();
-                    for (IMERecipeHandlerTrait<?, ?> meHandlerTrait : meHandlers) {
+                    for (var meHandlerTrait : meHandlers) {
                         traitSubscriptions.add(meHandlerTrait.addChangedListener(recipeLogic::updateTickSubscription));
                     }
                     var me = MERecipeHandlePart.of(mePart);

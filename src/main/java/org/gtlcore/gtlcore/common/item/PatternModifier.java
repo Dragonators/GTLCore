@@ -32,7 +32,6 @@ import appeng.api.inventories.InternalInventory;
 import appeng.api.parts.IPart;
 import appeng.blockentity.networking.CableBusBlockEntity;
 import appeng.helpers.patternprovider.PatternProviderLogicHost;
-import appeng.parts.crafting.PatternProviderPart;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import lombok.Setter;
 
@@ -124,13 +123,16 @@ public class PatternModifier implements IItemUIFactory {
                     // 计算具体点击位置
                     Vec3 hitInBlock = new Vec3(hitVec.x - (double) pos.getX(), hitVec.y - (double) pos.getY(), hitVec.z - (double) pos.getZ());
                     IPart part = cable.getCableBus().selectPartLocal(hitInBlock).part;
-                    internalInventory = (part instanceof PatternProviderPart providerPart) ?
+                    internalInventory = (part instanceof PatternProviderLogicHost providerPart) ?
                             providerPart.getLogic().getPatternInv() : null;
+
                 } else if (tile instanceof PatternProviderLogicHost providerBlock) {
                     internalInventory = providerBlock.getLogic().getPatternInv();
                 } else if (tile instanceof MetaMachineBlockEntity mmbe && mmbe.getMetaMachine() instanceof MEPatternBufferPartMachine me) {
                     internalInventory = me.getTerminalPatternInventory();
-                } else internalInventory = null;
+                } else {
+                    internalInventory = null;
+                }
 
                 if (internalInventory == null) {
                     serverPlayer.displayClientMessage(Component.literal("只能对着样板供应器使用")
