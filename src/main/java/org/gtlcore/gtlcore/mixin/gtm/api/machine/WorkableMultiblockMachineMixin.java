@@ -63,6 +63,8 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
     @Getter
     private final List<MERecipeHandlePart> mERecipeHandleParts = new ObjectArrayList<>();
     @Getter
+    private final List<MERecipeHandlePart> mERecipeOutputHandleParts = new ObjectArrayList<>();
+    @Getter
     private final Map<GTRecipe, IRecipeHandlePart> recipeHandleMap = new Object2ObjectOpenHashMap<>();
     @Getter
     protected Map<IO, List<RecipeHandlePart>> capabilities = new EnumMap<>(IO.class);
@@ -87,9 +89,6 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
         MEOutPutBus = false;
         MEOutPutHatch = false;
         MEOutPutDual = false;
-        this.capabilities.clear();
-        this.capabilitiesFlat.clear();
-        this.recipeHandleParts.clear();
     }
 
     @Inject(method = "onPartUnload", at = @At("TAIL"), remap = false)
@@ -97,9 +96,6 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
         MEOutPutBus = false;
         MEOutPutHatch = false;
         MEOutPutDual = false;
-        this.capabilities.clear();
-        this.capabilitiesFlat.clear();
-        this.recipeHandleParts.clear();
     }
 
     @Override
@@ -127,6 +123,7 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
         capabilitiesFlat.clear();
         recipeHandleParts.clear();
         mERecipeHandleParts.clear();
+        mERecipeOutputHandleParts.clear();
         recipeHandleMap.clear();
         if (!this.isFormed) return;
 
@@ -140,7 +137,16 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
         // IMultiPart
         var distinctParts = new ObjectArrayList<IRecipeHandler<?>>();
         for (IMultiPart part : this.getParts()) {
-            if (part instanceof FluidHatchPartMachine || part instanceof IDistinctPart) {
+            if (part instanceof IMEPatternPartMachine mePart) {
+                var meHandlers = mePart.getMERecipeHandlerTraits();
+                for (var meHandlerTrait : meHandlers) {
+                    traitSubscriptions.add(meHandlerTrait.addChangedListener(recipeLogic::updateTickSubscription));
+                }
+                var me = MERecipeHandlePart.of(mePart);
+                me.setMachineCache(recipeHandleMap);
+                mERecipeHandleParts.add(me);
+                if (mePart.canHandleOutput()) mERecipeOutputHandleParts.add(me);
+            } else if (part instanceof FluidHatchPartMachine || part instanceof IDistinctPart) {
                 if (part instanceof MEOutputPartMachine) {
                     MEOutPutBus = true;
                     MEOutPutHatch = true;
@@ -149,15 +155,6 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
                     MEOutPutBus = true;
                 } else if (part instanceof MEOutputHatchPartMachine) {
                     MEOutPutHatch = true;
-                } else if (part instanceof IMEPatternPartMachine mePart) {
-                    var meHandlers = mePart.getMERecipeHandlerTraits();
-                    for (var meHandlerTrait : meHandlers) {
-                        traitSubscriptions.add(meHandlerTrait.addChangedListener(recipeLogic::updateTickSubscription));
-                    }
-                    var me = MERecipeHandlePart.of(mePart);
-                    me.setMachineCache(recipeHandleMap);
-                    mERecipeHandleParts.add(me);
-                    continue;
                 }
                 List<IRecipeHandler<?>> hatch = new ObjectArrayList<>();
                 boolean isOutput = false;
@@ -186,13 +183,5 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
         for (var recipeHandle : getRecipeHandleParts()) {
             this.addHandlerList(recipeHandle);
         }
-    }
-
-    @Override
-    public boolean hasCachedRecipeAvailable() {
-        for (MERecipeHandlePart mERecipeHandlePart : mERecipeHandleParts) {
-            if (!mERecipeHandlePart.getMachine().getCachedGTRecipe().isEmpty()) return true;
-        }
-        return false;
     }
 }

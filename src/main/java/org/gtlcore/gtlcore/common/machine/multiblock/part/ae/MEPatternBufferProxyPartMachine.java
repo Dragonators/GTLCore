@@ -2,16 +2,13 @@ package org.gtlcore.gtlcore.common.machine.multiblock.part.ae;
 
 import org.gtlcore.gtlcore.api.machine.trait.*;
 
-import com.gregtechceu.gtceu.api.GTValues;
 import com.gregtechceu.gtceu.api.capability.recipe.FluidRecipeCapability;
-import com.gregtechceu.gtceu.api.capability.recipe.IO;
 import com.gregtechceu.gtceu.api.capability.recipe.ItemRecipeCapability;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.MetaMachine;
 import com.gregtechceu.gtceu.api.machine.feature.IInteractedMachine;
 import com.gregtechceu.gtceu.api.machine.feature.IMachineLife;
-import com.gregtechceu.gtceu.api.machine.feature.multiblock.IDistinctPart;
-import com.gregtechceu.gtceu.api.machine.multiblock.part.TieredIOPartMachine;
+import com.gregtechceu.gtceu.api.machine.multiblock.part.MultiblockPartMachine;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.GTRecipeType;
 import com.gregtechceu.gtceu.api.recipe.ingredient.FluidIngredient;
@@ -44,10 +41,10 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
-public class MEPatternBufferProxyPartMachine extends TieredIOPartMachine implements IMachineLife, IMEPatternPartMachine, IInteractedMachine, IDistinctPart {
+public class MEPatternBufferProxyPartMachine extends MultiblockPartMachine implements IMachineLife, IMEPatternPartMachine, IInteractedMachine {
 
     protected static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(
-            MEPatternBufferProxyPartMachine.class, TieredIOPartMachine.MANAGED_FIELD_HOLDER);
+            MEPatternBufferProxyPartMachine.class, MultiblockPartMachine.MANAGED_FIELD_HOLDER);
 
     @Getter
     protected MEPatternBufferProxyRecipeHandler<Ingredient, ItemStack> itemProxyHandler;
@@ -64,7 +61,7 @@ public class MEPatternBufferProxyPartMachine extends TieredIOPartMachine impleme
     private boolean bufferResolved = false;
 
     public MEPatternBufferProxyPartMachine(IMachineBlockEntity holder) {
-        super(holder, GTValues.LuV, IO.IN);
+        super(holder);
         this.itemProxyHandler = new MEPatternBufferProxyRecipeHandler<>(this, ItemRecipeCapability.CAP);
         this.fluidProxyHandler = new MEPatternBufferProxyRecipeHandler<>(this, FluidRecipeCapability.CAP);
     }
@@ -195,10 +192,14 @@ public class MEPatternBufferProxyPartMachine extends TieredIOPartMachine impleme
     }
 
     @Override
-    public boolean isDistinct() {
+    public boolean canHandleOutput() {
         return true;
     }
 
     @Override
-    public void setDistinct(boolean b) {}
+    public void notifySelf() {
+        if (buffer != null) {
+            buffer.notifySelf();
+        }
+    }
 }

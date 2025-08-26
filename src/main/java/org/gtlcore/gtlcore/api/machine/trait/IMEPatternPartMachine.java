@@ -19,4 +19,8 @@ public interface IMEPatternPartMachine {
     boolean hasCacheInSlot(int slot);
 
     Iterable<IMERecipeHandlerTrait<?, ?>> getMERecipeHandlerTraits();
+
+    boolean canHandleOutput();
+
+    void notifySelf();
 }
