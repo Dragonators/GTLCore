@@ -50,7 +50,9 @@ public abstract class MEPatternIOPartMachine extends MultiblockPartMachine imple
 
     @Nullable
     public IFancyUIProvider.@Nullable PageGroupingData getPageGroupingData() {
-        return new IFancyUIProvider.PageGroupingData("gtceu.multiblock.page_switcher.io.both", 3);
+        return canHandleOutput ?
+                new IFancyUIProvider.PageGroupingData("gtceu.multiblock.page_switcher.io.both", 3) :
+                new IFancyUIProvider.PageGroupingData("gtceu.multiblock.page_switcher.io.import", 1);
     }
 
     @Override
