@@ -98,6 +98,14 @@ public interface IMERecipeHandler<T extends Predicate<S>, S> extends IFilteredHa
      */
     boolean meHandleRecipeInner(GTRecipe recipe, Object2LongMap<T> preparedContents, boolean simulate, int trySlot);
 
+    /**
+     * ME输出处理的内部实现
+     * 由具体实现类提供处理逻辑
+     *
+     * @param contents 类型化的内容列表
+     */
+    boolean meHandleRecipeOutputInner(List<T> contents, boolean simulate);
+
     // ==================== Content Preparation ====================
 
     /**
@@ -118,6 +126,24 @@ public interface IMERecipeHandler<T extends Predicate<S>, S> extends IFilteredHa
         }
 
         prepareMEHandleContents(recipe, typedContents, simulate);
+    }
+
+    /**
+     * 将配方待处理内容List<?>转换为List<T>以调用实际处理
+     * 只有非simulate模式
+     *
+     * @param leftContents 待处理输出内容
+     */
+    default boolean meHandleRecipeOutput(List<?> leftContents, boolean simulate) {
+        if (leftContents.isEmpty()) return true;
+        if (simulate) return meHandleRecipeOutputInner(List.of(), true);
+
+        List<T> typedContents = new ObjectArrayList<>(leftContents.size());
+        for (Object leftObj : leftContents) {
+            typedContents.add(this.copyContent(leftObj));
+        }
+
+        return meHandleRecipeOutputInner(typedContents, simulate);
     }
 
     /**

@@ -7,6 +7,7 @@ import com.gregtechceu.gtceu.api.capability.recipe.*;
 import com.gregtechceu.gtceu.api.machine.trait.MachineTrait;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.ingredient.FluidIngredient;
+import com.gregtechceu.gtceu.api.recipe.ingredient.IntProviderIngredient;
 import com.gregtechceu.gtceu.common.data.GTItems;
 import com.gregtechceu.gtceu.common.item.IntCircuitBehaviour;
 
@@ -18,6 +19,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.material.Fluid;
 
+import appeng.api.stacks.AEFluidKey;
+import appeng.api.stacks.AEItemKey;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.objects.*;
@@ -44,10 +47,13 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
     @Getter
     protected final MEFluidInputHandler fluidInputHandler;
 
-    public MEPatternBufferRecipeHandlerTrait(MEPatternBufferPartMachine ioBuffer) {
+    private final MEPatternBufferPartMachine.PendingRefundData pendingRefundData;
+
+    public MEPatternBufferRecipeHandlerTrait(MEPatternBufferPartMachine ioBuffer, MEPatternBufferPartMachine.PendingRefundData pendingRefundData) {
         super(ioBuffer);
         itemInputHandler = new MEItemInputHandler(ioBuffer);
         fluidInputHandler = new MEFluidInputHandler(ioBuffer);
+        this.pendingRefundData = pendingRefundData;
     }
 
     @Override
@@ -199,10 +205,30 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
                 getMachine().getShareInventory().handleRecipeInner(IO.IN, recipe, left, null, true);
 
                 // simulate时left会包含Circuit
-                setPreparedMEHandleContents(ingredientsToAEKeyMapWithOutCircuit(left, this::setPreparedCircuitConfig));
+                setPreparedMEHandleContents(ingredientsMapWithOutCircuit(left, this::setPreparedCircuitConfig));
             } else {
-                setPreparedMEHandleContents(ingredientsToAEKeyMap(left));
+                setPreparedMEHandleContents(ingredientsMap(left));
             }
+        }
+
+        @Override
+        public boolean meHandleRecipeOutputInner(List<Ingredient> left, boolean simulate) {
+            if (simulate) return true;
+            for (Ingredient ingredient : left) {
+                if (ingredient instanceof IntProviderIngredient intProvider) {
+                    intProvider.setItemStacks(null);
+                    intProvider.setSampledCount(null);
+                }
+
+                ItemStack[] items = ingredient.getItems();
+                if (items.length != 0) {
+                    ItemStack output = items[0];
+                    if (!output.isEmpty()) {
+                        pendingRefundData.addTo(AEItemKey.of(output), output.getCount());
+                    }
+                }
+            }
+            return true;
         }
     }
 
@@ -277,8 +303,25 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
 
         @Override
         public void prepareMEHandleContents(GTRecipe recipe, List<FluidIngredient> left, boolean simulate) {
-            getMachine().getShareTank().handleRecipeInner(IO.IN, recipe, left, null, simulate);
-            setPreparedMEHandleContents(fluidIngredientsToAEKeyMap(left));
+            if (simulate) {
+                getMachine().getShareTank().handleRecipeInner(IO.IN, recipe, left, null, true);
+            }
+            setPreparedMEHandleContents(fluidIngredientsMap(left));
+        }
+
+        @Override
+        public boolean meHandleRecipeOutputInner(List<FluidIngredient> left, boolean simulate) {
+            if (simulate) return true;
+            for (FluidIngredient fluidIngredient : left) {
+                if (!fluidIngredient.isEmpty()) {
+                    FluidStack[] fluids = fluidIngredient.getStacks();
+                    if (fluids.length != 0) {
+                        FluidStack output = fluids[0];
+                        pendingRefundData.addTo(AEFluidKey.of(output.getFluid()), output.getAmount());
+                    }
+                }
+            }
+            return true;
         }
     }
 
@@ -299,7 +342,7 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
         return new ImmutablePair<>(items, fluids);
     }
 
-    private static Object2LongMap<Ingredient> ingredientsToAEKeyMapWithOutCircuit(List<Ingredient> ingredients, Consumer<Integer> consumer) {
+    private static Object2LongMap<Ingredient> ingredientsMapWithOutCircuit(List<Ingredient> ingredients, Consumer<Integer> consumer) {
         var result = new Object2LongOpenCustomHashMap<>(CacheHashStrategies.IngredientHashStrategy.INSTANCE);
         consumer.accept(-1);
         for (Ingredient ingredient : ingredients) {
@@ -316,7 +359,7 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
         return result;
     }
 
-    private static Object2LongMap<Ingredient> ingredientsToAEKeyMap(List<Ingredient> ingredients) {
+    private static Object2LongMap<Ingredient> ingredientsMap(List<Ingredient> ingredients) {
         var result = new Object2LongOpenCustomHashMap<>(CacheHashStrategies.IngredientHashStrategy.INSTANCE);
         for (Ingredient ingredient : ingredients) {
             var items = ingredient.getItems();
@@ -328,7 +371,7 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
         return result;
     }
 
-    private static Object2LongMap<FluidIngredient> fluidIngredientsToAEKeyMap(List<FluidIngredient> ingredients) {
+    private static Object2LongMap<FluidIngredient> fluidIngredientsMap(List<FluidIngredient> ingredients) {
         var result = new Object2LongOpenCustomHashMap<>(CacheHashStrategies.FluidIngredientHashStrategy.INSTANCE);
         for (FluidIngredient ingredient : ingredients) {
             if (ingredient.isEmpty()) continue;

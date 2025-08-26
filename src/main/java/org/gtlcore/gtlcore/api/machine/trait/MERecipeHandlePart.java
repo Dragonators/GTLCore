@@ -148,6 +148,18 @@ public class MERecipeHandlePart implements IRecipeHandlePart {
         return false;
     }
 
+    public boolean meHandleOutput(Reference2ObjectMap<RecipeCapability<?>, List<Object>> contents, boolean simulate) {
+        for (var it = Reference2ObjectMaps.fastIterator(contents); it.hasNext();) {
+            var entry = it.next();
+            var cap = entry.getKey();
+            var content = entry.getValue();
+            var meHandler = getMECapability(cap);
+            if (!meHandler.meHandleRecipeOutput(content, simulate)) return false;
+        }
+        if (!simulate) machine.notifySelf();
+        return true;
+    }
+
     @Override
     public IO getHandlerIO() {
         return IO.IN;

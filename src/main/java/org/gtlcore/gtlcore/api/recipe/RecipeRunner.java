@@ -148,6 +148,7 @@ public class RecipeRunner {
                 return handleNonDistinctInput(machine, inHandlers);
             }
         } else {
+            if (handleOutput(machine.getMERecipeOutputHandleParts())) return true;
             return handleOutput(machine);
         }
 
@@ -221,6 +222,14 @@ public class RecipeRunner {
             }
         }
 
+        return false;
+    }
+
+    private boolean handleOutput(List<MERecipeHandlePart> meHandlers) {
+        if (meHandlers.isEmpty()) return false;
+        for (MERecipeHandlePart meHandler : meHandlers) {
+            if (meHandler.meHandleOutput(recipeContent, simulated)) return true;
+        }
         return false;
     }
 }

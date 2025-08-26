@@ -65,6 +65,14 @@ public class MEPatternBufferProxyRecipeHandler<T extends Predicate<S>, S> extend
     }
 
     @Override
+    public boolean meHandleRecipeOutputInner(List<T> contents, boolean simulate) {
+        if (handler != null) {
+            return handler.meHandleRecipeOutputInner(contents, simulate);
+        }
+        return false;
+    }
+
+    @Override
     public void prepareMEHandleContents(GTRecipe recipe, List<T> left, boolean simulate) {
         if (handler != null) {
             handler.prepareMEHandleContents(recipe, left, simulate);
