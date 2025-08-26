@@ -209,8 +209,12 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
         this.patternInventory.setFilter(stack -> stack.getItem() instanceof ProcessingPatternItem);
         Arrays.fill(lastNotifyTickBySlot, Long.MIN_VALUE);
         Arrays.setAll(internalInventory, InternalSlot::new);
-        Arrays.setAll(catalystItems, i -> new ItemStackTransfer(9));
-        Arrays.setAll(catalystFluids, i -> new FluidTransferList(Stream.generate(() -> (IFluidTransfer) new FluidStorage(8 * FluidHelper.getBucket()))
+        for (int i = 0; i < catalystItems.length; i++) {
+            var transfer = new ItemStackTransfer(9);
+            transfer.setFilter(stack -> !(stack.getItem() instanceof ProcessingPatternItem));
+            catalystItems[i] = transfer;
+        }
+        Arrays.setAll(catalystFluids, i -> new FluidTransferList(Stream.generate(() -> (IFluidTransfer) new FluidStorage(16 * FluidHelper.getBucket()))
                 .limit(9)
                 .toList()));
         getMainNode().addService(ICraftingProvider.class, this);
@@ -218,7 +222,7 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
         this.mePatternCircuitInventory = new NotifiableCircuitItemStackHandler(this);
         this.circuitHandler = new PatternCircuitHandler((NotifiableCircuitItemStackHandler) mePatternCircuitInventory);
         this.shareInventory = new CatalystItemStackHandler(this, 9, IO.IN, IO.NONE);
-        this.shareTank = new CatalystFluidStackHandler(this, 9, 8 * FluidHelper.getBucket(), IO.IN, IO.NONE);
+        this.shareTank = new CatalystFluidStackHandler(this, 9, 16 * FluidHelper.getBucket(), IO.IN, IO.NONE);
 
         this.pendingRefundData = new PendingRefundData();
     }
@@ -474,8 +478,6 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
 
         final var catalystUIManager = new MEPatternCatalystUIManager(group.getSizeWidth() + 4, catalystItems, catalystFluids);
 
-        group.addWidget(catalystUIManager.getDockRoot());
-
         int index = 0;
         for (int y = 0; y < colSize; ++y) {
             for (int x = 0; x < rowSize; ++x) {
@@ -500,6 +502,7 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
                 group.addWidget(slot);
             }
         }
+        group.waitToAdded(catalystUIManager);
         return group;
     }
 

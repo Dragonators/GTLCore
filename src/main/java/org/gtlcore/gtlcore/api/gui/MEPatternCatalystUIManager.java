@@ -2,25 +2,28 @@ package org.gtlcore.gtlcore.api.gui;
 
 import com.gregtechceu.gtceu.api.gui.GuiTextures;
 
-import com.lowdragmc.lowdraglib.gui.widget.SlotWidget;
-import com.lowdragmc.lowdraglib.gui.widget.TankWidget;
-import com.lowdragmc.lowdraglib.gui.widget.Widget;
-import com.lowdragmc.lowdraglib.gui.widget.WidgetGroup;
+import com.lowdragmc.lowdraglib.gui.widget.*;
 import com.lowdragmc.lowdraglib.jei.IngredientIO;
 import com.lowdragmc.lowdraglib.misc.FluidTransferList;
 import com.lowdragmc.lowdraglib.side.fluid.IFluidTransfer;
 import com.lowdragmc.lowdraglib.side.item.IItemTransfer;
 
-import lombok.Getter;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+
 import org.jetbrains.annotations.NotNull;
 
-public class MEPatternCatalystUIManager {
+public class MEPatternCatalystUIManager extends WidgetGroup {
 
     static final int SLOT_SIZE = 18;
     static final int PAD_OUT = 8;
     static final int PAD_IN = 4;
     static final int MAX_COLS = 9;
     private static final int[] OPTIMAL_COLUMNS = new int[MAX_COLS + 1];
+    // dragging
+    protected double lastDeltaX, lastDeltaY;
+    protected int dragOffsetX, dragOffsetY;
+    protected boolean isDragging;
 
     static {
         for (int slots = 1; slots <= MAX_COLS; slots++) {
@@ -30,18 +33,15 @@ public class MEPatternCatalystUIManager {
 
     private int lastIndex = -1;
 
-    /** 右侧停靠容器（外层 UI 需要将其 add 到主界面上） */
-    @Getter
-    private final WidgetGroup dockRoot;
-
     private final IItemTransfer[] itemTransfers;
 
     private final FluidTransferList[] fluidTankTransfers;
 
     public MEPatternCatalystUIManager(int dockX, IItemTransfer[] itemTransfers, FluidTransferList[] fluidTankTransfers) {
         // 初始高度给个最小值，后面会根据内容 resize
-        this.dockRoot = new WidgetGroup(dockX, 0, 16, 16);
-        this.dockRoot.setVisible(false).setActive(false);
+        super(dockX, 16, 16, 16);
+        this.setBackground(GuiTextures.BACKGROUND);
+        this.setVisible(false).setActive(false);
         this.itemTransfers = itemTransfers;
         this.fluidTankTransfers = fluidTankTransfers;
     }
@@ -52,17 +52,15 @@ public class MEPatternCatalystUIManager {
      * - 否则即时创建新的催化剂 UI 并显示它。
      */
     public void toggleFor(int index) {
-        if (dockRoot == null) return;
-
         if (lastIndex == index) {
-            dockRoot.setVisible(!dockRoot.isVisible()).setActive(!dockRoot.isActive());
+            this.setVisible(!this.isVisible()).setActive(!this.isActive());
             return;
         }
         show(index, itemTransfers[index], fluidTankTransfers[index]);
     }
 
     private void show(int index, IItemTransfer itemInventory, FluidTransferList tanks) {
-        dockRoot.clearAllWidgets();
+        this.clearAllWidgets();
 
         final int itemSlots = (itemInventory != null) ? itemInventory.getSlots() : 0;
         final int fluidTanks = (tanks != null) ? tanks.transfers.length : 0;
@@ -73,7 +71,7 @@ public class MEPatternCatalystUIManager {
         if (itemSlots > 0) {
             Widget itemContainer = createInventoryContainer(itemInventory, itemSlots);
             itemContainer.setSelfPosition(0, currentY);
-            dockRoot.addWidget(itemContainer);
+            this.addWidget(itemContainer);
             currentY += itemContainer.getSize().height;
             maxWidth = Math.max(maxWidth, itemContainer.getSize().width);
         }
@@ -81,7 +79,7 @@ public class MEPatternCatalystUIManager {
         if (fluidTanks > 0) {
             Widget fluidContainer = createFluidContainer(tanks, fluidTanks);
             fluidContainer.setSelfPosition(0, currentY);
-            dockRoot.addWidget(fluidContainer);
+            this.addWidget(fluidContainer);
             currentY += fluidContainer.getSize().height;
             maxWidth = Math.max(maxWidth, fluidContainer.getSize().width);
         }
@@ -89,8 +87,8 @@ public class MEPatternCatalystUIManager {
         if (maxWidth <= 0) maxWidth = 16;
         if (currentY <= 0) currentY = 16;
 
-        dockRoot.setSize(maxWidth, currentY);
-        dockRoot.setVisible(true).setActive(true);
+        this.setSize(maxWidth, currentY);
+        this.setVisible(true).setActive(true);
         lastIndex = index;
     }
 
@@ -103,6 +101,7 @@ public class MEPatternCatalystUIManager {
         final int groupH = PAD_OUT * 2 + containerH;
 
         WidgetGroup group = new WidgetGroup(0, 0, groupW, groupH);
+        group.addWidget(new LabelWidget(8, 2, "物品催化剂槽"));
         WidgetGroup container = new WidgetGroup(PAD_OUT, PAD_OUT + 4, containerW, containerH);
 
         int index = 0;
@@ -128,7 +127,8 @@ public class MEPatternCatalystUIManager {
         final int groupH = PAD_OUT * 2 + containerH;
 
         WidgetGroup group = new WidgetGroup(0, 0, groupW, groupH);
-        WidgetGroup container = new WidgetGroup(PAD_OUT, PAD_OUT, containerW, containerH);
+        group.addWidget(new LabelWidget(8, 2, "流体催化剂槽"));
+        WidgetGroup container = new WidgetGroup(PAD_OUT, PAD_OUT + 4, containerW, containerH);
 
         int index = 0;
         for (int y = 0; y < rows && index < slots; ++y) {
@@ -175,5 +175,61 @@ public class MEPatternCatalystUIManager {
     private static @NotNull Widget createTankWidget(IFluidTransfer storage, int sx, int sy) {
         return new TankWidget(storage, 0, sx, sy, true, true)
                 .setBackground(GuiTextures.FLUID_SLOT);
+    }
+
+    private boolean isMouseover(int x, int y, int width, int height, double mouseX, double mouseY) {
+        boolean b = mouseX >= x && mouseY >= y && x + width > mouseX && y + height > mouseY;
+        if (b) {
+            l:
+            for (var ui : this.widgets) {
+                if (ui instanceof WidgetGroup wg) for (var u : wg.widgets)
+                    if (u instanceof WidgetGroup w) {
+                        int pX = w.getPositionX(), pY = w.getPositionY(), pW = w.getSizeWidth(), pH = w.getSizeHeight();
+                        b = !(mouseX >= pX && mouseY >= pY && pX + pW > mouseX && pY + pH > mouseY);
+                        if (!b) break l;
+                    }
+            }
+            return b;
+        }
+        return false;
+    }
+
+    @Override
+    @OnlyIn(Dist.CLIENT)
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        this.lastDeltaX = 0;
+        this.lastDeltaY = 0;
+        this.isDragging = false;
+        if (isMouseover(getPositionX(), getPositionY(), getSizeWidth(), getSizeHeight(), mouseX, mouseY)) {
+            isDragging = true;
+            return true;
+        }
+        return super.mouseClicked(mouseX, mouseY, button) || isMouseOverElement(mouseX, mouseY);
+    }
+
+    @Override
+    @OnlyIn(Dist.CLIENT)
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        double dx = dragX + lastDeltaX;
+        double dy = dragY + lastDeltaY;
+        dragX = (int) dx;
+        dragY = (int) dy;
+        lastDeltaX = dx - dragX;
+        lastDeltaY = dy - dragY;
+        if (isDragging) {
+            this.dragOffsetX += (int) dragX;
+            this.dragOffsetY += (int) dragY;
+            this.addSelfPosition((int) dragX, (int) dragY);
+        }
+        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY) || isMouseOverElement(mouseX, mouseY);
+    }
+
+    @Override
+    @OnlyIn(Dist.CLIENT)
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        this.lastDeltaX = 0;
+        this.lastDeltaY = 0;
+        this.isDragging = false;
+        return super.mouseReleased(mouseX, mouseY, button) || isMouseOverElement(mouseX, mouseY);
     }
 }
