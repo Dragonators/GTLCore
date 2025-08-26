@@ -3,6 +3,7 @@ package org.gtlcore.gtlcore.common.machine.multiblock.part.ae;
 import org.gtlcore.gtlcore.api.gui.MEPatternCatalystUIManager;
 import org.gtlcore.gtlcore.api.machine.trait.*;
 import org.gtlcore.gtlcore.common.data.GTLMachines;
+import org.gtlcore.gtlcore.config.ConfigHolder;
 import org.gtlcore.gtlcore.integration.ae2.widget.AEPatternViewExtendSlotWidget;
 import org.gtlcore.gtlcore.utils.GTLUtil;
 
@@ -30,7 +31,6 @@ import com.gregtechceu.gtceu.api.recipe.ingredient.FluidIngredient;
 import com.gregtechceu.gtceu.common.data.GTItems;
 import com.gregtechceu.gtceu.common.item.IntCircuitBehaviour;
 import com.gregtechceu.gtceu.integration.ae2.gui.widget.AETextInputButtonWidget;
-import com.gregtechceu.gtceu.integration.ae2.machine.MEBusPartMachine;
 import com.gregtechceu.gtceu.utils.FluidStackHashStrategy;
 import com.gregtechceu.gtceu.utils.ItemStackHashStrategy;
 import com.gregtechceu.gtceu.utils.ResearchManager;
@@ -73,14 +73,17 @@ import appeng.api.crafting.IPatternDetails;
 import appeng.api.implementations.blockentities.PatternContainerGroup;
 import appeng.api.inventories.InternalInventory;
 import appeng.api.networking.IGrid;
+import appeng.api.networking.IGridNode;
 import appeng.api.networking.IGridNodeListener;
 import appeng.api.networking.crafting.ICraftingProvider;
+import appeng.api.networking.ticking.IGridTickable;
+import appeng.api.networking.ticking.TickRateModulation;
+import appeng.api.networking.ticking.TickingRequest;
 import appeng.api.stacks.*;
 import appeng.api.storage.MEStorage;
 import appeng.api.storage.StorageHelper;
 import appeng.crafting.pattern.EncodedPatternItem;
 import appeng.crafting.pattern.ProcessingPatternItem;
-import appeng.helpers.patternprovider.PatternContainer;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.common.primitives.Ints;
@@ -101,11 +104,10 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-public class MEPatternBufferPartMachine extends MEBusPartMachine
-                                        implements ICraftingProvider, PatternContainer, IMEPatternPartMachine, IInteractedMachine {
+public class MEPatternBufferPartMachine extends MEPatternIOPartMachine implements IInteractedMachine {
 
     protected static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(
-            MEPatternBufferPartMachine.class, MEBusPartMachine.MANAGED_FIELD_HOLDER);
+            MEPatternBufferPartMachine.class, MEPatternIOPartMachine.MANAGED_FIELD_HOLDER);
 
     protected final int maxPatternCount;
 
@@ -173,6 +175,8 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
 
     private boolean needPatternSync;
 
+    private boolean isSleeping = true;
+
     @Persisted
     private final ObjectOpenHashSet<BlockPos> proxies = new ObjectOpenHashSet<>();
 
@@ -186,10 +190,10 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
     private final PendingRefundData pendingRefundData;
 
     /** Recipe handler trait for ME Pattern Buffer */
-    protected final MEPatternBufferRecipeHandlerTrait recipeHandler = new MEPatternBufferRecipeHandlerTrait(this);
+    protected final MEPatternBufferRecipeHandlerTrait recipeHandler;
 
-    public MEPatternBufferPartMachine(IMachineBlockEntity holder, int maxPatternCount, Object... args) {
-        super(holder, IO.IN, args);
+    public MEPatternBufferPartMachine(IMachineBlockEntity holder, int maxPatternCount, boolean canHandleOutput) {
+        super(holder, canHandleOutput);
 
         // Initialize UI configuration
         this.maxPatternCount = maxPatternCount;
@@ -209,15 +213,15 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
         this.patternInventory.setFilter(stack -> stack.getItem() instanceof ProcessingPatternItem);
         Arrays.fill(lastNotifyTickBySlot, Long.MIN_VALUE);
         Arrays.setAll(internalInventory, InternalSlot::new);
-        for (int i = 0; i < catalystItems.length; i++) {
+        Arrays.setAll(catalystItems, i -> {
             var transfer = new ItemStackTransfer(9);
             transfer.setFilter(stack -> !(stack.getItem() instanceof ProcessingPatternItem));
-            catalystItems[i] = transfer;
-        }
+            return transfer;
+        });
         Arrays.setAll(catalystFluids, i -> new FluidTransferList(Stream.generate(() -> (IFluidTransfer) new FluidStorage(16 * FluidHelper.getBucket()))
                 .limit(9)
                 .toList()));
-        getMainNode().addService(ICraftingProvider.class, this);
+        getMainNode().addService(ICraftingProvider.class, this).addService(IGridTickable.class, new Ticker());;
 
         this.mePatternCircuitInventory = new NotifiableCircuitItemStackHandler(this);
         this.circuitHandler = new PatternCircuitHandler((NotifiableCircuitItemStackHandler) mePatternCircuitInventory);
@@ -225,15 +229,8 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
         this.shareTank = new CatalystFluidStackHandler(this, 9, 16 * FluidHelper.getBucket(), IO.IN, IO.NONE);
 
         this.pendingRefundData = new PendingRefundData();
+        this.recipeHandler = new MEPatternBufferRecipeHandlerTrait(this, pendingRefundData);
     }
-
-    @Override
-    public boolean isWorkingEnabled() {
-        return true;
-    }
-
-    @Override
-    public void setWorkingEnabled(boolean ignored) {}
 
     // ========================================
     // LIFECYCLE & NETWORK MANAGEMENT
@@ -477,6 +474,7 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
                 .setButtonTooltips(Component.translatable("gui.gtceu.rename.desc")));
 
         final var catalystUIManager = new MEPatternCatalystUIManager(group.getSizeWidth() + 4, catalystItems, catalystFluids);
+        group.waitToAdded(catalystUIManager);
 
         int index = 0;
         for (int y = 0; y < colSize; ++y) {
@@ -502,7 +500,6 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
                 group.addWidget(slot);
             }
         }
-        group.waitToAdded(catalystUIManager);
         return group;
     }
 
@@ -756,6 +753,7 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
                 itemCatalystInventory.mergeLong(AEItemKey.of(stack), stack.getCount(), Long::sum);
             }
         }
+        internalInventory[slot].onContentsChanged.run();
     }
 
     private void reCalculateCatalystFluidMap(int slot) {
@@ -766,6 +764,19 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
             FluidStack stack = catalystFluid.getFluidInTank(i);
             if (!stack.isEmpty()) {
                 fluidCatalystInventory.mergeLong(AEFluidKey.of(stack.getFluid()), stack.getAmount(), Long::sum);
+            }
+        }
+        internalInventory[slot].onContentsChanged.run();
+    }
+
+    @Override
+    public void notifySelf() {
+        if (isSleeping) {
+            if (getMainNode().isActive()) {
+                getMainNode().ifPresent((grid, node) -> {
+                    grid.getTickManager().wakeDevice(node);
+                    isSleeping = false;
+                });
             }
         }
     }
@@ -783,7 +794,10 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
 
         @Getter
         @Setter
-        protected Runnable onContentsChanged = () -> {};
+        protected Runnable onContentsChanged = () -> {
+            recipeHandler.getFluidInputHandler().notifyListeners();
+            recipeHandler.getItemInputHandler().notifyListeners();
+        };
 
         @Getter
         private final Object2LongOpenHashMap<AEItemKey> itemInventory = new Object2LongOpenHashMap<>();
@@ -895,8 +909,6 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
 
         public void pushPattern(IPatternDetails patternDetails, KeyCounter[] inputHolder) {
             patternDetails.pushInputsToExternalInventory(inputHolder, this::add);
-            recipeHandler.getFluidInputHandler().notifyListeners();
-            recipeHandler.getItemInputHandler().notifyListeners();
             onContentsChanged.run();
         }
 
@@ -965,7 +977,6 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
                         it.remove();
                     }
                 }
-                onContentsChanged.run();
             }
 
             return true;
@@ -1008,7 +1019,6 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
                         it.remove();
                     }
                 }
-                onContentsChanged.run();
             }
 
             return true;
@@ -1084,6 +1094,9 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
         @Getter
         private final Object2LongOpenHashMap<AEKey> buffer = new Object2LongOpenHashMap<>();
 
+        private static final int BATCH_SIZE = 64;
+        private static final int MAX_FAILED_ATTEMPTS = 5;
+
         public PendingRefundData() {
             buffer.defaultReturnValue(0L);
         }
@@ -1094,31 +1107,49 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
             }
         }
 
-        public void reFunds() {
-            var network = getMainNode().getGrid();
-            if (network != null) {
-                MEStorage networkInv = network.getStorageService().getInventory();
-                var energy = network.getEnergyService();
+        public boolean reFunds() {
+            if (buffer.isEmpty()) return false;
 
-                for (var it = buffer.object2LongEntrySet().fastIterator(); it.hasNext();) {
-                    var entry = it.next();
-                    long amount = entry.getLongValue();
-                    if (amount <= 0) {
+            final var network = getMainNode().getGrid();
+            if (network == null) {
+                return false;
+            }
+
+            final MEStorage networkInv = network.getStorageService().getInventory();
+            final var energy = network.getEnergyService();
+            int operationsBatched = 0;
+            int consecutiveFailures = 0;
+            boolean didWork = false;
+
+            for (var it = buffer.object2LongEntrySet().fastIterator(); it.hasNext() && operationsBatched < BATCH_SIZE;) {
+                var entry = it.next();
+                long amount = entry.getLongValue();
+
+                if (amount <= 0) {
+                    it.remove();
+                    continue;
+                }
+
+                long inserted = StorageHelper.poweredInsert(energy, networkInv, entry.getKey(), amount, actionSource);
+                operationsBatched++;
+
+                if (inserted > 0) {
+                    didWork = true;
+                    consecutiveFailures = 0;
+                    long left = amount - inserted;
+                    if (left <= 0) {
                         it.remove();
-                        continue;
+                    } else {
+                        entry.setValue(left);
                     }
-
-                    long inserted = StorageHelper.poweredInsert(energy, networkInv, entry.getKey(), amount, actionSource);
-                    if (inserted > 0) {
-                        long left = amount - inserted;
-                        if (left <= 0) {
-                            it.remove();
-                        } else {
-                            entry.setValue(left);
-                        }
+                } else {
+                    consecutiveFailures++;
+                    if (consecutiveFailures >= MAX_FAILED_ATTEMPTS) {
+                        break;
                     }
                 }
             }
+            return didWork;
         }
 
         @Override
@@ -1153,6 +1184,28 @@ public class MEPatternBufferPartMachine extends MEBusPartMachine
                     buffer.put(aeKey, amount);
                 }
             }
+        }
+    }
+
+    protected class Ticker implements IGridTickable {
+
+        @Override
+        public TickingRequest getTickingRequest(IGridNode node) {
+            return new TickingRequest(ConfigHolder.INSTANCE.MEPatternOutputMin, ConfigHolder.INSTANCE.MEPatternOutputMax, false, true);
+        }
+
+        @Override
+        public TickRateModulation tickingRequest(IGridNode node, int ticksSinceLastCall) {
+            if (!getMainNode().isActive()) {
+                return TickRateModulation.SLEEP;
+            }
+
+            if (pendingRefundData.buffer.isEmpty()) {
+                if (ticksSinceLastCall >= ConfigHolder.INSTANCE.MEPatternOutputMax) {
+                    isSleeping = true;
+                    return TickRateModulation.SLEEP;
+                } else return TickRateModulation.SLOWER;
+            } else return pendingRefundData.reFunds() ? TickRateModulation.URGENT : TickRateModulation.SLOWER;
         }
     }
 }

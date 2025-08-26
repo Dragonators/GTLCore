@@ -50,6 +50,14 @@ public class ConfigHolder {
     @Configurable.Comment("连锁黑名单,支持通配符*")
     @Configurable.Synchronized
     public String[] blackBlockList = { "ae2:cable_bus", "minecraft:grass_block" };
+    @Configurable
+    @Configurable.Comment("ME样板总成输出最小间隔")
+    @Configurable.Range(min = 1, max = 100)
+    public int MEPatternOutputMin = 5;
+    @Configurable
+    @Configurable.Comment("ME样板总成输出最大间隔")
+    @Configurable.Range(min = 1, max = 200)
+    public int MEPatternOutputMax = 80;
 
     @Configurable
     public String[] mobList1 = new String[] { "chicken", "rabbit", "sheep", "cow", "horse", "pig", "donkey", "skeleton_horse", "iron_golem", "wolf", "goat", "parrot", "camel", "cat", "fox", "llama", "panda", "polar_bear" };

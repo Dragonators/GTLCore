@@ -687,7 +687,7 @@ public class GTLMachines {
                 .register();
 
         public static final MachineDefinition ME_MINI_PATTERN_BUFFER = REGISTRATE
-                .machine("me_mini_pattern_buffer", (h) -> new MEPatternBufferPartMachine(h, 9))
+                .machine("me_mini_pattern_buffer", (h) -> new MEPatternBufferPartMachine(h, 9, false))
                 .tier(5)
                 .rotationState(RotationState.ALL)
                 .abilities(PartAbility.IMPORT_ITEMS, PartAbility.IMPORT_FLUIDS)
@@ -702,10 +702,10 @@ public class GTLMachines {
                 .register();
 
         public static final MachineDefinition ME_EXTEND_PATTERN_BUFFER = REGISTRATE
-                .machine("me_extend_pattern_buffer", (h) -> new MEPatternBufferPartMachine(h, 36))
+                .machine("me_extend_pattern_buffer", (h) -> new MEPatternBufferPartMachine(h, 36, true))
                 .tier(8)
                 .rotationState(RotationState.ALL)
-                .abilities(PartAbility.IMPORT_ITEMS, PartAbility.IMPORT_FLUIDS)
+                .abilities(PartAbility.IMPORT_ITEMS, PartAbility.IMPORT_FLUIDS, PartAbility.EXPORT_ITEMS, PartAbility.EXPORT_FLUIDS)
                 .rotationState(RotationState.ALL)
                 .overlayTieredHullRenderer("me_pattern_buffer")
                 .langValue("ME Extend Pattern Buffer")
