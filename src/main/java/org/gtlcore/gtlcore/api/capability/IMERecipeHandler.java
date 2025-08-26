@@ -143,7 +143,7 @@ public interface IMERecipeHandler<T extends Predicate<S>, S> extends IFilteredHa
             typedContents.add(this.copyContent(leftObj));
         }
 
-        return meHandleRecipeOutputInner(typedContents, simulate);
+        return meHandleRecipeOutputInner(typedContents, false);
     }
 
     /**

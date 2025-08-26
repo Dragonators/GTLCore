@@ -145,7 +145,12 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
                 var me = MERecipeHandlePart.of(mePart);
                 me.setMachineCache(recipeHandleMap);
                 mERecipeHandleParts.add(me);
-                if (mePart.canHandleOutput()) mERecipeOutputHandleParts.add(me);
+                if (mePart.canHandleOutput()) {
+                    mERecipeOutputHandleParts.add(me);
+                    MEOutPutBus = true;
+                    MEOutPutHatch = true;
+                    MEOutPutDual = true;
+                }
             } else if (part instanceof FluidHatchPartMachine || part instanceof IDistinctPart) {
                 if (part instanceof MEOutputPartMachine) {
                     MEOutPutBus = true;
