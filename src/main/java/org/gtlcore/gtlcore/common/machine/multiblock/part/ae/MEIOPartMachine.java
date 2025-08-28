@@ -1,7 +1,8 @@
 package org.gtlcore.gtlcore.common.machine.multiblock.part.ae;
 
-import org.gtlcore.gtlcore.api.machine.trait.IMEPatternPartMachine;
+import org.gtlcore.gtlcore.api.machine.trait.IMEIOPartMachine;
 
+import com.gregtechceu.gtceu.api.capability.recipe.IO;
 import com.gregtechceu.gtceu.api.gui.fancy.IFancyUIProvider;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.feature.IMachineLife;
@@ -16,9 +17,7 @@ import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 import net.minecraft.core.Direction;
 
 import appeng.api.networking.IManagedGridNode;
-import appeng.api.networking.crafting.ICraftingProvider;
 import appeng.api.networking.security.IActionSource;
-import appeng.helpers.patternprovider.PatternContainer;
 import lombok.Getter;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
@@ -26,38 +25,40 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.EnumSet;
 
-public abstract class MEPatternIOPartMachine extends MultiblockPartMachine implements ICraftingProvider, PatternContainer, IMachineLife, IGridConnectedMachine, IMEPatternPartMachine {
+public abstract class MEIOPartMachine extends MultiblockPartMachine implements IMachineLife, IGridConnectedMachine, IMEIOPartMachine {
 
-    protected static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(MEPatternIOPartMachine.class, MultiblockPartMachine.MANAGED_FIELD_HOLDER);
-
-    private final boolean canHandleOutput;
+    protected static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(MEIOPartMachine.class, MultiblockPartMachine.MANAGED_FIELD_HOLDER);
 
     @Persisted
     @Getter
     protected final GridNodeHolder nodeHolder;
+
     @Getter
     @Setter
     @DescSynced
     protected boolean isOnline;
+
     protected final IActionSource actionSource;
 
-    public MEPatternIOPartMachine(IMachineBlockEntity holder, boolean canHandleOutput) {
+    protected final IO io;
+
+    protected boolean isSleeping = true;
+
+    public MEIOPartMachine(IMachineBlockEntity holder, IO io) {
         super(holder);
-        this.canHandleOutput = canHandleOutput;
         this.nodeHolder = createNodeHolder();
         this.actionSource = IActionSource.ofMachine(nodeHolder.getMainNode()::getNode);
+        this.io = io;
     }
 
     @Nullable
     public IFancyUIProvider.@Nullable PageGroupingData getPageGroupingData() {
-        return canHandleOutput ?
-                new IFancyUIProvider.PageGroupingData("gtceu.multiblock.page_switcher.io.both", 3) :
-                new IFancyUIProvider.PageGroupingData("gtceu.multiblock.page_switcher.io.import", 1);
-    }
-
-    @Override
-    public @NotNull ManagedFieldHolder getFieldHolder() {
-        return MANAGED_FIELD_HOLDER;
+        return switch (this.io) {
+            case IN -> new PageGroupingData("gtceu.multiblock.page_switcher.io.import", 1);
+            case OUT -> new PageGroupingData("gtceu.multiblock.page_switcher.io.export", 2);
+            case BOTH -> new PageGroupingData("gtceu.multiblock.page_switcher.io.both", 3);
+            case NONE -> null;
+        };
     }
 
     @Override
@@ -65,8 +66,9 @@ public abstract class MEPatternIOPartMachine extends MultiblockPartMachine imple
         return nodeHolder.getMainNode();
     }
 
-    protected GridNodeHolder createNodeHolder() {
-        return new GridNodeHolder(this);
+    @Override
+    public IO getIO() {
+        return io;
     }
 
     @Override
@@ -76,7 +78,23 @@ public abstract class MEPatternIOPartMachine extends MultiblockPartMachine imple
     }
 
     @Override
-    public boolean canHandleOutput() {
-        return canHandleOutput;
+    public void notifySelfIO() {
+        if (isSleeping) {
+            if (getMainNode().isActive()) {
+                getMainNode().ifPresent((grid, node) -> {
+                    grid.getTickManager().wakeDevice(node);
+                    isSleeping = false;
+                });
+            }
+        }
+    }
+
+    @Override
+    public @NotNull ManagedFieldHolder getFieldHolder() {
+        return MANAGED_FIELD_HOLDER;
+    }
+
+    protected GridNodeHolder createNodeHolder() {
+        return new GridNodeHolder(this);
     }
 }

@@ -7,6 +7,7 @@ import org.gtlcore.gtlcore.common.machine.generator.LightningRodMachine;
 import org.gtlcore.gtlcore.common.machine.generator.MagicEnergyMachine;
 import org.gtlcore.gtlcore.common.machine.multiblock.electric.CoilWorkableElectricMultipleRecipesMultiblockMachine;
 import org.gtlcore.gtlcore.common.machine.multiblock.part.*;
+import org.gtlcore.gtlcore.common.machine.multiblock.part.ae.MEExtendedOutputPartMachine;
 import org.gtlcore.gtlcore.common.machine.multiblock.part.ae.MEPatternBufferPartMachine;
 import org.gtlcore.gtlcore.common.machine.multiblock.part.ae.MEPatternBufferProxyPartMachine;
 import org.gtlcore.gtlcore.common.machine.multiblock.part.maintenance.*;
@@ -687,7 +688,7 @@ public class GTLMachines {
                 .register();
 
         public static final MachineDefinition ME_MINI_PATTERN_BUFFER = REGISTRATE
-                .machine("me_mini_pattern_buffer", (h) -> new MEPatternBufferPartMachine(h, 9, false))
+                .machine("me_mini_pattern_buffer", (h) -> new MEPatternBufferPartMachine(h, 9, IO.IN))
                 .tier(5)
                 .rotationState(RotationState.ALL)
                 .abilities(PartAbility.IMPORT_ITEMS, PartAbility.IMPORT_FLUIDS)
@@ -702,7 +703,7 @@ public class GTLMachines {
                 .register();
 
         public static final MachineDefinition ME_EXTEND_PATTERN_BUFFER = REGISTRATE
-                .machine("me_extend_pattern_buffer", (h) -> new MEPatternBufferPartMachine(h, 36, true))
+                .machine("me_extend_pattern_buffer", (h) -> new MEPatternBufferPartMachine(h, 36, IO.BOTH))
                 .tier(8)
                 .rotationState(RotationState.ALL)
                 .abilities(PartAbility.IMPORT_ITEMS, PartAbility.IMPORT_FLUIDS, PartAbility.EXPORT_ITEMS, PartAbility.EXPORT_FLUIDS)
@@ -728,6 +729,18 @@ public class GTLMachines {
                         Component.translatable("block.gtceu.pattern_buffer_proxy.desc.1"),
                         Component.translatable("block.gtceu.pattern_buffer_proxy.desc.2"),
                         Component.translatable("gtceu.universal.enabled"))
+                .tooltipBuilder(GTL_MODIFY)
+                .register();
+
+        public static final MachineDefinition ME_EXTENDED_EXPORT_BUFFER = REGISTRATE
+                .machine("me_extended_export_buffer", MEExtendedOutputPartMachine::new)
+                .tier(8)
+                .rotationState(RotationState.ALL)
+                .abilities(PartAbility.EXPORT_FLUIDS, PartAbility.EXPORT_ITEMS)
+                .rotationState(RotationState.ALL)
+                .overlayTieredHullRenderer("me_extended_export_buffer")
+                .langValue("ME Extended Export Buffer")
+                .tooltips(Component.translatable("gtmthings.machine.me_export_buffer.tooltip"))
                 .tooltipBuilder(GTL_MODIFY)
                 .register();
 

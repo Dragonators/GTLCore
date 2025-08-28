@@ -51,30 +51,41 @@ public class RecipeHandlePart implements IRecipeHandlePart {
         return (Object2LongMap<S>) this.initializeContent(cap);
     }
 
-    public Object2LongOpenHashMap<?> initializeContent(RecipeCapability<?> cap) {
+    public Object2LongMap<?> initializeContent(RecipeCapability<?> cap) {
         if (cap == ItemRecipeCapability.CAP) {
             itemContent = new Object2LongOpenHashMap<>();
             for (var item : this.getCapability(cap)) {
                 if (item instanceof CatalystItemStackHandler || item instanceof NotifiableCircuitItemStackHandler) continue;
-                for (var o : item.getContents()) {
-                    if (o instanceof ItemStack stack) {
-                        itemContent.computeLong(stack, (k, v) -> v == null ? stack.getCount() : v + stack.getCount());
+                if (item instanceof IMEPartMachine aeItemHandler) {
+                    final var map = aeItemHandler.getMEItemMap();
+                    if (map != null) {
+                        for (var it = Object2LongMaps.fastIterator(map); it.hasNext();) {
+                            var entry = it.next();
+                            itemContent.addTo(entry.getKey(), entry.getLongValue());
+                        }
+                    }
+                } else {
+                    for (var o : item.getContents()) {
+                        if (o instanceof ItemStack stack) {
+                            itemContent.addTo(stack, stack.getCount());
+                        }
                     }
                 }
             }
+            return itemContent;
         } else if (cap == FluidRecipeCapability.CAP) {
             fluidContent = new Object2LongOpenHashMap<>();
             for (var fluid : this.getCapability(cap)) {
                 if (fluid instanceof CatalystFluidStackHandler) continue;
                 for (var o : fluid.getContents()) {
                     if (o instanceof FluidStack stack) {
-                        fluidContent.computeLong(stack, (k, v) -> v == null ? stack.getAmount() : v + stack.getAmount());
+                        fluidContent.addTo(stack, stack.getAmount());
                     }
                 }
             }
+            return fluidContent;
         }
-        if (cap == ItemRecipeCapability.CAP) return itemContent;
-        else return fluidContent;
+        return Object2LongMaps.EMPTY_MAP;
     }
 
     public void addHandlers(Iterable<IRecipeHandler<?>> handlers) {

@@ -12,24 +12,43 @@ import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.objects.*;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.Predicate;
 
 public class MERecipeHandlePart implements IRecipeHandlePart {
 
+    public static final Comparator<MERecipeHandlePart> COMPARATOR = Comparator.comparingInt(h -> sumPriority(h.meHandlerMap));
+
+    protected static int sumPriority(Reference2ObjectMap<RecipeCapability<?>, IMERecipeHandler<?, ?>> meHandlerMap) {
+        int sum = 0;
+        for (var it = Reference2ObjectMaps.fastIterator(meHandlerMap); it.hasNext();) {
+            sum += it.next().getValue().getPriority();
+        }
+        return sum;
+    }
+
     @Getter
     private final BiMap<GTRecipe, Integer> slotMap = HashBiMap.create();
     @Getter
     private final Reference2ObjectOpenHashMap<RecipeCapability<?>, IMERecipeHandler<? extends Predicate<?>, ?>> meHandlerMap = new Reference2ObjectOpenHashMap<>();
     @Getter
-    private final IMEPatternPartMachine machine;
+    @Nullable
+    private final IMEPatternPartMachine patternMachine;
+    @Getter
+    private final IMEIOPartMachine ioMachine;
 
-    public MERecipeHandlePart(IMEPatternPartMachine machine) {
-        this.machine = machine;
+    public MERecipeHandlePart(IMEIOPartMachine machine) {
+        this.ioMachine = machine;
+        if (machine instanceof IMEPatternPartMachine patternPartMachine) {
+            this.patternMachine = patternPartMachine;
+        } else {
+            this.patternMachine = null;
+        }
     }
 
-    public static MERecipeHandlePart of(IMEPatternPartMachine machine) {
+    public static MERecipeHandlePart of(IMEIOPartMachine machine) {
         MERecipeHandlePart rhl = new MERecipeHandlePart(machine);
         rhl.addMEHandlers(machine.getMERecipeHandlerTraits());
         return rhl;
@@ -56,8 +75,8 @@ public class MERecipeHandlePart implements IRecipeHandlePart {
         return getMeHandlerMap().getOrDefault(cap, null);
     }
 
-    public void setMachineCache(Map<GTRecipe, IRecipeHandlePart> map) {
-        this.machine.setCache(map, this);
+    public void restoreMachineCache(Map<GTRecipe, IRecipeHandlePart> map) {
+        this.patternMachine.restoreMachineCache(map, this);
     }
 
     public int meHandleRecipe(GTRecipe recipe,
@@ -116,7 +135,7 @@ public class MERecipeHandlePart implements IRecipeHandlePart {
             }
 
             if (allSuccess) {
-                if (!this.machine.hasCacheInSlot(slot)) this.machine.setRecipe(slot, recipe);
+                if (!this.patternMachine.hasCacheInSlot(slot)) this.patternMachine.setSlotCacheRecipe(slot, recipe);
                 return slot;
             }
         }
@@ -140,8 +159,8 @@ public class MERecipeHandlePart implements IRecipeHandlePart {
             // 当取出再原地放回样板时，RecipeHandle侧的slotMap会先从该方法尝试handle原slot
             // 此时会handle成功，导致对应slot的cache永远无法更新(只在meHandleRecipe这一方法中更新)
             // 因此在此处特别添加判断，防止此类情形
-            if (!machine.hasCacheInSlot(trySlot)) {
-                machine.setRecipe(trySlot, recipe);
+            if (!patternMachine.hasCacheInSlot(trySlot)) {
+                patternMachine.setSlotCacheRecipe(trySlot, recipe);
             }
             return true;
         }
@@ -156,13 +175,13 @@ public class MERecipeHandlePart implements IRecipeHandlePart {
             var meHandler = getMECapability(cap);
             if (!meHandler.meHandleRecipeOutput(content, simulate)) return false;
         }
-        if (!simulate) machine.notifySelf();
+        if (!simulate) ioMachine.notifySelfIO();
         return true;
     }
 
     @Override
     public IO getHandlerIO() {
-        return IO.IN;
+        return ioMachine.getIO();
     }
 
     @Override
