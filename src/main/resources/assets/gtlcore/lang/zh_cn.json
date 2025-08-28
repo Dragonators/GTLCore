@@ -97,6 +97,8 @@
     "config.gtlcore.option.oreMultiplier": "矿石产量乘数",
     "config.gtlcore.option.spacetimePip": "时空管道流量",
     "config.gtlcore.option.travelStaffCD": "旅行权杖CD",
+    "config.gtlcore.option.MEPatternOutputMin": "ME样板总成输出最小间隔",
+    "config.gtlcore.option.MEPatternOutputMax": "ME样板总成输出最大间隔",
     "config.jade.plugin_gtlcore.wireless_data_hatch_provider": "无线数据仓",
     "gtlcore.condition.gravity": "需要强重力环境",
     "gtlcore.condition.zero_gravity": "需要无重力环境",
