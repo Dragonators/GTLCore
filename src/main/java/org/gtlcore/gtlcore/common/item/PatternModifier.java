@@ -82,11 +82,11 @@ public class PatternModifier implements IItemUIFactory {
     }
 
     private void setAe2PatternGeneratorMaxFluidStack(String s) {
-        Ae2PatternGeneratorMaxFluidStack = Integer.parseInt(s);
+        Ae2PatternGeneratorMaxFluidStack = Long.parseLong(s);
     }
 
     private void setAe2PatternGeneratorMaxItemStack(String s) {
-        Ae2PatternGeneratorMaxItemStack = Integer.parseInt(s);
+        Ae2PatternGeneratorMaxItemStack = Long.parseLong(s);
     }
 
     private void setAe2PatternGeneratorDivScale(String s) {

@@ -173,23 +173,16 @@ public abstract class RecipeLogicMixin implements ILockRecipe, IRecipeStatus {
      */
     @Overwrite(remap = false)
     public void findAndHandleRecipe() {
-        if (!this.recipeDirty && this.lastRecipe != null && gtlcore$checkLastRecipe(this.lastRecipe)) {
-            GTRecipe recipe = this.lastRecipe;
-            this.lastRecipe = null;
-            this.lastOriginRecipe = null;
-            this.setupRecipe(recipe);
-        } else {
-            this.lastRecipe = null;
-            if (this.isLock && lockRecipe != null) {
-                this.lastOriginRecipe = lockRecipe;
-                GTRecipe modified = machine.fullModifyRecipe(lastOriginRecipe.copy(), this.ocParams, this.ocResult);
-                if (modified != null && this.gtlcore$checkLastRecipe(modified)) {
-                    setupRecipe(modified);
-                }
-            } else {
-                this.lastOriginRecipe = null;
-                this.handleSearchingRecipes(this.machine instanceof ResearchStationMachine ? this.searchResearchRecipe() : this.searchRecipe());
+        this.lastRecipe = null;
+        if (this.isLock && lockRecipe != null) {
+            this.lastOriginRecipe = lockRecipe;
+            GTRecipe modified = machine.fullModifyRecipe(lastOriginRecipe.copy(), this.ocParams, this.ocResult);
+            if (modified != null && this.gtlcore$checkLastRecipe(modified)) {
+                setupRecipe(modified);
             }
+        } else {
+            this.lastOriginRecipe = null;
+            this.handleSearchingRecipes(this.machine instanceof ResearchStationMachine ? this.searchResearchRecipe() : this.searchRecipe());
         }
         this.recipeDirty = false;
     }
@@ -222,7 +215,6 @@ public abstract class RecipeLogicMixin implements ILockRecipe, IRecipeStatus {
     public void onRecipeFinish() {
         this.machine.afterWorking();
         if (this.lastRecipe != null) {
-            this.lastRecipe.postWorking(this.machine);
             RecipeRunnerHelper.handleRecipeOutput(this.machine, this.lastRecipe);
             if (this.machine.alwaysTryModifyRecipe()) {
                 if (this.lastOriginRecipe != null) {
