@@ -110,14 +110,6 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
     protected static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(
             MEPatternBufferPartMachine.class, MEIOPartMachine.MANAGED_FIELD_HOLDER);
 
-    protected final int maxPatternCount;
-
-    private final boolean[] hasPatternArray;
-    private final long[] lastNotifyTickBySlot;
-    private final ItemStack[] lastSnapshotBySlot;
-    @DescSynced
-    private final boolean[] cacheRecipe;
-
     private final InternalInventory internalPatternInventory = new InternalInventory() {
 
         @Override
@@ -138,9 +130,14 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
         }
     };
 
+    protected final int maxPatternCount;
+
+    private final boolean[] hasPatternArray;
+    @DescSynced
+    private final boolean[] cacheRecipe;
+
     @Getter
     @Persisted
-    @DescSynced
     private final ItemStackTransfer patternInventory;
 
     @Getter
@@ -202,15 +199,12 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
         this.cacheRecipe = new boolean[maxPatternCount];
         this.internalInventory = new InternalSlot[maxPatternCount];
         this.patternSlotMap = HashBiMap.create(maxPatternCount);
-        this.lastNotifyTickBySlot = new long[maxPatternCount];
-        this.lastSnapshotBySlot = new ItemStack[maxPatternCount];
         this.catalystItems = new ItemStackTransfer[maxPatternCount];
         this.catalystFluids = new FluidTransferList[maxPatternCount];
 
         // Initialize inventories
         this.patternInventory = new ItemStackTransfer(maxPatternCount);
         this.patternInventory.setFilter(stack -> stack.getItem() instanceof ProcessingPatternItem);
-        Arrays.fill(lastNotifyTickBySlot, Long.MIN_VALUE);
         Arrays.setAll(internalInventory, InternalSlot::new);
         Arrays.setAll(catalystItems, i -> {
             var transfer = new ItemStackTransfer(9);
@@ -510,6 +504,7 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
 
                 var slot = new AEPatternViewExtendSlotWidget(patternInventory, index++, x * 18 + 8, y * 18 + 14)
                         .setOnMiddleClick(() -> catalystUIManager.toggleFor(finalI))
+                        .setOnPatternSlotChanged(() -> this.onPatternChange(finalI))
                         .setOccupiedTexture(GuiTextures.SLOT)
                         .setItemHook(stack -> {
                             if (!stack.isEmpty() && stack.getItem() instanceof EncodedPatternItem iep) {
@@ -518,7 +513,6 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
                             }
                             return stack;
                         })
-                        .setChangeListener(debounceAndFilter(finalI, () -> this.onPatternChange(finalI)))
                         .setOnAddedTooltips((s, l) -> {
                             if (cacheRecipe[finalI])
                                 l.add(Component.translatable("gtceu.machine.pattern.recipe.cache"));
@@ -528,44 +522,6 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
             }
         }
         return group;
-    }
-
-    // ========================================
-    // PERFORMANCE OPTIMIZATION UTILITIES
-    // ========================================
-
-    private Runnable debounceAndFilter(int slotIndex, Runnable delegate) {
-        return () -> {
-            long now = getGameTick();
-            if (lastNotifyTickBySlot[slotIndex] == now) {
-                return;
-            }
-
-            ItemStack cur = this.patternInventory.getStackInSlot(slotIndex);
-            ItemStack prev = lastSnapshotBySlot[slotIndex];
-            if (sameStack(prev, cur)) {
-                lastNotifyTickBySlot[slotIndex] = now;
-                return;
-            }
-
-            lastNotifyTickBySlot[slotIndex] = now;
-            lastSnapshotBySlot[slotIndex] = cur.isEmpty() ? ItemStack.EMPTY : cur.copy();
-
-            delegate.run();
-        };
-    }
-
-    private static boolean sameStack(@Nullable ItemStack a, @Nullable ItemStack b) {
-        if (a == b) return true;
-        if (a == null || b == null) return false;
-        if (a.isEmpty() && b.isEmpty()) return true;
-        if (a.isEmpty() ^ b.isEmpty()) return false;
-        return ItemStack.isSameItemSameTags(a, b) && a.getCount() == b.getCount();
-    }
-
-    private long getGameTick() {
-        var level = getLevel();
-        return level != null ? level.getGameTime() : System.nanoTime();
     }
 
     // ========================================
