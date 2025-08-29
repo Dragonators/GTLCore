@@ -1,9 +1,10 @@
 package org.gtlcore.gtlcore.api.pattern;
 
+import com.gregtechceu.gtceu.api.pattern.Predicates;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import org.gtlcore.gtlcore.api.pattern.util.IValueContainer;
 import org.gtlcore.gtlcore.api.pattern.util.SimpleValueContainer;
 
-import com.gregtechceu.gtceu.api.block.ActiveBlock;
 import com.gregtechceu.gtceu.api.machine.MetaMachine;
 import com.gregtechceu.gtceu.api.machine.feature.ITieredMachine;
 import com.gregtechceu.gtceu.api.machine.multiblock.PartAbility;
@@ -24,6 +25,7 @@ import it.unimi.dsi.fastutil.objects.ObjectSets;
 import lombok.NonNull;
 
 import java.util.*;
+
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -31,33 +33,21 @@ import static com.gregtechceu.gtceu.api.pattern.Predicates.blocks;
 
 public class GTLPredicates {
 
-    public static TraceabilityPredicate tierCasings(Map<Integer, Supplier<Block>> map, String tierType) {
-        return new TraceabilityPredicate(blockWorldState -> {
-            var blockState = blockWorldState.getBlockState();
-            for (var entry : map.entrySet()) {
-                if (blockState.is(entry.getValue().get())) {
-                    var stats = entry.getKey();
-                    Object currentCoil = blockWorldState.getMatchContext().getOrPut(tierType, stats);
-                    if (!currentCoil.equals(stats)) {
-                        blockWorldState.setError(new PatternStringError("gtceu.multiblock.pattern.error.tier"));
-                        return false;
-                    }
-                    return true;
-                }
-            }
-            return false;
-        }, () -> map.values().stream()
-                .map(blockSupplier -> BlockInfo.fromBlockState(blockSupplier.get().defaultBlockState()))
-                .toArray(BlockInfo[]::new))
-                .addTooltips(Component.translatable("gtceu.multiblock.pattern.error.tier"));
-    }
+    public static TraceabilityPredicate tierCasings(Int2ObjectMap<Supplier<?>> map, String tierType) {
+        BlockInfo[] blockInfos = new BlockInfo[map.size()];
+        int index = 0;
 
-    public static TraceabilityPredicate tierActiveCasings(Map<Integer, Supplier<ActiveBlock>> map, String tierType) {
+        for (var entry = map.values().iterator(); entry.hasNext(); ++index) {
+            var blockSupplier = entry.next();
+            var block = (Block) blockSupplier.get();
+            blockInfos[index] = BlockInfo.fromBlockState(block.defaultBlockState());
+        }
+
         return new TraceabilityPredicate(blockWorldState -> {
             var blockState = blockWorldState.getBlockState();
-            for (var entry : map.entrySet()) {
-                if (blockState.is(entry.getValue().get())) {
-                    var stats = entry.getKey();
+            for (var entry : map.int2ObjectEntrySet()) {
+                if (blockState.is((Block) entry.getValue().get())) {
+                    var stats = entry.getIntKey();
                     Object currentCoil = blockWorldState.getMatchContext().getOrPut(tierType, stats);
                     if (!currentCoil.equals(stats)) {
                         blockWorldState.setError(new PatternStringError("gtceu.multiblock.pattern.error.tier"));
@@ -67,14 +57,11 @@ public class GTLPredicates {
                 }
             }
             return false;
-        }, () -> map.values().stream()
-                .map(blockSupplier -> BlockInfo.fromBlockState(blockSupplier.get().defaultBlockState()))
-                .toArray(BlockInfo[]::new))
-                .addTooltips(Component.translatable("gtceu.multiblock.pattern.error.tier"));
+        }, () -> blockInfos).addTooltips(Component.translatable("gtceu.multiblock.pattern.error.tier"));
     }
 
     public static TraceabilityPredicate countBlock(String name, Block... blocks) {
-        TraceabilityPredicate inner = blocks(blocks);
+        TraceabilityPredicate inner = Predicates.blocks(blocks);
         Predicate<MultiblockState> predicate = state -> {
             if (inner.test(state)) {
                 IValueContainer<?> currentContainer = state.getMatchContext().getOrPut(name + "Value",

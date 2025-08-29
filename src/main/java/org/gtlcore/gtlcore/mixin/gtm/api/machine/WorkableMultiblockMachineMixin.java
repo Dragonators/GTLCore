@@ -47,6 +47,7 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
     @Shadow(remap = false)
     @Final
     public RecipeLogic recipeLogic;
+
     @Getter
     private boolean MEOutPutBus = false;
     @Getter
