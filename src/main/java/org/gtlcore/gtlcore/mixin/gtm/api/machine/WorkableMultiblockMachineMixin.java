@@ -138,19 +138,26 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
         // IMultiPart
         var distinctParts = new ObjectArrayList<IRecipeHandler<?>>();
         for (IMultiPart part : this.getParts()) {
-            if (part instanceof IMEPatternPartMachine mePart) {
+            if (part instanceof IMEIOPartMachine mePart) {
                 var meHandlers = mePart.getMERecipeHandlerTraits();
                 for (var meHandlerTrait : meHandlers) {
                     traitSubscriptions.add(meHandlerTrait.addChangedListener(recipeLogic::updateTickSubscription));
                 }
                 var me = MERecipeHandlePart.of(mePart);
-                me.setMachineCache(recipeHandleMap);
-                mERecipeHandleParts.add(me);
-                if (mePart.canHandleOutput()) {
+                if (mePart.getIO() == IO.OUT) {
                     mERecipeOutputHandleParts.add(me);
                     MEOutPutBus = true;
                     MEOutPutHatch = true;
                     MEOutPutDual = true;
+                } else {
+                    me.restoreMachineCache(recipeHandleMap);
+                    mERecipeHandleParts.add(me);
+                    if (mePart.getIO() == IO.BOTH) {
+                        mERecipeOutputHandleParts.add(me);
+                        MEOutPutBus = true;
+                        MEOutPutHatch = true;
+                        MEOutPutDual = true;
+                    }
                 }
             } else if (part instanceof FluidHatchPartMachine || part instanceof IDistinctPart) {
                 if (part instanceof MEOutputPartMachine) {
@@ -185,6 +192,7 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
                 }
             }
         }
+        if (!mERecipeOutputHandleParts.isEmpty()) mERecipeOutputHandleParts.sort(MERecipeHandlePart.COMPARATOR.reversed());
         if (!distinctParts.isEmpty()) recipeHandleParts.add(RecipeHandlePart.of(IO.IN, distinctParts));
         for (var recipeHandle : getRecipeHandleParts()) {
             this.addHandlerList(recipeHandle);

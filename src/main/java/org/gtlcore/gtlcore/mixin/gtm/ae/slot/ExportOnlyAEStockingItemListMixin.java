@@ -1,16 +1,13 @@
 package org.gtlcore.gtlcore.mixin.gtm.ae.slot;
 
-import org.gtlcore.gtlcore.api.machine.trait.IMEPartMachine;
 import org.gtlcore.gtlcore.api.recipe.ingredient.LongIngredient;
+import org.gtlcore.gtlcore.integration.ae2.slot.LongAEStockingSlot;
 
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
 import com.gregtechceu.gtceu.api.machine.MetaMachine;
-import com.gregtechceu.gtceu.api.machine.trait.NotifiableItemStackHandler;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.ingredient.SizedIngredient;
-import com.gregtechceu.gtceu.integration.ae2.slot.ExportOnlyAEItemList;
 import com.gregtechceu.gtceu.integration.ae2.slot.ExportOnlyAEItemSlot;
-import com.gregtechceu.gtceu.utils.ItemStackHashStrategy;
 
 import com.lowdragmc.lowdraglib.misc.ItemStackTransfer;
 
@@ -18,30 +15,18 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 
 import appeng.api.stacks.GenericStack;
-import com.google.common.primitives.Ints;
 import it.unimi.dsi.fastutil.objects.Object2LongOpenCustomHashMap;
-import lombok.Getter;
-import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 
-import java.util.*;
+import java.util.List;
 import java.util.function.Function;
 
-@Mixin(ExportOnlyAEItemList.class)
-public abstract class ExportOnlyAEItemListMixin extends NotifiableItemStackHandler implements IMEPartMachine {
+@Mixin(targets = "com.gregtechceu.gtceu.integration.ae2.machine.MEStockingBusPartMachine$ExportOnlyAEStockingItemList", remap = false)
+public abstract class ExportOnlyAEStockingItemListMixin extends ExportOnlyAEItemListMixin {
 
-    @Getter
-    protected final Object2LongOpenCustomHashMap<ItemStack> itemMap = new Object2LongOpenCustomHashMap<>(ItemStackHashStrategy.comparingAllButCount());
-    @Setter
-    protected boolean changed = true;
-
-    @Shadow(remap = false)
-    protected ExportOnlyAEItemSlot[] inventory;
-
-    public ExportOnlyAEItemListMixin(MetaMachine machine, int slots, @NotNull IO handlerIO, @NotNull IO capabilityIO, Function<Integer, ItemStackTransfer> transferFactory) {
+    public ExportOnlyAEStockingItemListMixin(MetaMachine machine, int slots, @NotNull IO handlerIO, @NotNull IO capabilityIO, Function<Integer, ItemStackTransfer> transferFactory) {
         super(machine, slots, handlerIO, capabilityIO, transferFactory);
     }
 
@@ -64,11 +49,11 @@ public abstract class ExportOnlyAEItemListMixin extends NotifiableItemStackHandl
                         for (ExportOnlyAEItemSlot i : this.inventory) {
                             GenericStack stored = i.getStock();
                             if (stored != null && stored.amount() != 0) {
-                                if (ingredient.test(i.getStackInSlot(0))) {
-                                    ItemStack extracted = i.extractItem(0, Ints.saturatedCast(amount), simulate, !simulate);
-                                    if (extracted.getCount() > 0) {
+                                if (ingredient.test(i.getStackInSlot(0)) && i instanceof LongAEStockingSlot longAEStockingSlot) {
+                                    long extracted = longAEStockingSlot.extractLong(0, amount, simulate, !simulate);
+                                    if (extracted > 0) {
                                         changed = true;
-                                        amount -= extracted.getCount();
+                                        amount -= extracted;
                                     }
                                 }
                                 if (amount <= 0L) {
@@ -89,36 +74,19 @@ public abstract class ExportOnlyAEItemListMixin extends NotifiableItemStackHandl
     }
 
     @Override
-    public void onContentsChanged() {
-        super.onContentsChanged();
-        this.changed = true;
-    }
-
-    @Override
     public Object2LongOpenCustomHashMap<ItemStack> getMEItemMap() {
-        if (changed) {
-            changed = false;
-            itemMap.clear();
+        if (getChanged()) {
+            setChanged(false);
+            getItemMap().clear();
             for (var slot : inventory) {
-                GenericStack stock = slot.getStock();
-                if (stock != null && stock.amount() != 0L) {
-                    ItemStack stack = slot.getStackInSlot(0);
-                    if (!stack.isEmpty()) this.itemMap.addTo(stack, stock.amount());
+                if (slot instanceof LongAEStockingSlot longAEStockingSlot) {
+                    var pair = longAEStockingSlot.getStackWithLongInSlot();
+                    if (pair != null) {
+                        this.getItemMap().addTo(pair.left(), pair.right());
+                    }
                 }
             }
         }
-        return itemMap.isEmpty() ? null : itemMap;
-    }
-
-    @Override
-    public boolean getChanged() {
-        return changed;
-    }
-
-    @Override
-    public List<Object> getContents() {
-        var itemMap = this.getMEItemMap();
-        if (itemMap == null) return Collections.emptyList();
-        return Arrays.asList(itemMap.keySet().toArray());
+        return getItemMap().isEmpty() ? null : getItemMap();
     }
 }

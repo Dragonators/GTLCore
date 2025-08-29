@@ -2,6 +2,7 @@ package org.gtlcore.gtlcore.common.machine.multiblock.part.ae;
 
 import org.gtlcore.gtlcore.api.machine.trait.IMERecipeHandlerTrait;
 
+import com.gregtechceu.gtceu.api.capability.recipe.IO;
 import com.gregtechceu.gtceu.api.capability.recipe.RecipeCapability;
 import com.gregtechceu.gtceu.api.machine.MetaMachine;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
@@ -30,6 +31,14 @@ public class MEPatternBufferProxyRecipeHandler<T extends Predicate<S>, S> extend
     @Override
     public RecipeCapability<T> getCapability() {
         return capability;
+    }
+
+    @Override
+    public IO getIo() {
+        if (handler != null) {
+            return handler.getIo();
+        }
+        return IO.NONE;
     }
 
     @Override

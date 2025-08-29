@@ -1,7 +1,9 @@
 package org.gtlcore.gtlcore.mixin.gtm;
 
+import org.gtlcore.gtlcore.api.recipe.ingredient.LongIngredient;
 import org.gtlcore.gtlcore.utils.GTLUtil;
 
+import com.gregtechceu.gtceu.api.capability.recipe.ItemRecipeCapability;
 import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic;
 import com.gregtechceu.gtceu.api.recipe.RecipeHelper;
 import com.gregtechceu.gtceu.integration.jade.provider.CapabilityBlockProvider;
@@ -17,6 +19,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 import org.spongepowered.asm.mixin.Mixin;
@@ -57,9 +60,29 @@ public abstract class RecipeOutputProviderMixin extends CapabilityBlockProvider<
                 Map<String, CompoundTag> cache = new HashMap<>();
                 // int count = 0;
                 ListTag itemTags = new ListTag();
-                for (var stack : RecipeHelper.getOutputItems(recipe)) {
-                    if (stack != null && !stack.isEmpty()) {
-                        String sid = GTLUtil.getItemId(stack.getItem());
+                for (Ingredient outputContent : RecipeHelper.getOutputContents(recipe, ItemRecipeCapability.CAP)) {
+                    final var stack = outputContent.getItems()[0];
+                    String sid = GTLUtil.getItemId(stack.getItem());
+                    if (outputContent instanceof LongIngredient longIngredient) {
+                        if (cache.containsKey(sid)) {
+                            CompoundTag tag = cache.get(sid);
+                            if (tag != null) {
+                                long amount = tag.getLong("Count");
+                                if (amount > 0) {
+                                    tag.putLong("Count", amount + longIngredient.getActualAmount());
+                                }
+                            }
+                        } else {
+                            var itemTag = new CompoundTag();
+                            itemTag.putString("id", sid);
+                            itemTag.putLong("Count", longIngredient.getActualAmount());
+                            if (stack.getTag() != null) {
+                                itemTag.put("tag", stack.getTag().copy());
+                            }
+                            cache.put(sid, itemTag);
+                            itemTags.add(itemTag);
+                        }
+                    } else {
                         if (cache.containsKey(sid)) {
                             CompoundTag tag = cache.get(sid);
                             if (tag != null) {

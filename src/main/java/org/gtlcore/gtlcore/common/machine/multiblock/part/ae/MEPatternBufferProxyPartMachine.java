@@ -3,6 +3,7 @@ package org.gtlcore.gtlcore.common.machine.multiblock.part.ae;
 import org.gtlcore.gtlcore.api.machine.trait.*;
 
 import com.gregtechceu.gtceu.api.capability.recipe.FluidRecipeCapability;
+import com.gregtechceu.gtceu.api.capability.recipe.IO;
 import com.gregtechceu.gtceu.api.capability.recipe.ItemRecipeCapability;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.MetaMachine;
@@ -162,16 +163,16 @@ public class MEPatternBufferProxyPartMachine extends MultiblockPartMachine imple
     }
 
     @Override
-    public void setRecipe(int index, GTRecipe recipe) {
+    public void setSlotCacheRecipe(int index, GTRecipe recipe) {
         if (buffer != null) {
-            buffer.setRecipe(index, recipe);
+            buffer.setSlotCacheRecipe(index, recipe);
         }
     }
 
     @Override
-    public void setCache(Map<GTRecipe, IRecipeHandlePart> map, MERecipeHandlePart mePart) {
+    public void restoreMachineCache(Map<GTRecipe, IRecipeHandlePart> map, MERecipeHandlePart mePart) {
         if (this.buffer == null) return;
-        this.buffer.setCache(map, mePart);
+        this.buffer.restoreMachineCache(map, mePart);
     }
 
     @Override
@@ -192,14 +193,17 @@ public class MEPatternBufferProxyPartMachine extends MultiblockPartMachine imple
     }
 
     @Override
-    public boolean canHandleOutput() {
-        return true;
+    public void notifySelfIO() {
+        if (buffer != null) {
+            buffer.notifySelfIO();
+        }
     }
 
     @Override
-    public void notifySelf() {
+    public IO getIO() {
         if (buffer != null) {
-            buffer.notifySelf();
+            return buffer.getIO();
         }
+        return IO.NONE;
     }
 }

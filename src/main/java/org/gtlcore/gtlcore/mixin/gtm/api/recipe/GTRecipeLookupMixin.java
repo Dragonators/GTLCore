@@ -275,7 +275,7 @@ public abstract class GTRecipeLookupMixin {
         if (holder instanceof IRecipeCapabilityMachine rlm) {
             var parts = rlm.getMERecipeHandleParts();
             for (var part : parts) {
-                var cachedMERecipes = part.getMachine().getCachedGTRecipe();
+                var cachedMERecipes = part.getPatternMachine().getCachedGTRecipe();
                 if (!cachedMERecipes.isEmpty()) {
                     return cachedMERecipes.get(0);
                 }
@@ -302,7 +302,7 @@ public abstract class GTRecipeLookupMixin {
             if (!parts.isEmpty()) {
                 List<GTRecipe> meRecipes = new ObjectArrayList<>();
                 for (var part : parts) {
-                    meRecipes.addAll(part.getMachine().getCachedGTRecipe());
+                    meRecipes.addAll(part.getPatternMachine().getCachedGTRecipe());
                 }
                 meRecipes = meRecipes.stream().filter(r -> r.recipeType == recipeType).toList();
                 if (!meRecipes.isEmpty()) {

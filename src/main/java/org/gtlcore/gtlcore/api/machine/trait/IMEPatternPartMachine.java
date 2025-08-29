@@ -6,21 +6,15 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
-public interface IMEPatternPartMachine {
+public interface IMEPatternPartMachine extends IMEIOPartMachine {
 
     // every element should not be Null
     @NotNull
     List<@NotNull GTRecipe> getCachedGTRecipe();
 
-    void setRecipe(int index, GTRecipe recipe);
+    void setSlotCacheRecipe(int index, GTRecipe recipe);
 
-    void setCache(Map<GTRecipe, IRecipeHandlePart> map, MERecipeHandlePart mePart);
+    void restoreMachineCache(Map<GTRecipe, IRecipeHandlePart> map, MERecipeHandlePart mePart);
 
     boolean hasCacheInSlot(int slot);
-
-    Iterable<IMERecipeHandlerTrait<?, ?>> getMERecipeHandlerTraits();
-
-    boolean canHandleOutput();
-
-    void notifySelf();
 }
