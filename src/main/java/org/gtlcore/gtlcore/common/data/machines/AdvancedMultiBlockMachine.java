@@ -6,6 +6,7 @@ import org.gtlcore.gtlcore.api.pattern.GTLPredicates;
 import org.gtlcore.gtlcore.api.recipe.RecipeResult;
 import org.gtlcore.gtlcore.client.renderer.machine.EyeOfHarmonyRenderer;
 import org.gtlcore.gtlcore.client.renderer.machine.SpaceElevatorRenderer;
+import org.gtlcore.gtlcore.common.block.BlockMap;
 import org.gtlcore.gtlcore.common.block.GTLFusionCasingBlock;
 import org.gtlcore.gtlcore.common.data.*;
 import org.gtlcore.gtlcore.common.machine.multiblock.SimulationMachine;
@@ -1814,7 +1815,7 @@ public class AdvancedMultiBlockMachine {
                     .where("E", Predicates.blocks(GTLBlocks.SPACE_ELEVATOR_SUPPORT.get()))
                     .where("H", Predicates.blocks(ChemicalHelper.getBlock(TagPrefix.frameGt, GTMaterials.Neutronium)))
                     .where("F", Predicates.blocks(Registries.getBlock("kubejs:space_elevator_internal_support")))
-                    .where("C", GTLPredicates.tierActiveCasings(GTLBlocks.sepmmap, "SEPMTier"))
+                    .where("C", GTLPredicates.tierCasings(BlockMap.sepmMap, "SEPMTier"))
                     .where("A", Predicates.blocks(Registries.getBlock("kubejs:high_strength_concrete")))
                     .where("D", Predicates.blocks(GTLBlocks.SPACE_ELEVATOR_MECHANICAL_CASING.get()))
                     .where("M", Predicates.blocks(GTLBlocks.POWER_CORE.get()))
