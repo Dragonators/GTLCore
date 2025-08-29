@@ -4,13 +4,10 @@ import com.gregtechceu.gtceu.api.GTCEuAPI;
 
 import net.minecraft.world.level.block.Block;
 
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.ints.*;
+import it.unimi.dsi.fastutil.objects.*;
 
-import java.util.Comparator;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Supplier;
 
 public interface BlockMap {
@@ -22,11 +19,13 @@ public interface BlockMap {
     Int2ObjectOpenHashMap<Supplier<?>> calMap = new Int2ObjectOpenHashMap<>(16);
     Int2ObjectOpenHashMap<Supplier<?>> coilMap = new Int2ObjectOpenHashMap<>(24);
 
-    static void init() {
-        GTCEuAPI.HEATING_COILS.forEach((c, b) -> coilMap.put(c.getTier(), b));
-    }
+    static void init() {}
 
     static void build() {
+        IntArrayList list = new IntArrayList(24);
+        GTCEuAPI.HEATING_COILS.forEach((c, b) -> list.add(c.getCoilTemperature()));
+        List<Integer> integers = list.stream().sorted().filter(Objects::nonNull).toList();
+        GTCEuAPI.HEATING_COILS.forEach((c, b) -> coilMap.put(integers.indexOf(c.getCoilTemperature()), b));
         var tier = new ObjectArrayList<>(scMap.int2ObjectEntrySet());
         tier.sort(Comparator.comparingInt(Int2ObjectMap.Entry::getIntKey));
         tierBlockMap.put("sc", tier.stream().map(Map.Entry::getValue).map(Supplier::get).toArray(Block[]::new));
