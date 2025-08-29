@@ -7,7 +7,6 @@ import com.gregtechceu.gtceu.api.machine.MetaMachine;
 import com.gregtechceu.gtceu.api.machine.feature.ITieredMachine;
 import com.gregtechceu.gtceu.api.machine.multiblock.PartAbility;
 import com.gregtechceu.gtceu.api.pattern.MultiblockState;
-import com.gregtechceu.gtceu.api.pattern.Predicates;
 import com.gregtechceu.gtceu.api.pattern.TraceabilityPredicate;
 import com.gregtechceu.gtceu.api.pattern.error.PatternStringError;
 import com.gregtechceu.gtceu.api.pattern.predicates.PredicateBlocks;
@@ -21,8 +20,13 @@ import net.minecraft.world.level.block.Block;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 
 import java.util.*;
+import it.unimi.dsi.fastutil.objects.*;
+import lombok.NonNull;
+
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+
+import static com.gregtechceu.gtceu.api.pattern.Predicates.blocks;
 
 public class GTLPredicates {
 
@@ -54,7 +58,7 @@ public class GTLPredicates {
     }
 
     public static TraceabilityPredicate countBlock(String name, Block... blocks) {
-        TraceabilityPredicate inner = Predicates.blocks(blocks);
+        TraceabilityPredicate inner = blocks(blocks);
         Predicate<MultiblockState> predicate = state -> {
             if (inner.test(state)) {
                 IValueContainer<?> currentContainer = state.getMatchContext().getOrPut(name + "Value",
@@ -99,5 +103,26 @@ public class GTLPredicates {
                         return false;
                     }
                 });
+    }
+
+    // group1 - group2
+    public static TraceabilityPredicate diffAbilities(@NonNull Collection<PartAbility> group1, @NonNull Collection<PartAbility> group2) {
+        return blocks(diffBlocks(group1, group2).toArray(Block[]::new));
+    }
+
+    private static ObjectSet<Block> unionBlocks(@NonNull Collection<PartAbility> group) {
+        if (group.isEmpty()) return ObjectSets.emptySet();
+        ObjectSet<Block> out = new ObjectOpenHashSet<>();
+        for (PartAbility ability : group) {
+            out.addAll(ability.getAllBlocks());
+        }
+        return out;
+    }
+
+    private static ObjectSet<Block> diffBlocks(Collection<PartAbility> group1,
+                                               Collection<PartAbility> group2) {
+        ObjectSet<Block> g1 = unionBlocks(group1);
+        g1.removeAll(unionBlocks(group2));
+        return g1;
     }
 }

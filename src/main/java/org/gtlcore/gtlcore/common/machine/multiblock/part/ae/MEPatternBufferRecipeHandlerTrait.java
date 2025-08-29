@@ -2,6 +2,7 @@ package org.gtlcore.gtlcore.common.machine.multiblock.part.ae;
 
 import org.gtlcore.gtlcore.api.machine.trait.IMERecipeHandlerTrait;
 import org.gtlcore.gtlcore.api.recipe.ingredient.CacheHashStrategies;
+import org.gtlcore.gtlcore.api.recipe.ingredient.LongIngredient;
 
 import com.gregtechceu.gtceu.api.capability.recipe.*;
 import com.gregtechceu.gtceu.api.machine.trait.MachineTrait;
@@ -42,17 +43,17 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
     protected List<Runnable> listeners = new ArrayList<>();
 
     @Getter
-    protected final MEItemInputHandler itemInputHandler;
+    protected final MEItemInputHandler meItemHandler;
 
     @Getter
-    protected final MEFluidInputHandler fluidInputHandler;
+    protected final MEFluidHandler meFluidHandler;
 
     private final MEPatternBufferPartMachine.PendingRefundData pendingRefundData;
 
-    public MEPatternBufferRecipeHandlerTrait(MEPatternBufferPartMachine ioBuffer, MEPatternBufferPartMachine.PendingRefundData pendingRefundData) {
+    public MEPatternBufferRecipeHandlerTrait(MEPatternBufferPartMachine ioBuffer, MEPatternBufferPartMachine.PendingRefundData pendingRefundData, IO io) {
         super(ioBuffer);
-        itemInputHandler = new MEItemInputHandler(ioBuffer);
-        fluidInputHandler = new MEFluidInputHandler(ioBuffer);
+        meItemHandler = new MEItemInputHandler(ioBuffer, io);
+        meFluidHandler = new MEFluidHandler(ioBuffer, io);
         this.pendingRefundData = pendingRefundData;
     }
 
@@ -71,13 +72,13 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
     }
 
     public List<IMERecipeHandlerTrait<? extends Predicate<?>, ?>> getMERecipeHandlers() {
-        return List.of(itemInputHandler, fluidInputHandler);
+        return List.of(meItemHandler, meFluidHandler);
     }
 
     public Reference2ObjectMap<RecipeCapability<?>, IMERecipeHandlerTrait<? extends Predicate<?>, ?>> getMERecipeHandlerMap() {
         Reference2ObjectMap<RecipeCapability<?>, IMERecipeHandlerTrait<? extends Predicate<?>, ?>> map = new Reference2ObjectArrayMap<>();
-        map.put(ItemRecipeCapability.CAP, itemInputHandler);
-        map.put(FluidRecipeCapability.CAP, fluidInputHandler);
+        map.put(ItemRecipeCapability.CAP, meItemHandler);
+        map.put(FluidRecipeCapability.CAP, meFluidHandler);
         return map;
     }
 
@@ -119,14 +120,18 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
     public class MEItemInputHandler extends NotifiableMERecipeHandlerTrait<Ingredient, ItemStack> {
 
         @Getter
+        private final IO io;
+
+        @Getter
         @Setter
         private Object2LongMap<Ingredient> preparedMEHandleContents = new Object2LongOpenHashMap<>();
 
         @Setter
         private int preparedCircuitConfig = -1;
 
-        public MEItemInputHandler(MEPatternBufferPartMachine machine) {
+        public MEItemInputHandler(MEPatternBufferPartMachine machine, IO io) {
             super(machine);
+            this.io = io;
         }
 
         public MEPatternBufferPartMachine getMachine() {
@@ -134,18 +139,8 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
         }
 
         @Override
-        public int getPriority() {
-            return Integer.MAX_VALUE;
-        }
-
-        @Override
         public RecipeCapability<Ingredient> getCapability() {
             return ItemRecipeCapability.CAP;
-        }
-
-        @Override
-        public Ingredient copyContent(Object content) {
-            return super.copyContent(content);
         }
 
         @Override
@@ -232,14 +227,18 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
         }
     }
 
-    public class MEFluidInputHandler extends NotifiableMERecipeHandlerTrait<FluidIngredient, FluidStack> {
+    public class MEFluidHandler extends NotifiableMERecipeHandlerTrait<FluidIngredient, FluidStack> {
+
+        @Getter
+        private final IO io;
 
         @Getter
         @Setter
         private Object2LongMap<FluidIngredient> preparedMEHandleContents = new Object2LongOpenHashMap<>();
 
-        public MEFluidInputHandler(MEPatternBufferPartMachine machine) {
+        public MEFluidHandler(MEPatternBufferPartMachine machine, IO io) {
             super(machine);
+            this.io = io;
         }
 
         public MEPatternBufferPartMachine getMachine() {
@@ -247,18 +246,8 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
         }
 
         @Override
-        public int getPriority() {
-            return Integer.MAX_VALUE;
-        }
-
-        @Override
         public RecipeCapability<FluidIngredient> getCapability() {
             return FluidRecipeCapability.CAP;
-        }
-
-        @Override
-        public FluidIngredient copyContent(Object content) {
-            return super.copyContent(content);
         }
 
         @Override
@@ -354,7 +343,7 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
                 consumer.accept(IntCircuitBehaviour.getCircuitConfiguration(items[0]));
                 continue;
             }
-            result.addTo(ingredient, items[0].getCount());
+            result.addTo(ingredient, ingredient instanceof LongIngredient longIngredient ? longIngredient.getActualAmount() : items[0].getCount());
         }
         return result;
     }
@@ -366,7 +355,7 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
             if (items.length == 0 || items[0].isEmpty()) {
                 continue;
             }
-            result.addTo(ingredient, items[0].getCount());
+            result.addTo(ingredient, ingredient instanceof LongIngredient longIngredient ? longIngredient.getActualAmount() : items[0].getCount());
         }
         return result;
     }

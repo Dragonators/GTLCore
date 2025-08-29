@@ -123,7 +123,7 @@ public interface IParallelLogic {
             } else if (handle != null) {
                 for (var it = Object2LongMaps.fastIterator(handle.getContent(ItemRecipeCapability.CAP)); it.hasNext();) {
                     var entry = it.next();
-                    ingredientStacks.computeLong(entry.getKey(), (k, v) -> v == null ? entry.getLongValue() : v + entry.getLongValue());
+                    ingredientStacks.addTo(entry.getKey(), entry.getLongValue());
                 }
             } else {
                 Object2LongOpenCustomHashMap<ItemStack> map = new Object2LongOpenCustomHashMap<>(ItemStackHashStrategy.comparingAllButCount());
@@ -138,11 +138,11 @@ public interface IParallelLogic {
                 for (var it : machine.getCapabilities().getOrDefault(IO.IN, Collections.emptyList())) {
                     for (var obj = Object2LongMaps.fastIterator(it.getContent(ItemRecipeCapability.CAP)); obj.hasNext();) {
                         var entry = obj.next();
-                        map.computeLong(entry.getKey(), (k, v) -> v == null ? entry.getLongValue() : v + entry.getLongValue());
+                        map.addTo(entry.getKey(), entry.getLongValue());
                     }
                 }
                 for (var obj : map.object2LongEntrySet()) {
-                    ingredientStacks.computeLong(obj.getKey(), (k, v) -> v == null ? obj.getLongValue() : v + obj.getLongValue());
+                    ingredientStacks.addTo(obj.getKey(), obj.getLongValue());
                 }
             }
             return calculate(parallelAmount, countableMap, ingredientStacks);
@@ -174,14 +174,14 @@ public interface IParallelLogic {
             } else if (recipeHandle != null && machine.isDistinct()) {
                 for (var it = Object2LongMaps.fastIterator(recipeHandle.getContent(FluidRecipeCapability.CAP)); it.hasNext();) {
                     var entry = it.next();
-                    ingredientStacks.computeLong(entry.getKey(), (k, v) -> v == null ? entry.getLongValue() : v + entry.getLongValue());
+                    ingredientStacks.addTo(entry.getKey(), entry.getLongValue());
                 }
             } else {
                 for (var container : machine.getCapabilitiesFlat(IO.IN, FluidRecipeCapability.CAP)) {
                     if (container instanceof CatalystFluidStackHandler) continue;
                     for (var object : container.getContents()) {
                         if (object instanceof FluidStack fs) {
-                            ingredientStacks.computeLong(fs, (k, v) -> v == null ? fs.getAmount() : v + fs.getAmount());
+                            ingredientStacks.addTo(fs, fs.getAmount());
                         }
                     }
                 }

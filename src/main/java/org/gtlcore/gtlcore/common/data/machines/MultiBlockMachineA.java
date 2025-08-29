@@ -40,6 +40,8 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.DirectionalBlock;
 import net.minecraft.world.level.material.Fluids;
 
+import java.util.List;
+
 import static com.gregtechceu.gtceu.api.pattern.Predicates.*;
 import static com.gregtechceu.gtceu.common.data.GTRecipeModifiers.ELECTRIC_OVERCLOCK;
 import static com.gregtechceu.gtceu.common.registry.GTRegistration.REGISTRATE;
@@ -703,7 +705,7 @@ public class MultiBlockMachineA {
                     .where("e", Predicates.blocks(Registries.getBlock("kubejs:aggregatione_core")))
                     .where("a", Predicates.blocks(ChemicalHelper.getBlock(TagPrefix.frameGt, GTMaterials.NaquadahEnriched)))
                     .where("i", Predicates.blocks(GTMachines.ITEM_IMPORT_BUS[0].get()))
-                    .where("g", Predicates.abilities(PartAbility.EXPORT_ITEMS))
+                    .where("g", GTLPredicates.diffAbilities(List.of(PartAbility.EXPORT_ITEMS), List.of(PartAbility.IMPORT_ITEMS, PartAbility.IMPORT_FLUIDS)))
                     .where(" ", Predicates.any())
                     .build())
             .additionalDisplay((controller, components) -> {
