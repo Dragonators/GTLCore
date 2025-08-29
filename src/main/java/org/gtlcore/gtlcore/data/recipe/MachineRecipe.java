@@ -216,13 +216,14 @@ public class MachineRecipe {
                 "SGS", "GHG", "SGS", 'H', GTMachines.HULL[GTValues.UEV].asStack(), 'G',
                 new UnificationEntry(TagPrefix.gear, GTLMaterials.AstralTitanium), 'S',
                 new UnificationEntry(TagPrefix.gearSmall, GTLMaterials.Quantanium));
-        VanillaRecipeHelper.addShapedRecipe(provider, true, "", GTLItems.ULTIMATE_TERMINAL.asStack(),
+        VanillaRecipeHelper.addShapedRecipe(provider, true, GTLCore.id("ultimate_terminal"),
+                GTLItems.ULTIMATE_TERMINAL.asStack(),
                 "ABA", "CDC", "CEC",
-                "A", new UnificationEntry(screw, BlackBronze),
-                "B", net.minecraftforge.common.Tags.Items.GLASS_PANES,
-                "C", new UnificationEntry(plate, Silicon),
-                "D", CustomItems.ADVANCED_TERMINAL.asStack(),
-                "E", CustomTags.MV_CIRCUITS);
+                'A', new UnificationEntry(TagPrefix.screw, GTMaterials.BlackBronze),
+                'B', net.minecraftforge.common.Tags.Items.GLASS_PANES,
+                'C', new UnificationEntry(TagPrefix.plate, GTMaterials.Silicon),
+                'D', CustomItems.ADVANCED_TERMINAL.asStack(),
+                'E', CustomTags.MV_CIRCUITS);
         registerMachineRecipe(provider, ArrayUtils.subarray(GTMachines.TRANSFORMER, GTValues.UHV, GTValues.MAX),
                 "WCC",
                 "TH ", "WCC", 'W', POWER_COMPONENT, 'C', CABLE, 'T', CABLE_TIER_UP, 'H', HULL);
