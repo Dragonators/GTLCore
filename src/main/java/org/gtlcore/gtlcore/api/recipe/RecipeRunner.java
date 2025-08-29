@@ -11,6 +11,7 @@ import com.gregtechceu.gtceu.api.recipe.RecipeHelper;
 import com.gregtechceu.gtceu.api.recipe.chance.boost.ChanceBoostFunction;
 import com.gregtechceu.gtceu.api.recipe.chance.logic.ChanceLogic;
 import com.gregtechceu.gtceu.api.recipe.content.Content;
+import com.gregtechceu.gtceu.api.recipe.content.ContentModifier;
 
 import it.unimi.dsi.fastutil.objects.*;
 
@@ -68,7 +69,7 @@ public class RecipeRunner {
                     if (cont.chance >= cont.maxChance) {
                         contentList.add(cont.content);
                     } else {
-                        chancedContents.add(cont.copy(cap, null));
+                        chancedContents.add(cont.copy(cap, ContentModifier.multiplier(1.0 / recipe.parallels)));
                     }
                 }
             }
@@ -78,7 +79,7 @@ public class RecipeRunner {
                 int recipeTier = RecipeHelper.getPreOCRecipeEuTier(recipe);
                 int holderTier = holder.getChanceTier();
                 var cache = this.chanceCaches.get(cap);
-                chancedContents = logic.roll(chancedContents, function, recipeTier, holderTier, cache, 1, cap);
+                chancedContents = logic.roll(chancedContents, function, recipeTier, holderTier, cache, recipe.parallels, cap);
                 if (chancedContents != null) {
                     for (Content cont : chancedContents) {
                         contentList.add(cont.content);
