@@ -140,7 +140,8 @@ public class UltimateTerminalBehavior implements IItemUIFactory {
             }
         }).setBackground(GuiTextures.BACKGROUND_INVERSE).setButtonBackground(GuiTextures.BUTTON).textTexture.setRollSpeed(.5f);
         tier.setOnChanged(s -> setTier(tier.getIndex(s), handItem));
-        tier.setIndex(getTier(handItem), List.of(tierBlockMap.get(handItem.getTag().getString("blocks"))));
+        String block = handItem.getTag().getString("blocks");
+        if (!block.isEmpty()) tier.setIndex(getTier(handItem), List.of(tierBlockMap.get(block)));
         contain.addWidget(tier);
         contain.addWidget(type);
         group.addWidget(contain);
