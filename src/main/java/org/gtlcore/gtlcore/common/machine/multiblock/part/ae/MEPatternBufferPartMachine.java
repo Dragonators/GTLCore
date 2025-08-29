@@ -220,7 +220,10 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
         Arrays.setAll(catalystFluids, i -> new FluidTransferList(Stream.generate(() -> (IFluidTransfer) new FluidStorage(16 * FluidHelper.getBucket()))
                 .limit(9)
                 .toList()));
-        getMainNode().addService(ICraftingProvider.class, this).addService(IGridTickable.class, new Ticker());
+        getMainNode().addService(ICraftingProvider.class, this);
+        if (io == IO.BOTH) {
+            getMainNode().addService(IGridTickable.class, new Ticker());
+        }
 
         this.pendingRefundData = new PendingRefundData();
         this.mePatternCircuitInventory = new NotifiableCircuitItemStackHandler(this);
