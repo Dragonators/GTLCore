@@ -283,6 +283,12 @@ public class GTLItems {
             .model(NonNullBiConsumer.noop())
             .register();
 
+    public static ItemEntry<ComponentItem> ULTIMATE_TERMINAL = REGISTRATE
+            .item("ultimate_terminal", ComponentItem::create)
+            .properties((p) -> p.stacksTo(1))
+            .onRegister(GTItems.attach(new UltimateTerminalBehavior()))
+            .register();
+
     private static ItemEntry<Item> register(String id, boolean defaultModel) {
         return defaultModel ? REGISTRATE.item(id, Item::new).register() : REGISTRATE.item(id, Item::new).model(NonNullBiConsumer.noop()).register();
     }

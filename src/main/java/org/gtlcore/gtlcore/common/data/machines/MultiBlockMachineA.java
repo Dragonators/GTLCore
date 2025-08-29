@@ -4,6 +4,7 @@ import org.gtlcore.gtlcore.GTLCore;
 import org.gtlcore.gtlcore.api.machine.multiblock.CoilWorkableElectricMultipleRecipesMachine;
 import org.gtlcore.gtlcore.api.machine.multiblock.NoEnergyMultiblockMachine;
 import org.gtlcore.gtlcore.api.pattern.GTLPredicates;
+import org.gtlcore.gtlcore.common.block.BlockMap;
 import org.gtlcore.gtlcore.common.data.*;
 import org.gtlcore.gtlcore.common.machine.multiblock.electric.*;
 import org.gtlcore.gtlcore.common.machine.multiblock.steam.LargeSteamParallelMultiblockMachine;
@@ -3080,7 +3081,7 @@ public class MultiBlockMachineA {
                             .or(Predicates.autoAbilities(definition.getRecipeTypes()))
                             .or(Predicates.abilities(PartAbility.MAINTENANCE).setExactLimit(1)))
                     .where("c", Predicates.blocks(GTBlocks.FUSION_COIL.get()))
-                    .where("d", GTLPredicates.tierCasings(GTLBlocks.scmap, "SCTier"))
+                    .where("d", GTLPredicates.tierCasings(BlockMap.scMap, "SCTier"))
                     .where(" ", Predicates.any())
                     .build())
             .workableCasingRenderer(GTCEu.id("block/casings/gcym/atomic_casing"), GTCEu.id("block/multiblock/electric_blast_furnace"))
@@ -3148,7 +3149,7 @@ public class MultiBlockMachineA {
                             .or(Predicates.abilities(PartAbility.INPUT_LASER).setMaxGlobalLimited(1)))
                     .where("I", Predicates.blocks(ChemicalHelper.getBlock(TagPrefix.frameGt, GTLMaterials.HastelloyN)))
                     .where("J", Predicates.blocks(GTLBlocks.ADVANCED_ASSEMBLY_LINE_UNIT.get()))
-                    .where("K", GTLPredicates.tierCasings(GTLBlocks.calmap, "CATier"))
+                    .where("K", GTLPredicates.tierCasings(BlockMap.calMap, "CATier"))
                     .where("L", Predicates.blocks(GTBlocks.CASING_POLYTETRAFLUOROETHYLENE_PIPE.get()))
                     .where("M", Predicates.blocks(ChemicalHelper.getBlock(TagPrefix.frameGt, GTMaterials.TungstenSteel)))
                     .where("N", Predicates.blocks(GTLBlocks.IRIDIUM_CASING.get())
