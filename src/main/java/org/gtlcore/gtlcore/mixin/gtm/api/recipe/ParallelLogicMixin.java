@@ -72,9 +72,9 @@ public class ParallelLogicMixin {
         } else {
             Objects.requireNonNull(machine);
             int limitByOutput = limitByOutputMerging(currentRecipe, machine, multiplierByInputs, machine::canVoidRecipeOutputs);
-            if (limitByOutput > 0) {
+            if (limitByOutput > 1) {
                 GTRecipe multiRecipe = currentRecipe.copy(ContentModifier.multiplier(limitByOutput), modifyDuration);
-                multiRecipe.parallels = limitByOutput;
+                multiRecipe.parallels = Ints.saturatedCast((long) limitByOutput * currentRecipe.parallels);
                 IParallelLogic.getRecipeOutputChance(machine, multiRecipe);
                 return Pair.of(multiRecipe, limitByOutput);
             } else {

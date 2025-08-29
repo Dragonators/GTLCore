@@ -62,6 +62,7 @@ public abstract class RecipeOutputProviderMixin extends CapabilityBlockProvider<
                 ListTag itemTags = new ListTag();
                 for (Ingredient outputContent : RecipeHelper.getOutputContents(recipe, ItemRecipeCapability.CAP)) {
                     final var stack = outputContent.getItems()[0];
+                    if (stack == null || stack.isEmpty()) continue;
                     String sid = GTLUtil.getItemId(stack.getItem());
                     if (outputContent instanceof LongIngredient longIngredient) {
                         if (cache.containsKey(sid)) {
