@@ -90,7 +90,7 @@ public abstract class MEOutputPartMachineMixin extends DualHatchPartMachine impl
         this.time = 0;
     }
 
-    @Mixin(targets = "com.hepdd.gtmthings.common.block.machine.multiblock.part.appeng.MEOutputPartMachine.InaccessibleInfiniteTank")
+    @Mixin(targets = "com.hepdd.gtmthings.common.block.machine.multiblock.part.appeng.MEOutputPartMachine$InaccessibleInfiniteTank", remap = false)
     public static class InaccessibleInfiniteTankMixin extends NotifiableFluidTank {
 
         @Shadow(remap = false)
@@ -113,7 +113,7 @@ public abstract class MEOutputPartMachineMixin extends DualHatchPartMachine impl
         }
     }
 
-    @Mixin(targets = "com.hepdd.gtmthings.common.block.machine.multiblock.part.appeng.MEOutputPartMachine.InaccessibleInfiniteHandler")
+    @Mixin(targets = "com.hepdd.gtmthings.common.block.machine.multiblock.part.appeng.MEOutputPartMachine$InaccessibleInfiniteHandler", remap = false)
     private static class InaccessibleInfiniteHandlerMixin extends NotifiableItemStackHandler {
 
         public InaccessibleInfiniteHandlerMixin(MetaMachine machine, int slots, @NotNull IO handlerIO, @NotNull IO capabilityIO, Function<Integer, ItemStackTransfer> transferFactory) {
