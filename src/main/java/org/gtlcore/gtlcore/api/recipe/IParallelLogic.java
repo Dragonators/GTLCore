@@ -35,7 +35,7 @@ public interface IParallelLogic {
             var contentList = recipeContents.computeIfAbsent(cap, c -> new ObjectArrayList<>());
             for (var cont : entry.getValue()) {
                 if (cont.chance >= cont.maxChance) contentList.add(cont);
-                else chancedContents.add(cont.copy(cap, ContentModifier.multiplier(1.0 / recipe.parallels)));
+                else chancedContents.add(cont);
             }
             if (!chancedContents.isEmpty()) {
                 var function = recipe.getType().getChanceFunction();
