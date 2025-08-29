@@ -14,9 +14,15 @@ import java.util.function.Predicate;
  */
 public interface IMERecipeHandlerTrait<T extends Predicate<S>, S> extends IMERecipeHandler<T, S> {
 
-    default IO getHandlerIO() {
-        return IO.IN;
-    }
+    IO getIo();
 
     ISubscription addChangedListener(Runnable var1);
+
+    default int getPriority() {
+        return switch (getIo()) {
+            case OUT -> 10;
+            case BOTH -> 5;
+            case IN, NONE -> 0;
+        };
+    }
 }
