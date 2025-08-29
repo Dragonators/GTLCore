@@ -2,13 +2,18 @@ package org.gtlcore.gtlcore.integration.ae2.widget;
 
 import com.gregtechceu.gtceu.integration.ae2.gui.widget.slot.AEPatternViewSlotWidget;
 
+import com.lowdragmc.lowdraglib.gui.modular.ModularUIGuiContainer;
 import com.lowdragmc.lowdraglib.side.item.IItemTransfer;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import org.jetbrains.annotations.Nullable;
 
-import javax.swing.*;
+import javax.annotation.Nonnull;
 
 public class AEPatternViewExtendSlotWidget extends AEPatternViewSlotWidget {
 
@@ -17,11 +22,23 @@ public class AEPatternViewExtendSlotWidget extends AEPatternViewSlotWidget {
     }
 
     @Nullable
-    private Runnable onMiddleClick; // 接收槽位 index（或你想传的任何信息）
+    private Runnable onMiddleClick;
+    @Nullable
+    private Runnable onPatternSlotChanged;
 
     public AEPatternViewExtendSlotWidget setOnMiddleClick(@Nullable Runnable runnable) {
         this.onMiddleClick = runnable;
         return this;
+    }
+
+    public AEPatternViewExtendSlotWidget setOnPatternSlotChanged(@Nullable Runnable runnable) {
+        this.onPatternSlotChanged = runnable;
+        return this;
+    }
+
+    @Override
+    protected Slot createSlot(IItemTransfer itemHandler, int index) {
+        return new ExtendWidgetSlotItemTransfer(itemHandler, index, 0, 0);
     }
 
     @Override
@@ -32,8 +49,29 @@ public class AEPatternViewExtendSlotWidget extends AEPatternViewSlotWidget {
                 onMiddleClick.run();
                 return true;
             }
+
+            var stack = slotReference.getItem();
+            if (canPutItems && stack.isEmpty() || canTakeItems && !stack.isEmpty()) {
+                ModularUIGuiContainer modularUIGui = gui.getModularUIGui();
+                boolean last = modularUIGui.getQuickCrafting();
+                InputConstants.Key mouseKey = InputConstants.Type.MOUSE.getOrCreate(button);
+                HOVER_SLOT = slotReference;
+                gui.getModularUIGui().superMouseClicked(mouseX, mouseY, button);
+                HOVER_SLOT = null;
+                if (last != modularUIGui.getQuickCrafting()) {
+                    modularUIGui.dragSplittingButton = button;
+                    if (button == 0) {
+                        modularUIGui.dragSplittingLimit = 0;
+                    } else if (button == 1) {
+                        modularUIGui.dragSplittingLimit = 1;
+                    } else if (Minecraft.getInstance().options.keyPickItem.matchesMouse(mouseKey.getValue())) {
+                        modularUIGui.dragSplittingLimit = 2;
+                    }
+                }
+                return true;
+            }
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return false;
     }
 
     @Override
@@ -42,6 +80,21 @@ public class AEPatternViewExtendSlotWidget extends AEPatternViewSlotWidget {
         if (id == 10) {
             if (onMiddleClick != null) {
                 onMiddleClick.run();
+            }
+        }
+    }
+
+    protected class ExtendWidgetSlotItemTransfer extends WidgetSlotItemTransfer {
+
+        public ExtendWidgetSlotItemTransfer(IItemTransfer itemHandler, int index, int xPosition, int yPosition) {
+            super(itemHandler, index, xPosition, yPosition);
+        }
+
+        @Override
+        public void set(@Nonnull ItemStack stack) {
+            super.set(stack);
+            if (onPatternSlotChanged != null) {
+                onPatternSlotChanged.run();
             }
         }
     }
