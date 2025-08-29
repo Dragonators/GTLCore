@@ -1,7 +1,5 @@
 package org.gtlcore.gtlcore.api.pattern;
 
-import com.gregtechceu.gtceu.api.pattern.Predicates;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import org.gtlcore.gtlcore.api.pattern.util.IValueContainer;
 import org.gtlcore.gtlcore.api.pattern.util.SimpleValueContainer;
 
@@ -19,13 +17,11 @@ import com.lowdragmc.lowdraglib.utils.BlockInfo;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.Block;
 
-import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
-import it.unimi.dsi.fastutil.objects.ObjectSet;
-import it.unimi.dsi.fastutil.objects.ObjectSets;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.objects.*;
 import lombok.NonNull;
 
 import java.util.*;
-
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -61,7 +57,7 @@ public class GTLPredicates {
     }
 
     public static TraceabilityPredicate countBlock(String name, Block... blocks) {
-        TraceabilityPredicate inner = Predicates.blocks(blocks);
+        TraceabilityPredicate inner = blocks(blocks);
         Predicate<MultiblockState> predicate = state -> {
             if (inner.test(state)) {
                 IValueContainer<?> currentContainer = state.getMatchContext().getOrPut(name + "Value",
