@@ -23,6 +23,7 @@ import java.util.Objects;
 @Mixin(targets = "com.gregtechceu.gtceu.integration.ae2.machine.MEStockingBusPartMachine$ExportOnlyAEStockingItemSlot", remap = false)
 public class ExportOnlyAEStockingItemSlotMixin implements LongAEStockingSlot {
 
+    @SuppressWarnings("target")
     @Shadow(remap = false)
     @Final
     MEStockingBusPartMachine this$0;

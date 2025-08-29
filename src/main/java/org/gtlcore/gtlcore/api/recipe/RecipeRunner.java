@@ -11,7 +11,6 @@ import com.gregtechceu.gtceu.api.recipe.RecipeHelper;
 import com.gregtechceu.gtceu.api.recipe.chance.boost.ChanceBoostFunction;
 import com.gregtechceu.gtceu.api.recipe.chance.logic.ChanceLogic;
 import com.gregtechceu.gtceu.api.recipe.content.Content;
-import com.gregtechceu.gtceu.api.recipe.content.ContentModifier;
 
 import it.unimi.dsi.fastutil.objects.*;
 
@@ -60,7 +59,7 @@ public class RecipeRunner {
             RecipeCapability<?> cap = entry.getKey();
             if (!cap.doMatchInRecipe()) continue;
             if (entry.getValue().isEmpty()) continue;
-            List<Content> chancedContents = new ArrayList<>();
+            List<Content> chancedContents = new ObjectArrayList<>();
             var contentList = this.recipeContent.computeIfAbsent(cap, c -> new ObjectArrayList<>());
             for (Content cont : entry.getValue()) {
                 if (simulated) {
@@ -69,7 +68,7 @@ public class RecipeRunner {
                     if (cont.chance >= cont.maxChance) {
                         contentList.add(cont.content);
                     } else {
-                        chancedContents.add(cont.copy(cap, ContentModifier.multiplier(1.0 / recipe.parallels)));
+                        chancedContents.add(cont);
                     }
                 }
             }
