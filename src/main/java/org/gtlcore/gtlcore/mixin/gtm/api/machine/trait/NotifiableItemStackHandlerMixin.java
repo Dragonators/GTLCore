@@ -69,45 +69,15 @@ public abstract class NotifiableItemStackHandlerMixin {
             if (io == IO.OUT && ingredient instanceof IntProviderIngredient provider) {
                 provider.setItemStacks(null);
                 provider.setSampledCount(-1);
-
-                ItemStack output;
-                if (simulate) {
-                    output = provider.getItems().length == 0 ? ItemStack.EMPTY : provider.getItems()[0].copyWithCount(provider.getCountProvider().getMaxValue());
-                    items = new ItemStack[] { output };
-                } else {
-                    items = provider.getItems();
-                    if (items.length == 0 || items[0].isEmpty()) {
-                        it.remove();
-                        continue;
-                    }
-                    output = items[0];
-                }
-
-                long outputStorageLimit = 0;
-                for (int slot = 0; slot < storage.getSlots(); ++slot) {
-                    ItemStack stack = storage.getStackInSlot(slot);
-                    if (stack.isEmpty() || ItemStack.isSameItemSameTags(stack, output)) {
-                        outputStorageLimit += storage.getSlotLimit(slot) - stack.getCount();
-                    }
-                }
-
-                if (provider.getCountProvider().getMinValue() > outputStorageLimit) {
-                    it.remove();
-                    continue;
-                } else if (simulate) {
-                    amount = provider.getCountProvider().getMaxValue();
-                } else {
-                    amount = Math.min(output.getCount(), outputStorageLimit);
-                }
-            } else {
-                items = ingredient.getItems();
-                if (items.length == 0 || items[0].isEmpty()) {
-                    it.remove();
-                    continue;
-                }
-                if (ingredient instanceof LongIngredient li) amount = li.getActualAmount();
-                else amount = items[0].getCount();
             }
+
+            items = ingredient.getItems();
+            if (items.length == 0 || items[0].isEmpty()) {
+                it.remove();
+                continue;
+            }
+            if (ingredient instanceof LongIngredient li) amount = li.getActualAmount();
+            else amount = items[0].getCount();
 
             for (int slot = 0; slot < storage.getSlots(); ++slot) {
                 ItemStack current = visited[slot] == null ? storage.getStackInSlot(slot) : visited[slot];
