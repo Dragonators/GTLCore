@@ -12,12 +12,16 @@ import net.minecraft.world.item.crafting.Ingredient;
 
 import appeng.api.stacks.AEFluidKey;
 import appeng.api.stacks.AEItemKey;
+import appeng.api.stacks.AEKey;
+import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 
 import java.lang.ref.WeakReference;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 public final class AEWriteService implements AutoCloseable {
 
@@ -72,6 +76,34 @@ public final class AEWriteService implements AutoCloseable {
                     }
                 }
             }
+        });
+    }
+
+    public void prepareDrainedData(WeakReference<AEAccumulator> accRef,
+                                   AtomicReference<Object2LongOpenHashMap<AEKey>> targetRef,
+                                   AtomicBoolean drainRequested) {
+        executor.execute(() -> {
+            var acc = accRef.get();
+            if (acc == null) {
+                drainRequested.set(false);
+                return;
+            }
+
+            if (targetRef.get() != null) {
+                drainRequested.set(false);
+                return;
+            }
+
+            Object2LongOpenHashMap<AEKey> drainedData = new Object2LongOpenHashMap<>();
+            acc.drainTo(drainedData);
+
+            if (!drainedData.isEmpty()) {
+                if (!targetRef.compareAndSet(null, drainedData)) {
+                    drainedData.object2LongEntrySet().fastForEach(e -> acc.add(e.getKey(), e.getLongValue()));
+                }
+            }
+
+            drainRequested.set(false);
         });
     }
 
