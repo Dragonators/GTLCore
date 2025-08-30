@@ -27,8 +27,7 @@ public class AEUtils {
 
         final MEStorage networkInv = network.getStorageService().getInventory();
         final var energy = network.getEnergyService();
-        int operationsBatched = 0;
-        int consecutiveFailures = 0;
+        int operationsBatched = 0, consecutiveFailures = 0;
         boolean didWork = false;
 
         for (var it = Object2LongMaps.fastIterator(buffer); it.hasNext() && operationsBatched < BATCH_SIZE;) {
