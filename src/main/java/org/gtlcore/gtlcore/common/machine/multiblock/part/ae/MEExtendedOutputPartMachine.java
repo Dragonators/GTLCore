@@ -43,7 +43,7 @@ import static org.gtlcore.gtlcore.common.machine.multiblock.part.ae.AEUtils.reFu
 public class MEExtendedOutputPartMachine extends MEIOPartMachine {
 
     @Getter
-    private final Object2LongOpenHashMap<AEKey> buffer = new Object2LongOpenHashMap<>();
+    protected final Object2LongOpenHashMap<AEKey> buffer = new Object2LongOpenHashMap<>();
 
     @Getter
     protected final NotifiableMERecipeHandlerTrait<Ingredient, ItemStack> itemOutputHandler;
@@ -53,9 +53,21 @@ public class MEExtendedOutputPartMachine extends MEIOPartMachine {
 
     public MEExtendedOutputPartMachine(IMachineBlockEntity holder) {
         super(holder, IO.OUT);
-        itemOutputHandler = new MEItemOutputHandler(this);
-        fluidOutputHandler = new MEFluidOutputHandler(this);
-        getMainNode().addService(IGridTickable.class, new Ticker());
+        itemOutputHandler = createItemOutputHandler();
+        fluidOutputHandler = createFluidOutputHandler();
+        registerDefaultServices();
+    }
+
+    protected NotifiableMERecipeHandlerTrait<Ingredient, ItemStack> createItemOutputHandler() {
+        return new MEItemOutputHandler(this);
+    }
+
+    protected NotifiableMERecipeHandlerTrait<FluidIngredient, FluidStack> createFluidOutputHandler() {
+        return new MEFluidOutputHandler(this);
+    }
+
+    protected void registerDefaultServices() {
+        getMainNode().addService(IGridTickable.class, new Ticker());;
     }
 
     public Iterable<IMERecipeHandlerTrait<?, ?>> getMERecipeHandlerTraits() {
@@ -65,7 +77,6 @@ public class MEExtendedOutputPartMachine extends MEIOPartMachine {
     @Override
     public void saveCustomPersistedData(@NotNull CompoundTag tag, boolean forDrop) {
         super.saveCustomPersistedData(tag, forDrop);
-
         if (buffer.isEmpty()) return;
 
         ListTag listTag = new ListTag();

@@ -479,6 +479,7 @@
     "block.gtceu.me_mini_pattern_buffer": "小型ME样板总成",
     "block.gtceu.me_extend_pattern_buffer": "扩展ME样板总成",
     "block.gtceu.me_extended_export_buffer": "增广ME输出总成",
+    "block.gtceu.me_extended_async_export_buffer": "增广ME异步输出总成",
     "gtceu.advanced_hyper_reactor": "进阶超能反应",
     "gtceu.aggregation_device": "聚合装置",
     "gtceu.annihilate_generator": "湮灭发电机",
@@ -1694,5 +1695,7 @@
     "config.gtceu.option.hand.output": "手动输出",
     "gtceu.top.buffer_not_bound": "尚未绑定总成",
     "gtceu.top.pending_refunds": "待返回列表",
-    "gtceu.machine.pattern.recipe.cache" : "配方已缓存"
+    "gtceu.machine.pattern.recipe.cache" : "配方已缓存",
+    "gtceu.machine.me_extended_export_buffer.tooltip.0" : "允许配置§6输出过滤§f与§b优先级§f",
+    "gtceu.machine.me_extended_async_export_buffer.tooltip.0" : "使用§6异步输出§f，适合跨配方机器"
 }
