@@ -73,7 +73,6 @@
     "gtm.api.recipe.ParallelLogicMixin",
     "gtm.api.recipe.RecipeIteratorAccessor",
     "gtm.api.recipe.RecipeIteratorMixin",
-    "gtm.api.recipe.RecipeModifierListMixin",
     "gtm.api.recipe.condition.CleanroomConditionMixin",
     "gtm.cover.ConveyorCoverMixin",
     "gtm.cover.InfiniteWaterCoverMixin",
