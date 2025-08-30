@@ -7,6 +7,7 @@ import org.gtlcore.gtlcore.common.machine.generator.LightningRodMachine;
 import org.gtlcore.gtlcore.common.machine.generator.MagicEnergyMachine;
 import org.gtlcore.gtlcore.common.machine.multiblock.electric.CoilWorkableElectricMultipleRecipesMultiblockMachine;
 import org.gtlcore.gtlcore.common.machine.multiblock.part.*;
+import org.gtlcore.gtlcore.common.machine.multiblock.part.ae.MEExtendedAsyncOutputPartMachine;
 import org.gtlcore.gtlcore.common.machine.multiblock.part.ae.MEExtendedOutputPartMachine;
 import org.gtlcore.gtlcore.common.machine.multiblock.part.ae.MEPatternBufferPartMachine;
 import org.gtlcore.gtlcore.common.machine.multiblock.part.ae.MEPatternBufferProxyPartMachine;
@@ -734,13 +735,28 @@ public class GTLMachines {
 
         public static final MachineDefinition ME_EXTENDED_EXPORT_BUFFER = REGISTRATE
                 .machine("me_extended_export_buffer", MEExtendedOutputPartMachine::new)
-                .tier(8)
+                .tier(9)
                 .rotationState(RotationState.ALL)
                 .abilities(PartAbility.EXPORT_FLUIDS, PartAbility.EXPORT_ITEMS)
                 .rotationState(RotationState.ALL)
                 .overlayTieredHullRenderer("me_extended_export_buffer")
                 .langValue("ME Extended Export Buffer")
-                .tooltips(Component.translatable("gtmthings.machine.me_export_buffer.tooltip"))
+                .tooltips(Component.translatable("gtmthings.machine.me_export_buffer.tooltip"),
+                        Component.translatable("gtceu.machine.me_extended_export_buffer.tooltip.0"))
+                .tooltipBuilder(GTL_MODIFY)
+                .register();
+
+        public static final MachineDefinition ME_EXTENDED_ASYNC_EXPORT_BUFFER = REGISTRATE
+                .machine("me_extended_async_export_buffer", MEExtendedAsyncOutputPartMachine::new)
+                .tier(9)
+                .rotationState(RotationState.ALL)
+                .abilities(PartAbility.EXPORT_FLUIDS, PartAbility.EXPORT_ITEMS)
+                .rotationState(RotationState.ALL)
+                .overlayTieredHullRenderer("me_extended_export_buffer")
+                .langValue("ME Extended Async Export Buffer")
+                .tooltips(Component.translatable("gtmthings.machine.me_export_buffer.tooltip"),
+                        Component.translatable("gtceu.machine.me_extended_export_buffer.tooltip.0"),
+                        Component.translatable("gtceu.machine.me_extended_async_export_buffer.tooltip.0"))
                 .tooltipBuilder(GTL_MODIFY)
                 .register();
 
