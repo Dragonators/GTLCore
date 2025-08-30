@@ -1,13 +1,19 @@
 package org.gtlcore.gtlcore.common.machine.multiblock.part.ae;
 
+import com.lowdragmc.lowdraglib.syncdata.ITagSerializable;
+
+import net.minecraft.nbt.CompoundTag;
+
 import appeng.api.stacks.AEKey;
 import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
+import lombok.Getter;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.LongAdder;
 
 public final class AEAccumulator {
 
+    @Getter
     private final ConcurrentHashMap<AEKey, LongAdder> acc = new ConcurrentHashMap<>();
 
     public void add(AEKey key, long delta) {
@@ -26,5 +32,9 @@ public final class AEAccumulator {
 
     public void clear() {
         acc.clear();
+    }
+
+    public boolean isEmpty() {
+        return acc.isEmpty();
     }
 }
