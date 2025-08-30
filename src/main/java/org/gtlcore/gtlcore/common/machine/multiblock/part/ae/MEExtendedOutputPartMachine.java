@@ -2,6 +2,7 @@ package org.gtlcore.gtlcore.common.machine.multiblock.part.ae;
 
 import org.gtlcore.gtlcore.api.machine.trait.IMERecipeHandlerTrait;
 import org.gtlcore.gtlcore.api.recipe.ingredient.LongIngredient;
+import org.gtlcore.gtlcore.client.gui.widget.MEOutListGridWidget;
 import org.gtlcore.gtlcore.config.ConfigHolder;
 
 import com.gregtechceu.gtceu.api.capability.recipe.FluidRecipeCapability;
@@ -13,7 +14,11 @@ import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.ingredient.FluidIngredient;
 import com.gregtechceu.gtceu.api.recipe.ingredient.IntProviderIngredient;
 
+import com.lowdragmc.lowdraglib.gui.widget.LabelWidget;
+import com.lowdragmc.lowdraglib.gui.widget.Widget;
+import com.lowdragmc.lowdraglib.gui.widget.WidgetGroup;
 import com.lowdragmc.lowdraglib.side.fluid.FluidStack;
+import com.lowdragmc.lowdraglib.utils.Position;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -42,6 +47,9 @@ import static org.gtlcore.gtlcore.common.machine.multiblock.part.ae.AEUtils.reFu
 
 public class MEExtendedOutputPartMachine extends MEIOPartMachine {
 
+    protected final static int MIN_FREQUENCY = ConfigHolder.INSTANCE.MEPatternOutputMin;
+    protected final static int MAX_FREQUENCY = ConfigHolder.INSTANCE.MEPatternOutputMax;
+
     @Getter
     protected final Object2LongOpenHashMap<AEKey> buffer = new Object2LongOpenHashMap<>();
 
@@ -56,6 +64,18 @@ public class MEExtendedOutputPartMachine extends MEIOPartMachine {
         itemOutputHandler = createItemOutputHandler();
         fluidOutputHandler = createFluidOutputHandler();
         registerDefaultServices();
+    }
+
+    @Override
+    public @NotNull Widget createUIWidget() {
+        WidgetGroup group = new WidgetGroup(new Position(0, 0));
+        // ME Network status
+        group.addWidget(new LabelWidget(0, 0, () -> this.isOnline ?
+                "gtceu.gui.me_network.online" :
+                "gtceu.gui.me_network.offline"));
+
+        group.addWidget(new MEOutListGridWidget(5, 20, 7, this.buffer));
+        return group;
     }
 
     protected NotifiableMERecipeHandlerTrait<Ingredient, ItemStack> createItemOutputHandler() {
@@ -252,7 +272,7 @@ public class MEExtendedOutputPartMachine extends MEIOPartMachine {
 
         @Override
         public TickingRequest getTickingRequest(IGridNode node) {
-            return new TickingRequest(ConfigHolder.INSTANCE.MEPatternOutputMin, ConfigHolder.INSTANCE.MEPatternOutputMax, false, true);
+            return new TickingRequest(MIN_FREQUENCY, MAX_FREQUENCY, false, true);
         }
 
         @Override
