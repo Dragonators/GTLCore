@@ -1,6 +1,8 @@
 package org.gtlcore.gtlcore.mixin.gtm.recipe;
 
+import org.gtlcore.gtlcore.GTLCore;
 import org.gtlcore.gtlcore.common.data.GTLMachines;
+import org.gtlcore.gtlcore.common.data.GTLRecipeTypes;
 import org.gtlcore.gtlcore.utils.Registries;
 
 import com.gregtechceu.gtceu.GTCEu;
@@ -10,7 +12,9 @@ import com.gregtechceu.gtceu.api.data.chemical.ChemicalHelper;
 import com.gregtechceu.gtceu.api.data.chemical.material.Material;
 import com.gregtechceu.gtceu.api.data.chemical.material.stack.UnificationEntry;
 import com.gregtechceu.gtceu.api.data.tag.TagPrefix;
+import com.gregtechceu.gtceu.api.fluids.store.FluidStorageKeys;
 import com.gregtechceu.gtceu.api.machine.MachineDefinition;
+import com.gregtechceu.gtceu.api.machine.multiblock.CleanroomType;
 import com.gregtechceu.gtceu.common.data.*;
 import com.gregtechceu.gtceu.data.recipe.CraftingComponent;
 import com.gregtechceu.gtceu.data.recipe.CustomTags;
@@ -20,9 +24,8 @@ import com.gregtechceu.gtceu.data.recipe.misc.MetaTileEntityMachineRecipeLoader;
 import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.world.item.ItemStack;
 
-import appeng.core.definitions.AEBlocks;
-import appeng.core.definitions.AEItems;
-import appeng.core.definitions.AEParts;
+import appeng.core.definitions.*;
+import com.hepdd.gtmthings.data.CustomMachines;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
@@ -184,6 +187,7 @@ public abstract class MetaTileEntityMachineRecipeLoaderMixin {
 
             ItemStack meInterface = AEParts.INTERFACE.stack(1);
             ItemStack accelerationCard = AEItems.SPEED_CARD.stack(2);
+            ItemStack capacityCard = AEItems.CAPACITY_CARD.stack(1);
 
             ASSEMBLER_RECIPES.recipeBuilder("me_export_hatch")
                     .inputItems(FLUID_EXPORT_HATCH[EV])
@@ -237,7 +241,7 @@ public abstract class MetaTileEntityMachineRecipeLoaderMixin {
                     .duration(300).EUt(VA[IV])
                     .save(provider);
 
-            ASSEMBLY_LINE_RECIPES.recipeBuilder("me_mini_pattern_buffer")
+            ASSEMBLY_LINE_RECIPES.recipeBuilder(GTLCore.id("me_mini_pattern_buffer"))
                     .inputItems(HUGE_INPUT_DUAL_HATCH[IV], 1)
                     .inputItems(EMITTER_IV, 1)
                     .inputItems(CustomTags.LuV_CIRCUITS, 4)
@@ -256,7 +260,7 @@ public abstract class MetaTileEntityMachineRecipeLoaderMixin {
                             .EUt(VA[IV]))
                     .save(provider);
 
-            ASSEMBLY_LINE_RECIPES.recipeBuilder("me_extend_pattern_buffer")
+            ASSEMBLY_LINE_RECIPES.recipeBuilder(GTLCore.id("me_extend_pattern_buffer"))
                     .inputItems(HUGE_INPUT_DUAL_HATCH[UV], 1)
                     .inputItems(EMITTER_UV, 1)
                     .inputItems(CustomTags.UHV_CIRCUITS, 4)
@@ -277,7 +281,7 @@ public abstract class MetaTileEntityMachineRecipeLoaderMixin {
                             .CWUt(96))
                     .duration(600).EUt(VA[UV]).save(provider);
 
-            ASSEMBLY_LINE_RECIPES.recipeBuilder("me_pattern_buffer_proxy")
+            ASSEMBLY_LINE_RECIPES.recipeBuilder(GTLCore.id("me_pattern_buffer_proxy"))
                     .inputItems(HULL[UV], 1)
                     .inputItems(SENSOR_UV, 2)
                     .inputItems(CustomTags.UHV_CIRCUITS, 1)
@@ -292,6 +296,34 @@ public abstract class MetaTileEntityMachineRecipeLoaderMixin {
                     .stationResearch(b -> b.researchStack(DUAL_IMPORT_HATCH[UV].asStack())
                             .CWUt(48))
                     .duration(600).EUt(VA[UV]).save(provider);
+
+            GTLRecipeTypes.PRECISION_ASSEMBLER_RECIPES.recipeBuilder(GTLCore.id("me_extended_export_buffer"))
+                    .inputItems(CustomMachines.ME_EXPORT_BUFFER, 4)
+                    .inputItems(GTBlocks.MACHINE_CASING_UHV, 4)
+                    .inputItems(capacityCard, 64)
+                    .inputItems(accelerationCard, 48)
+                    .inputFluids(SolderingAlloy.getFluid(1440))
+                    .inputFluids(Mithril.getFluid(576))
+                    .inputFluids(Iron.getFluid(FluidStorageKeys.PLASMA, 576))
+                    .inputFluids(SterileGrowthMedium.getFluid(576))
+                    .outputItems(GTLMachines.GTAEMachines.ME_EXTENDED_EXPORT_BUFFER)
+                    .EUt(VA[UV]).duration(400)
+                    .cleanroom(CleanroomType.CLEANROOM)
+                    .save(provider);
+
+            GTLRecipeTypes.PRECISION_ASSEMBLER_RECIPES.recipeBuilder(GTLCore.id("me_extended_async_export_buffer"))
+                    .inputItems(CustomMachines.ME_EXPORT_BUFFER, 4)
+                    .inputItems(GTBlocks.MACHINE_CASING_UHV, 4)
+                    .inputItems(capacityCard, 64)
+                    .inputItems(accelerationCard, 48)
+                    .inputFluids(SolderingAlloy.getFluid(1440))
+                    .inputFluids(Orichalcum.getFluid(576))
+                    .inputFluids(AbyssalAlloy.getFluid(576))
+                    .inputFluids(SterileGrowthMedium.getFluid(576))
+                    .outputItems(GTLMachines.GTAEMachines.ME_EXTENDED_ASYNC_EXPORT_BUFFER)
+                    .EUt(VA[UV]).duration(400)
+                    .cleanroom(CleanroomType.CLEANROOM)
+                    .save(provider);
         }
     }
 }
