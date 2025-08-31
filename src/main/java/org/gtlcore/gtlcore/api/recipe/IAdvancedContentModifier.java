@@ -4,9 +4,9 @@ import com.gregtechceu.gtceu.api.recipe.content.ContentModifier;
 
 public interface IAdvancedContentModifier {
 
-    void setDivision(int numerator, int denominator);
+    void setDivision(long numerator, long denominator);
 
-    static ContentModifier preciseDivision(int numerator, int denominator) {
+    static ContentModifier preciseDivision(long numerator, long denominator) {
         var modifier = new ContentModifier(0, 0);
         ((IAdvancedContentModifier) modifier).setDivision(numerator, denominator);
         return modifier;
