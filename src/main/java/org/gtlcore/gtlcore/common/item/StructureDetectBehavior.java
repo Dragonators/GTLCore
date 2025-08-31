@@ -1,12 +1,12 @@
 package org.gtlcore.gtlcore.common.item;
 
+import org.gtlcore.gtlcore.api.pattern.util.IMultiblockStateGet;
 import org.gtlcore.gtlcore.client.renderer.BlockHighlightHandler;
 
 import com.gregtechceu.gtceu.api.item.component.IInteractionItem;
 import com.gregtechceu.gtceu.api.item.tool.behavior.IToolBehavior;
 import com.gregtechceu.gtceu.api.machine.MetaMachine;
 import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMultiController;
-import com.gregtechceu.gtceu.api.pattern.BlockPattern;
 import com.gregtechceu.gtceu.api.pattern.MultiblockState;
 import com.gregtechceu.gtceu.api.pattern.error.PatternError;
 import com.gregtechceu.gtceu.api.pattern.error.PatternStringError;
@@ -15,28 +15,23 @@ import com.gregtechceu.gtceu.common.item.TooltipBehavior;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
 /**
  * @author EasterFG on 2024/10/25
  */
 public class StructureDetectBehavior extends TooltipBehavior implements IToolBehavior, IInteractionItem {
-
-    private static final ReentrantLock LOCK = new ReentrantLock();
 
     public static final StructureDetectBehavior INSTANCE = new StructureDetectBehavior(lines -> {
         lines.add(Component.translatable("item.gtlcore.structure_detect.tooltip.0"));
@@ -61,26 +56,10 @@ public class StructureDetectBehavior extends TooltipBehavior implements IToolBeh
                 if (controller.isFormed()) {
                     player.sendSystemMessage(Component.literal("已成型").withStyle(ChatFormatting.GREEN));
                 } else {
-                    if (!controller.self().allowFlip()) {
-                        MultiblockState multiblockState = controller.getMultiblockState();
-                        PatternError error = multiblockState.error;
-                        if (error != null) {
-                            showError(player, error, false);
-                        }
-                    } else {
-                        ((ServerLevel) level).getServer().execute(() -> {
-                            BlockPattern pattern = controller.getPattern();
-                            LOCK.lock();
-                            if (LOCK.tryLock()) {
-                                var result = check(controller, pattern);
-                                for (int i = 0; i < result.size(); i++) {
-                                    showError(player, result.get(i), (i == 1));
-                                }
-                                LOCK.unlock();
-                            } else {
-                                LOCK.unlock();
-                            }
-                        });
+                    MultiblockState multiblockState = controller.getMultiblockState();
+                    if (multiblockState instanceof IMultiblockStateGet stateGet && stateGet.isError()) {
+                        if (stateGet.getErrorNormal() != null) showError(player, stateGet.getErrorNormal(), false);
+                        if (stateGet.getErrorFlip() != null) showError(player, stateGet.getErrorFlip(), true);
                     }
                     return InteractionResult.SUCCESS;
                 }
@@ -89,37 +68,8 @@ public class StructureDetectBehavior extends TooltipBehavior implements IToolBeh
         return InteractionResult.PASS;
     }
 
-    private List<PatternError> check(IMultiController controller, BlockPattern pattern) {
-        List<PatternError> errors = new ArrayList<>();
-        if (controller == null) {
-            errors.add(new PatternStringError("no controller found"));
-            return errors;
-        }
-        BlockPos centerPos = controller.self().getPos();
-        Direction frontFacing = controller.self().getFrontFacing();
-        Direction[] facings = controller.hasFrontFacing() ? new Direction[] { frontFacing } :
-                new Direction[] { Direction.SOUTH, Direction.NORTH, Direction.EAST, Direction.WEST };
-        Direction upwardsFacing = controller.self().getUpwardsFacing();
-        boolean allowsFlip = controller.self().allowFlip();
-        MultiblockState worldState = new MultiblockState(controller.self().getLevel(), controller.self().getPos());
-        for (Direction direction : facings) {
-            pattern.checkPatternAt(worldState, centerPos, direction, upwardsFacing, false, false);
-            if (worldState.hasError()) {
-                errors.add(worldState.error);
-            }
-            if (allowsFlip) {
-                worldState = new MultiblockState(worldState.getWorld(), worldState.getPos());
-                pattern.checkPatternAt(worldState, centerPos, direction, upwardsFacing, true, false);
-                if (worldState.hasError()) {
-                    errors.add(worldState.error);
-                }
-            }
-        }
-        return errors;
-    }
-
     private void showError(Player player, PatternError error, boolean flip) {
-        List<Component> show = new ArrayList<>();
+        List<Component> show = new ObjectArrayList<>();
         if (error instanceof PatternStringError pe) {
             player.sendSystemMessage(pe.getErrorInfo());
             return;
