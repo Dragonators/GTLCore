@@ -4,7 +4,6 @@ import org.gtlcore.gtlcore.api.gui.TurnsConfiguratorButton;
 import org.gtlcore.gtlcore.api.machine.trait.IMEPartMachine;
 import org.gtlcore.gtlcore.api.recipe.ingredient.LongIngredient;
 import org.gtlcore.gtlcore.client.gui.widget.AEDualConfigWidget;
-import org.gtlcore.gtlcore.integration.ae2.slot.LongAEStockingSlot;
 
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
 import com.gregtechceu.gtceu.api.gui.GuiTextures;
@@ -52,8 +51,7 @@ import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.AEKey;
 import appeng.api.stacks.GenericStack;
 import appeng.api.storage.MEStorage;
-import it.unimi.dsi.fastutil.Pair;
-import it.unimi.dsi.fastutil.objects.Object2LongMap;
+import it.unimi.dsi.fastutil.objects.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.jetbrains.annotations.Nullable;
@@ -358,43 +356,56 @@ public class MEDualHatchStockPartMachine extends MEBusPartMachine implements IDa
 
         @Override
         public List<Ingredient> handleRecipeInner(IO io, GTRecipe recipe, List<Ingredient> left, @Nullable String slotName, boolean simulate) {
-            if (io == IO.IN) {
-                boolean changed = false;
-                var listIterator = left.listIterator();
-                while (listIterator.hasNext()) {
-                    Ingredient ingredient = listIterator.next();
-                    if (ingredient.isEmpty()) {
-                        listIterator.remove();
-                    } else {
-                        long amount;
-                        if (ingredient instanceof LongIngredient li) amount = li.getActualAmount();
-                        else if (ingredient instanceof SizedIngredient si) amount = si.getAmount();
-                        else amount = 1;
-                        if (amount < 1) listIterator.remove();
-                        else {
-                            for (ExportOnlyAEItemSlot i : this.inventory) {
-                                GenericStack stored = i.getStock();
-                                if (stored != null && stored.amount() != 0) {
-                                    if (ingredient.test(i.getStackInSlot(0)) && i instanceof LongAEStockingSlot longAEStockingSlot) {
-                                        long extracted = longAEStockingSlot.extractLong(0, amount, simulate, !simulate);
-                                        if (extracted > 0) {
-                                            changed = true;
-                                            amount -= extracted;
+            if (io != IO.IN || left.isEmpty()) {
+                return left;
+            }
+            IGrid grid = getMainNode().getGrid();
+            if (grid == null) {
+                return left;
+            }
+
+            MEStorage aeNetwork = grid.getStorageService().getInventory();
+            boolean changed = false;
+            var listIterator = left.listIterator();
+
+            while (listIterator.hasNext()) {
+                Ingredient ingredient = listIterator.next();
+                if (ingredient.isEmpty()) {
+                    listIterator.remove();
+                } else {
+                    long amount;
+                    if (ingredient instanceof LongIngredient li) amount = li.getActualAmount();
+                    else if (ingredient instanceof SizedIngredient si) amount = si.getAmount();
+                    else amount = 1;
+                    if (amount < 1) listIterator.remove();
+                    else {
+                        for (ExportOnlyAEItemSlot i : this.inventory) {
+                            GenericStack stored = i.getStock();
+                            if (stored != null && stored.amount() != 0 && stored.what() instanceof AEItemKey key) {
+                                if (ingredient.test(i.getStackInSlot(0))) {
+                                    long extracted = aeNetwork.extract(key, amount, simulate ? Actionable.SIMULATE : Actionable.MODULATE, getActionSource());
+                                    if (extracted > 0) {
+                                        changed = true;
+                                        amount -= extracted;
+                                        if (!simulate) {
+                                            long amt = stored.amount() - extracted;
+                                            if (amt == 0) i.setStock(null);
+                                            else i.setStock(new GenericStack(key, stored.amount() - extracted));
                                         }
                                     }
-                                    if (amount <= 0L) {
-                                        listIterator.remove();
-                                        break;
-                                    }
+                                }
+                                if (amount <= 0L) {
+                                    listIterator.remove();
+                                    break;
                                 }
                             }
                         }
                     }
                 }
-                if (!simulate && changed) {
-                    setChanged(true);
-                    this.onContentsChanged();
-                }
+            }
+            if (!simulate && changed) {
+                setChanged(true);
+                this.onContentsChanged();
             }
             return left.isEmpty() ? null : left;
         }
@@ -403,12 +414,19 @@ public class MEDualHatchStockPartMachine extends MEBusPartMachine implements IDa
         public @Nullable Object2LongMap<ItemStack> getMEItemMap() {
             if (getChanged()) {
                 setChanged(false);
-                getItemMap().clear();
+                final var itemMap = getItemMap();
+                itemMap.clear();
+                final MEStorage aeNetwork = Objects.requireNonNull(getMainNode().getGrid()).getStorageService().getInventory();
                 for (var slot : inventory) {
-                    if (slot instanceof LongAEStockingSlot longAEStockingSlot) {
-                        var pair = longAEStockingSlot.getStackWithLongInSlot();
-                        if (pair != null) {
-                            this.getItemMap().addTo(pair.left(), pair.right());
+                    final var stock = slot.getStock();
+                    final var config = slot.getConfig();
+                    if (config != null && config.what() instanceof AEItemKey key) {
+                        long extracted = aeNetwork.extract(key, Long.MAX_VALUE, Actionable.SIMULATE, getActionSource());
+                        if (extracted > 0) {
+                            if (stock == null || stock.amount() != extracted) {
+                                slot.setStock(new GenericStack(key, extracted));
+                            }
+                            itemMap.addTo(key.toStack(), extracted);
                         }
                     }
                 }
@@ -417,7 +435,7 @@ public class MEDualHatchStockPartMachine extends MEBusPartMachine implements IDa
         }
     }
 
-    private class ExportOnlyAEStockingItemSlot extends ExportOnlyAEItemSlot implements LongAEStockingSlot {
+    private class ExportOnlyAEStockingItemSlot extends ExportOnlyAEItemSlot {
 
         public ExportOnlyAEStockingItemSlot() {
             super();
@@ -460,41 +478,6 @@ public class MEDualHatchStockPartMachine extends MEBusPartMachine implements IDa
         @Override
         public ExportOnlyAEStockingItemSlot copy() {
             return new ExportOnlyAEStockingItemSlot(this.config == null ? null : copy(this.config), this.stock == null ? null : copy(this.stock));
-        }
-
-        @Override
-        public long extractLong(int slot, long amount, boolean simulate, boolean notifyChanges) {
-            if (slot == 0 && stock != null && config != null) {
-                if (!isOnline()) return 0;
-
-                MEStorage aeNetwork = Objects.requireNonNull(getMainNode().getGrid()).getStorageService().getInventory();
-                AEKey key = config.what();
-                if (key instanceof AEItemKey) {
-                    long extracted = aeNetwork.extract(key, amount, simulate ? Actionable.SIMULATE : Actionable.MODULATE, actionSource);
-                    if (extracted > 0L) {
-                        if (!simulate) {
-                            this.stock = ExportOnlyAESlot.copy(stock, stock.amount() - extracted);
-                            if (this.stock.amount() == 0) {
-                                this.stock = null;
-                            }
-
-                            if (notifyChanges && this.onContentsChanged != null) {
-                                this.onContentsChanged.run();
-                            }
-                        }
-                        return extracted;
-                    }
-                }
-            }
-            return 0;
-        }
-
-        @Override
-        public @Nullable Pair<ItemStack, Long> getStackWithLongInSlot() {
-            if (this.stock != null && this.stock.amount() > 0L) {
-                return this.stock.what() instanceof AEItemKey itemKey ? Pair.of(itemKey.toStack(), this.stock.amount()) : null;
-            }
-            return null;
         }
     }
 

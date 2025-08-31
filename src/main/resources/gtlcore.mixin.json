@@ -55,7 +55,6 @@
     "gtm.ae.slot.ExportOnlyAEItemSlotMixin",
     "gtm.ae.slot.ExportOnlyAESlotAccessor",
     "gtm.ae.slot.ExportOnlyAEStockingItemListMixin",
-    "gtm.ae.slot.ExportOnlyAEStockingItemSlotMixin",
     "gtm.api.capability.CWURecipeCapabilityMixin",
     "gtm.api.capability.FluidRecipeCapabilityMixin",
     "gtm.api.capability.ItemRecipeCapabilityMixin",
