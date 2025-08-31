@@ -1,5 +1,6 @@
 package org.gtlcore.gtlcore.common.data;
 
+import org.gtlcore.gtlcore.GTLCore;
 import org.gtlcore.gtlcore.api.machine.PerformanceMonitorMachine;
 import org.gtlcore.gtlcore.api.machine.multiblock.GTLPartAbility;
 import org.gtlcore.gtlcore.common.data.machines.*;
@@ -18,6 +19,7 @@ import com.gregtechceu.gtceu.api.GTValues;
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
 import com.gregtechceu.gtceu.api.data.RotationState;
 import com.gregtechceu.gtceu.api.machine.MachineDefinition;
+import com.gregtechceu.gtceu.api.machine.SimpleTieredMachine;
 import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMultiController;
 import com.gregtechceu.gtceu.api.machine.multiblock.CleanroomType;
 import com.gregtechceu.gtceu.api.machine.multiblock.CoilWorkableElectricMultiblockMachine;
@@ -28,6 +30,7 @@ import com.gregtechceu.gtceu.client.renderer.machine.MaintenanceHatchPartRendere
 import com.gregtechceu.gtceu.client.renderer.machine.OverlayTieredMachineRenderer;
 import com.gregtechceu.gtceu.client.renderer.machine.SimpleGeneratorMachineRenderer;
 import com.gregtechceu.gtceu.client.util.TooltipHelper;
+import com.gregtechceu.gtceu.common.data.*;
 import com.gregtechceu.gtceu.common.data.GTCompassSections;
 import com.gregtechceu.gtceu.common.data.GTCreativeModeTabs;
 import com.gregtechceu.gtceu.common.data.GTMachines;
@@ -56,8 +59,10 @@ import com.hepdd.gtmthings.data.WirelessMachines;
 import java.util.List;
 import java.util.function.BiConsumer;
 
+import static com.gregtechceu.gtceu.api.GTValues.*;
 import static com.gregtechceu.gtceu.api.GTValues.LV;
 import static com.gregtechceu.gtceu.api.GTValues.LuV;
+import static com.gregtechceu.gtceu.common.data.GTMachines.*;
 import static com.gregtechceu.gtceu.common.registry.GTRegistration.REGISTRATE;
 
 @SuppressWarnings("unused")
@@ -184,6 +189,18 @@ public class GTLMachines {
 
     public static final MachineDefinition[] NEUTRON_COMPRESSOR = GTMachines.registerSimpleMachines("neutron_compressor",
             GTLRecipeTypes.NEUTRON_COMPRESSOR_RECIPES, GTMachines.defaultTankSizeFunction, false, GTValues.MAX);
+
+    public static final MachineDefinition[] FRAGMENT_WORLD_COLLECTION_MACHINE = GTMachines.registerTieredMachines("fragment_world_collection_machine",
+            (holder, tier) -> new SimpleTieredMachine(holder, tier, largeTankSizeFunction), (tier, builder) -> builder
+                    .editableUI(SimpleTieredMachine.EDITABLE_UI_CREATOR.apply(GTLCore.id("fragment_world_collection"),
+                            GTLRecipeTypes.FRAGMENT_WORLD_COLLECTION))
+                    .rotationState(RotationState.NON_Y_AXIS)
+                    .recipeType(GTLRecipeTypes.FRAGMENT_WORLD_COLLECTION)
+                    .workableTieredHullRenderer(GTCEu.id("block/machines/fragment_world_collection_machine"))
+                    .tooltips(Component.translatable("从世界碎片中汲取资源"))
+                    .compassNode("fragment_world_collection")
+                    .register(),
+            ULV);
 
     public static final MachineDefinition[] LIGHTNING_ROD = GTMachines.registerTieredMachines(
             "lightning_rod",
