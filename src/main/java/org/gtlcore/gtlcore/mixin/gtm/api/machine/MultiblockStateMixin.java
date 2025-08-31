@@ -1,12 +1,15 @@
 package org.gtlcore.gtlcore.mixin.gtm.api.machine;
 
+import org.gtlcore.gtlcore.api.pattern.util.IMultiblockStateGet;
+
 import com.gregtechceu.gtceu.api.block.ActiveBlock;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMultiController;
 import com.gregtechceu.gtceu.api.pattern.MultiblockState;
 import com.gregtechceu.gtceu.api.pattern.MultiblockWorldSavedData;
-import com.gregtechceu.gtceu.common.machine.multiblock.part.FluidHatchPartMachine;
-import com.gregtechceu.gtceu.common.machine.multiblock.part.ItemBusPartMachine;
+import com.gregtechceu.gtceu.api.pattern.TraceabilityPredicate;
+import com.gregtechceu.gtceu.api.pattern.error.PatternError;
+import com.gregtechceu.gtceu.common.machine.multiblock.part.*;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -14,15 +17,28 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
 import com.hepdd.gtmthings.common.block.machine.multiblock.part.HugeBusPartMachine;
-import it.unimi.dsi.fastutil.longs.LongSet;
-import it.unimi.dsi.fastutil.longs.LongSets;
+import it.unimi.dsi.fastutil.longs.*;
+import lombok.Getter;
+import lombok.Setter;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(MultiblockState.class)
-public class MultiblockStateMixin {
+public abstract class MultiblockStateMixin implements IMultiblockStateGet {
+
+    @Getter
+    private boolean isError = false;
+    @Getter
+    @Setter
+    private PatternError errorNormal;
+    @Getter
+    @Setter
+    private PatternError errorFlip;
 
     @Final
     @Shadow(remap = false)
@@ -82,4 +98,25 @@ public class MultiblockStateMixin {
             }
         }
     }
+
+    @Override
+    public void cleanState() {
+        this.clean();
+    }
+
+    @Override
+    public boolean updateState(BlockPos posIn, TraceabilityPredicate predicate) {
+        return this.update(posIn, predicate);
+    }
+
+    @Inject(method = "setError", at = @At("HEAD"), remap = false)
+    public void setError(PatternError error, CallbackInfo ci) {
+        this.isError = error != null;
+    }
+
+    @Shadow(remap = false)
+    protected abstract void clean();
+
+    @Shadow(remap = false)
+    protected abstract boolean update(BlockPos posIn, TraceabilityPredicate predicate);
 }

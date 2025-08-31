@@ -142,6 +142,7 @@ public class AdvancedBlockPattern extends BlockPattern {
                 for (int b = 0, y = -centerOffset[1]; b < this.thumbLength; b++, y++) {
                     for (int a = 0, x = -centerOffset[0]; a < this.palmLength; a++, x++) {
                         TraceabilityPredicate predicate = this.blockMatches[c][b][a];
+                        if (predicate.isAny()) continue;
                         BlockPos pos = setActualRelativeOffset(x, y, z, facing, upwardsFacing, isFlipped)
                                 .offset(centerPos.getX(), centerPos.getY(), centerPos.getZ());
                         updateWorldState(worldState, pos, predicate);
