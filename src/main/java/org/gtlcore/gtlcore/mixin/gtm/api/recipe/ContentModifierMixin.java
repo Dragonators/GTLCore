@@ -13,10 +13,10 @@ import java.math.BigInteger;
 public class ContentModifierMixin implements IAdvancedContentModifier {
 
     @Unique
-    private int numerator = -1;
+    private long numerator = -1;
 
     @Unique
-    private int denominator = -1;
+    private long denominator = -1;
 
     @Unique
     private boolean useFraction;
@@ -36,7 +36,7 @@ public class ContentModifierMixin implements IAdvancedContentModifier {
     @Overwrite(remap = false)
     public Number apply(Number number) {
         if (number instanceof Long l) {
-            if (useFraction) return l * numerator / denominator;
+            if (useFraction) return l / denominator * numerator;
             return number.doubleValue() * this.multiplier + this.addition;
         } else if (number instanceof BigDecimal decimal) {
             return decimal.multiply(BigDecimal.valueOf(this.multiplier)).add(BigDecimal.valueOf(this.addition));
@@ -49,7 +49,7 @@ public class ContentModifierMixin implements IAdvancedContentModifier {
 
     @Override
     @Unique
-    public void setDivision(int numerator, int denominator) {
+    public void setDivision(long numerator, long denominator) {
         this.numerator = numerator;
         this.denominator = denominator;
         this.useFraction = true;
