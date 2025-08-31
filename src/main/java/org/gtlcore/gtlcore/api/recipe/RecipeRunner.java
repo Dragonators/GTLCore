@@ -67,7 +67,7 @@ public class RecipeRunner {
                 } else {
                     if (cont.chance >= cont.maxChance) {
                         contentList.add(cont.content);
-                    } else {
+                    } else if (cont.chance != 0) {
                         chancedContents.add(cont);
                     }
                 }
