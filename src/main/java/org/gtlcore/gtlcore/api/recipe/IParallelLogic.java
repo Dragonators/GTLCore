@@ -55,7 +55,7 @@ public interface IParallelLogic {
         recipe.outputs.clear();
         for (var it = recipeContents.reference2ObjectEntrySet().fastIterator(); it.hasNext();) {
             var entry = it.next();
-            List<Content> contentList = new ArrayList<>(entry.getValue().size());
+            List<Content> contentList = new ObjectArrayList<>(entry.getValue().size());
             contentList.addAll(entry.getValue());
             recipe.outputs.put(entry.getKey(), contentList);
         }
