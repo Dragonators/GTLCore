@@ -234,7 +234,6 @@ public abstract class BlockPatternMixin {
                 for (int y = 0; y < this.thumbLength; y++) {
                     for (int z = 0; z < this.palmLength; z++) {
                         TraceabilityPredicate predicate = this.blockMatches[l][y][z];
-                        if (predicate.isAny()) continue;
                         boolean find = false;
                         BlockInfo[] infos = null;
                         for (SimplePredicate limit : predicate.limited) {
