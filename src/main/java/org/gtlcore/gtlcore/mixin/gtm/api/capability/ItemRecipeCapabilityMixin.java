@@ -52,7 +52,7 @@ public class ItemRecipeCapabilityMixin {
         if (content instanceof LongIngredient longIngredient) {
             return LongIngredient.create(longIngredient.getInner(), modifier.apply(longIngredient.getActualAmount()).longValue());
         } else if (content instanceof SizedIngredient sizedIngredient) {
-            return LongIngredient.create(sizedIngredient.getInner(), modifier.apply(sizedIngredient.getAmount()).longValue());
+            return LongIngredient.create(sizedIngredient.getInner(), modifier.apply((long) sizedIngredient.getAmount()).longValue());
         } else if (content instanceof IntProviderIngredient intProviderIngredient) {
             return new IntProviderIngredient(intProviderIngredient.getInner(), new FlooredInt(new AddedFloat(new MultipliedFloat(new CastedFloat(intProviderIngredient.getCountProvider()), ConstantFloat.of((float) modifier.getMultiplier())), ConstantFloat.of((float) modifier.getAddition()))));
         } else {

@@ -67,10 +67,10 @@ public abstract class ChanceLogicOrMixin extends ChanceLogic {
             int maxChance = entry.maxChance;
 
             int newChance = gTLCore$getChance(entry, boostFunction, baseTier, machineTier);
-            int totalChance = times * newChance;
-            int guaranteed = totalChance / maxChance;
+            long totalChance = (long) times * newChance;
+            long guaranteed = totalChance / maxChance;
             if (guaranteed > 0) out.add(entry.copy(cap, preciseDivision(guaranteed, times)));
-            newChance = totalChance % maxChance;
+            newChance = (int) (totalChance % maxChance);
 
             int cached = gTLCore$getCachedChance(entry, cache);
             int chance = newChance + cached;
