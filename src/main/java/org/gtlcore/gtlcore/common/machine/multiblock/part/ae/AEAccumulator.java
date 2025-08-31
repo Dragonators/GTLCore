@@ -1,9 +1,5 @@
 package org.gtlcore.gtlcore.common.machine.multiblock.part.ae;
 
-import com.lowdragmc.lowdraglib.syncdata.ITagSerializable;
-
-import net.minecraft.nbt.CompoundTag;
-
 import appeng.api.stacks.AEKey;
 import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 import lombok.Getter;
