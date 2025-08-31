@@ -5,8 +5,10 @@ import com.lowdragmc.lowdraglib.side.fluid.FluidStack;
 import net.minecraft.world.item.ItemStack;
 
 import it.unimi.dsi.fastutil.objects.Object2LongMap;
-import it.unimi.dsi.fastutil.objects.Object2LongOpenCustomHashMap;
 import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.List;
 
 import javax.annotation.Nullable;
 
@@ -16,12 +18,16 @@ public interface IMEPartMachine {
         return null;
     }
 
-    default Object2LongOpenCustomHashMap<ItemStack> getItemMap() {
+    default @NotNull List<FluidStack> getMEFluidList() {
+        return List.of();
+    }
+
+    default Object2LongOpenHashMap<ItemStack> getItemMap() {
         return null;
     }
 
-    default @Nullable Object2LongOpenHashMap<FluidStack> getFluidMap() {
-        return null;
+    default @NotNull List<FluidStack> getFluidList() {
+        return List.of();
     }
 
     default void setChanged(boolean value) {}
@@ -29,4 +35,6 @@ public interface IMEPartMachine {
     default boolean getChanged() {
         return false;
     }
+
+    void onConfigChanged();
 }

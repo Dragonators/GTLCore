@@ -2,7 +2,7 @@ package org.gtlcore.gtlcore.mixin.gtm.ae.slot;
 
 import org.gtlcore.gtlcore.api.machine.trait.IMESlot;
 
-import com.gregtechceu.gtceu.integration.ae2.slot.ExportOnlyAEItemSlot;
+import com.gregtechceu.gtceu.integration.ae2.slot.ExportOnlyAEFluidSlot;
 
 import appeng.api.stacks.GenericStack;
 import lombok.Getter;
@@ -12,8 +12,8 @@ import org.spongepowered.asm.mixin.Mixin;
 
 import static com.lowdragmc.lowdraglib.LDLib.isRemote;
 
-@Mixin(targets = "com.gregtechceu.gtceu.integration.ae2.machine.MEStockingBusPartMachine$ExportOnlyAEStockingItemSlot", remap = false)
-public class ExportOnlyAEStockingItemSlotMixin extends ExportOnlyAEItemSlot implements IMESlot {
+@Mixin(targets = "com.gregtechceu.gtceu.integration.ae2.machine.MEStockingHatchPartMachine$ExportOnlyAEStockingFluidSlot", remap = false)
+public abstract class ExportOnlyAEStockingFluidSlotMixin extends ExportOnlyAEFluidSlot implements IMESlot {
 
     @Setter
     @Getter

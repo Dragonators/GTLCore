@@ -1,10 +1,12 @@
 package org.gtlcore.gtlcore.common.machine.multiblock.part;
 
 import org.gtlcore.gtlcore.api.gui.TurnsConfiguratorButton;
+import org.gtlcore.gtlcore.api.machine.trait.ExportOnlyAEConfigureFluidSlot;
+import org.gtlcore.gtlcore.api.machine.trait.ExportOnlyAEConfigureItemSlot;
 import org.gtlcore.gtlcore.api.machine.trait.IMEPartMachine;
+import org.gtlcore.gtlcore.api.machine.trait.IMESlot;
 import org.gtlcore.gtlcore.api.recipe.ingredient.LongIngredient;
 import org.gtlcore.gtlcore.client.gui.widget.AEDualConfigWidget;
-import org.gtlcore.gtlcore.integration.ae2.slot.LongAEStockingSlot;
 
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
 import com.gregtechceu.gtceu.api.gui.GuiTextures;
@@ -16,6 +18,7 @@ import com.gregtechceu.gtceu.api.machine.feature.IDataStickInteractable;
 import com.gregtechceu.gtceu.api.machine.trait.NotifiableFluidTank;
 import com.gregtechceu.gtceu.api.machine.trait.NotifiableItemStackHandler;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
+import com.gregtechceu.gtceu.api.recipe.ingredient.FluidIngredient;
 import com.gregtechceu.gtceu.api.recipe.ingredient.SizedIngredient;
 import com.gregtechceu.gtceu.common.item.IntCircuitBehaviour;
 import com.gregtechceu.gtceu.integration.ae2.machine.MEBusPartMachine;
@@ -38,6 +41,8 @@ import com.lowdragmc.lowdraglib.utils.Position;
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.TickTask;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -52,10 +57,11 @@ import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.AEKey;
 import appeng.api.stacks.GenericStack;
 import appeng.api.storage.MEStorage;
-import it.unimi.dsi.fastutil.Pair;
-import it.unimi.dsi.fastutil.objects.Object2LongMap;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.objects.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -144,6 +150,9 @@ public class MEDualHatchStockPartMachine extends MEBusPartMachine implements IDa
         }
         IStorageService storageService = grid.getStorageService();
         MEStorage networkStorage = storageService.getInventory();
+        final var inventory = this.aeItemHandler.getInventory();
+        final var fluidInventory = this.aeFluidHandler.getInventory();
+
         var counter = networkStorage.getAvailableStacks();
         int index = 0;
         for (Object2LongMap.Entry<AEKey> entry : counter) {
@@ -162,26 +171,29 @@ public class MEDualHatchStockPartMachine extends MEBusPartMachine implements IDa
             long request = networkStorage.extract(what, amount, Actionable.SIMULATE, actionSource);
             if (request == 0) continue;
             if (isItem) {
-                this.aeFluidHandler.getInventory()[index].setConfig(null);
+                ((IMESlot) fluidInventory[index]).setConfigWithoutNotify(null);
             } else {
-                this.aeItemHandler.getInventory()[index].setConfig(null);
+                ((IMESlot) inventory[index]).setConfigWithoutNotify(null);
             }
-            var itemSlot = this.aeItemHandler.getInventory()[index];
-            var fluidSlot = this.aeFluidHandler.getInventory()[index];
+            var itemSlot = inventory[index];
+            var fluidSlot = fluidInventory[index];
             var slot = isItem ? itemSlot : fluidSlot;
             if (isItem) {
-                fluidSlot.setConfig(null);
+                ((IMESlot) fluidSlot).setConfigWithoutNotify(null);
                 fluidSlot.setStock(null);
             } else {
-                itemSlot.setConfig(null);
+                ((IMESlot) itemSlot).setConfigWithoutNotify(null);
                 itemSlot.setStock(null);
             }
-            slot.setConfig(new GenericStack(what, 1));
+            ((IMESlot) slot).setConfigWithoutNotify(new GenericStack(what, 1));
             slot.setStock(new GenericStack(what, request));
             index++;
         }
         aeItemHandler.clearInventory(index);
         aeFluidHandler.clearInventory(index);
+
+        ((IMEPartMachine) aeItemHandler).onConfigChanged();
+        ((IMEPartMachine) aeFluidHandler).onConfigChanged();
     }
 
     protected void syncME() {
@@ -209,6 +221,19 @@ public class MEDualHatchStockPartMachine extends MEBusPartMachine implements IDa
                 }
             }
             slot.setStock(null);
+        }
+        ((IMEPartMachine) aeItemHandler).setChanged(true);
+        ((IMEPartMachine) aeFluidHandler).setChanged(true);
+    }
+
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        if (getLevel() instanceof ServerLevel serverLevel) {
+            serverLevel.getServer().tell(new TickTask(1, () -> {
+                ((IMEPartMachine) this.aeItemHandler).onConfigChanged();
+                ((IMEPartMachine) this.aeFluidHandler).onConfigChanged();
+            }));
         }
     }
 
@@ -288,6 +313,9 @@ public class MEDualHatchStockPartMachine extends MEBusPartMachine implements IDa
         }
 
         if (tag.contains("ConfigStacks")) {
+            final var inventory = this.aeItemHandler.getInventory();
+            final var fluidInventory = this.aeFluidHandler.getInventory();
+
             CompoundTag configStacks = tag.getCompound("ConfigStacks");
             for (int i = 0; i < CONFIG_SIZE; i++) {
                 String key = Integer.toString(i);
@@ -296,16 +324,19 @@ public class MEDualHatchStockPartMachine extends MEBusPartMachine implements IDa
                     var stack = GenericStack.readTag(configTag);
                     if (stack != null) {
                         if (stack.what() instanceof AEItemKey) {
-                            this.aeItemHandler.getInventory()[i].setConfig(stack);
+                            ((IMESlot) inventory[i]).setConfigWithoutNotify(stack);
                         } else {
-                            this.aeFluidHandler.getInventory()[i].setConfig(stack);
+                            ((IMESlot) fluidInventory[i]).setConfigWithoutNotify(stack);
                         }
                         continue;
                     }
                 }
-                this.aeItemHandler.getInventory()[i].setConfig(null);
-                this.aeFluidHandler.getInventory()[i].setConfig(null);
+                ((IMESlot) inventory[i]).setConfigWithoutNotify(null);
+                ((IMESlot) fluidInventory[i]).setConfigWithoutNotify(null);
             }
+
+            ((IMEPartMachine) aeItemHandler).onConfigChanged();
+            ((IMEPartMachine) aeFluidHandler).onConfigChanged();
         }
 
         if (tag.contains("GhostCircuit")) {
@@ -342,8 +373,37 @@ public class MEDualHatchStockPartMachine extends MEBusPartMachine implements IDa
 
     private class ExportOnlyAEStockingItemList extends ExportOnlyAEItemList implements IMEPartMachine {
 
+        protected ObjectArrayList<AEItemKey> configList = new ObjectArrayList<>();
+
+        protected IntArrayList configIndexList = new IntArrayList();
+
         public ExportOnlyAEStockingItemList(MetaMachine holder, int slots) {
             super(holder, slots, ExportOnlyAEStockingItemSlot::new);
+            for (ExportOnlyAEItemSlot exportOnlyAEItemSlot : inventory) {
+                ((IMESlot) exportOnlyAEItemSlot).setOnConfigChanged(this::onConfigChanged);
+            }
+        }
+
+        @Override
+        public void clearInventory(int startIndex) {
+            for (int i = startIndex; i < this.getConfigurableSlots(); ++i) {
+                IConfigurableSlot slot = this.getConfigurableSlot(i);
+                ((IMESlot) slot).setConfigWithoutNotify(null);
+                slot.setStock(null);
+            }
+        }
+
+        @Override
+        public void onConfigChanged() {
+            configList.clear();
+            configIndexList.clear();
+            for (int i = 0, inventoryLength = inventory.length; i < inventoryLength; i++) {
+                final var config = inventory[i].getConfig();
+                if (config != null && config.what() instanceof AEItemKey key) {
+                    configList.add(key);
+                    configIndexList.add(i);
+                }
+            }
         }
 
         @Override
@@ -358,43 +418,57 @@ public class MEDualHatchStockPartMachine extends MEBusPartMachine implements IDa
 
         @Override
         public List<Ingredient> handleRecipeInner(IO io, GTRecipe recipe, List<Ingredient> left, @Nullable String slotName, boolean simulate) {
-            if (io == IO.IN) {
-                boolean changed = false;
-                var listIterator = left.listIterator();
-                while (listIterator.hasNext()) {
-                    Ingredient ingredient = listIterator.next();
-                    if (ingredient.isEmpty()) {
-                        listIterator.remove();
-                    } else {
-                        long amount;
-                        if (ingredient instanceof LongIngredient li) amount = li.getActualAmount();
-                        else if (ingredient instanceof SizedIngredient si) amount = si.getAmount();
-                        else amount = 1;
-                        if (amount < 1) listIterator.remove();
-                        else {
-                            for (ExportOnlyAEItemSlot i : this.inventory) {
-                                GenericStack stored = i.getStock();
-                                if (stored != null && stored.amount() != 0) {
-                                    if (ingredient.test(i.getStackInSlot(0)) && i instanceof LongAEStockingSlot longAEStockingSlot) {
-                                        long extracted = longAEStockingSlot.extractLong(0, amount, simulate, !simulate);
-                                        if (extracted > 0) {
-                                            changed = true;
-                                            amount -= extracted;
+            if (io != IO.IN || left.isEmpty()) {
+                return left;
+            }
+            IGrid grid = getMainNode().getGrid();
+            if (grid == null) {
+                return left;
+            }
+
+            MEStorage aeNetwork = grid.getStorageService().getInventory();
+            boolean changed = false;
+            var listIterator = left.listIterator();
+
+            while (listIterator.hasNext()) {
+                Ingredient ingredient = listIterator.next();
+                if (ingredient.isEmpty()) {
+                    listIterator.remove();
+                } else {
+                    long amount;
+                    if (ingredient instanceof LongIngredient li) amount = li.getActualAmount();
+                    else if (ingredient instanceof SizedIngredient si) amount = si.getAmount();
+                    else amount = 1;
+                    if (amount < 1) listIterator.remove();
+                    else {
+                        for (int i = 0, configListSize = configList.size(); i < configListSize; i++) {
+                            AEItemKey aeItemKey = configList.get(i);
+                            if (ingredient.test(aeItemKey.toStack())) {
+                                long extracted = aeNetwork.extract(aeItemKey, amount, simulate ? Actionable.SIMULATE : Actionable.MODULATE, getActionSource());
+                                if (extracted > 0) {
+                                    changed = true;
+                                    amount -= extracted;
+                                    if (!simulate) {
+                                        var slot = this.inventory[configIndexList.getInt(i)];
+                                        if (slot.getStock() != null) {
+                                            long amt = slot.getStock().amount() - extracted;
+                                            if (amt == 0) slot.setStock(null);
+                                            else slot.setStock(new GenericStack(aeItemKey, amt));
                                         }
                                     }
-                                    if (amount <= 0L) {
-                                        listIterator.remove();
-                                        break;
-                                    }
                                 }
+                            }
+                            if (amount <= 0L) {
+                                listIterator.remove();
+                                break;
                             }
                         }
                     }
                 }
-                if (!simulate && changed) {
-                    setChanged(true);
-                    this.onContentsChanged();
-                }
+            }
+            if (!simulate && changed) {
+                setChanged(true);
+                this.onContentsChanged();
             }
             return left.isEmpty() ? null : left;
         }
@@ -403,13 +477,13 @@ public class MEDualHatchStockPartMachine extends MEBusPartMachine implements IDa
         public @Nullable Object2LongMap<ItemStack> getMEItemMap() {
             if (getChanged()) {
                 setChanged(false);
-                getItemMap().clear();
-                for (var slot : inventory) {
-                    if (slot instanceof LongAEStockingSlot longAEStockingSlot) {
-                        var pair = longAEStockingSlot.getStackWithLongInSlot();
-                        if (pair != null) {
-                            this.getItemMap().addTo(pair.left(), pair.right());
-                        }
+                final var itemMap = getItemMap();
+                itemMap.clear();
+                final MEStorage aeNetwork = Objects.requireNonNull(getMainNode().getGrid()).getStorageService().getInventory();
+                for (var key : configList) {
+                    long extracted = aeNetwork.extract(key, Long.MAX_VALUE, Actionable.SIMULATE, getActionSource());
+                    if (extracted > 0) {
+                        itemMap.addTo(key.toStack(), extracted);
                     }
                 }
             }
@@ -417,7 +491,7 @@ public class MEDualHatchStockPartMachine extends MEBusPartMachine implements IDa
         }
     }
 
-    private class ExportOnlyAEStockingItemSlot extends ExportOnlyAEItemSlot implements LongAEStockingSlot {
+    private class ExportOnlyAEStockingItemSlot extends ExportOnlyAEConfigureItemSlot {
 
         public ExportOnlyAEStockingItemSlot() {
             super();
@@ -461,47 +535,41 @@ public class MEDualHatchStockPartMachine extends MEBusPartMachine implements IDa
         public ExportOnlyAEStockingItemSlot copy() {
             return new ExportOnlyAEStockingItemSlot(this.config == null ? null : copy(this.config), this.stock == null ? null : copy(this.stock));
         }
-
-        @Override
-        public long extractLong(int slot, long amount, boolean simulate, boolean notifyChanges) {
-            if (slot == 0 && stock != null && config != null) {
-                if (!isOnline()) return 0;
-
-                MEStorage aeNetwork = Objects.requireNonNull(getMainNode().getGrid()).getStorageService().getInventory();
-                AEKey key = config.what();
-                if (key instanceof AEItemKey) {
-                    long extracted = aeNetwork.extract(key, amount, simulate ? Actionable.SIMULATE : Actionable.MODULATE, actionSource);
-                    if (extracted > 0L) {
-                        if (!simulate) {
-                            this.stock = ExportOnlyAESlot.copy(stock, stock.amount() - extracted);
-                            if (this.stock.amount() == 0) {
-                                this.stock = null;
-                            }
-
-                            if (notifyChanges && this.onContentsChanged != null) {
-                                this.onContentsChanged.run();
-                            }
-                        }
-                        return extracted;
-                    }
-                }
-            }
-            return 0;
-        }
-
-        @Override
-        public @Nullable Pair<ItemStack, Long> getStackWithLongInSlot() {
-            if (this.stock != null && this.stock.amount() > 0L) {
-                return this.stock.what() instanceof AEItemKey itemKey ? Pair.of(itemKey.toStack(), this.stock.amount()) : null;
-            }
-            return null;
-        }
     }
 
-    private class ExportOnlyAEStockingFluidList extends ExportOnlyAEFluidList {
+    private class ExportOnlyAEStockingFluidList extends ExportOnlyAEFluidList implements IMEPartMachine {
+
+        protected ObjectArrayList<AEFluidKey> configList = new ObjectArrayList<>();
+
+        protected IntArrayList configIndexList = new IntArrayList();
 
         public ExportOnlyAEStockingFluidList(MetaMachine holder, int slots) {
             super(holder, slots, ExportOnlyAEStockingFluidSlot::new);
+            for (ExportOnlyAEFluidSlot exportOnlyAEFluidSlot : inventory) {
+                ((IMESlot) exportOnlyAEFluidSlot).setOnConfigChanged(this::onConfigChanged);
+            }
+        }
+
+        @Override
+        public void clearInventory(int startIndex) {
+            for (int i = startIndex; i < this.getConfigurableSlots(); ++i) {
+                IConfigurableSlot slot = this.getConfigurableSlot(i);
+                ((IMESlot) slot).setConfigWithoutNotify(null);
+                slot.setStock(null);
+            }
+        }
+
+        @Override
+        public void onConfigChanged() {
+            configList.clear();
+            configIndexList.clear();
+            for (int i = 0, inventoryLength = inventory.length; i < inventoryLength; i++) {
+                final var config = inventory[i].getConfig();
+                if (config != null && config.what() instanceof AEFluidKey key) {
+                    configList.add(key);
+                    configIndexList.add(i);
+                }
+            }
         }
 
         @Override
@@ -513,9 +581,80 @@ public class MEDualHatchStockPartMachine extends MEBusPartMachine implements IDa
         public boolean isStocking() {
             return true;
         }
+
+        @Override
+        public List<FluidIngredient> handleRecipeInner(IO io, GTRecipe recipe, List<FluidIngredient> left, @Nullable String slotName, boolean simulate) {
+            if (io != IO.IN || left.isEmpty()) {
+                return left;
+            }
+            IGrid grid = getMainNode().getGrid();
+            if (grid == null) {
+                return left;
+            }
+
+            MEStorage aeNetwork = grid.getStorageService().getInventory();
+            boolean changed = false;
+            var listIterator = left.listIterator();
+
+            while (listIterator.hasNext()) {
+                FluidIngredient ingredient = listIterator.next();
+                if (ingredient.isEmpty()) {
+                    listIterator.remove();
+                } else {
+                    long amount = ingredient.getAmount();
+                    if (amount < 1) listIterator.remove();
+                    else {
+                        for (int i = 0, configListSize = configList.size(); i < configListSize; i++) {
+                            AEFluidKey aeFluidKey = configList.get(i);
+                            if (ingredient.test(FluidStack.create(aeFluidKey.getFluid(), 1, aeFluidKey.getTag()))) {
+                                long extracted = aeNetwork.extract(aeFluidKey, amount, simulate ? Actionable.SIMULATE : Actionable.MODULATE, getActionSource());
+                                if (extracted > 0) {
+                                    changed = true;
+                                    amount -= extracted;
+                                    if (!simulate) {
+                                        var slot = this.inventory[configIndexList.getInt(i)];
+                                        if (slot.getStock() != null) {
+                                            long amt = slot.getStock().amount() - extracted;
+                                            if (amt == 0) slot.setStock(null);
+                                            else slot.setStock(new GenericStack(aeFluidKey, amt));
+                                        }
+                                    }
+                                }
+                            }
+                            if (amount <= 0L) {
+                                listIterator.remove();
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            if (!simulate && changed) {
+                setChanged(true);
+                this.onContentsChanged();
+            }
+            return left.isEmpty() ? null : left;
+        }
+
+        @Override
+        public @NotNull List<FluidStack> getMEFluidList() {
+            if (getChanged()) {
+                setChanged(false);
+                final var fluidList = getFluidList();
+                fluidList.clear();
+                final MEStorage aeNetwork = Objects.requireNonNull(getMainNode().getGrid()).getStorageService().getInventory();
+                for (var key : configList) {
+                    long extracted = aeNetwork.extract(key, Long.MAX_VALUE, Actionable.SIMULATE, getActionSource());
+                    if (extracted > 0) {
+                        fluidList.add(FluidStack.create(key.getFluid(), extracted));
+                    }
+                }
+            }
+            return getFluidList();
+        }
     }
 
-    private class ExportOnlyAEStockingFluidSlot extends ExportOnlyAEFluidSlot {
+    private class ExportOnlyAEStockingFluidSlot extends ExportOnlyAEConfigureFluidSlot {
 
         public ExportOnlyAEStockingFluidSlot() {
             super();

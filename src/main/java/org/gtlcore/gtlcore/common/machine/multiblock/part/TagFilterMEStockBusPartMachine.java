@@ -1,8 +1,9 @@
 package org.gtlcore.gtlcore.common.machine.multiblock.part;
 
+import org.gtlcore.gtlcore.api.machine.trait.ExportOnlyAEConfigureItemSlot;
 import org.gtlcore.gtlcore.api.machine.trait.IMEPartMachine;
+import org.gtlcore.gtlcore.api.machine.trait.IMESlot;
 import org.gtlcore.gtlcore.api.recipe.ingredient.LongIngredient;
-import org.gtlcore.gtlcore.integration.ae2.slot.LongAEStockingSlot;
 
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
 import com.gregtechceu.gtceu.api.gui.GuiTextures;
@@ -19,6 +20,7 @@ import com.gregtechceu.gtceu.integration.ae2.machine.MEInputBusPartMachine;
 import com.gregtechceu.gtceu.integration.ae2.slot.ExportOnlyAEItemList;
 import com.gregtechceu.gtceu.integration.ae2.slot.ExportOnlyAEItemSlot;
 import com.gregtechceu.gtceu.integration.ae2.slot.ExportOnlyAESlot;
+import com.gregtechceu.gtceu.integration.ae2.slot.IConfigurableSlot;
 
 import com.lowdragmc.lowdraglib.gui.texture.IGuiTexture;
 import com.lowdragmc.lowdraglib.gui.texture.TextTexture;
@@ -33,6 +35,8 @@ import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.Holder;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.TickTask;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -49,8 +53,9 @@ import appeng.api.stacks.GenericStack;
 import appeng.api.storage.MEStorage;
 import appeng.util.prioritylist.IPartitionList;
 import com.glodblock.github.extendedae.common.me.taglist.TagExpParser;
-import it.unimi.dsi.fastutil.Pair;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.objects.Object2LongMap;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.Reference2BooleanMap;
 import it.unimi.dsi.fastutil.objects.Reference2BooleanOpenHashMap;
 import lombok.Getter;
@@ -58,8 +63,8 @@ import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -150,7 +155,9 @@ public class TagFilterMEStockBusPartMachine extends MEInputBusPartMachine {
         MEStorage networkStorage = storageService.getInventory();
         IPartitionList filter = new ItemTagPriority(TagExpParser.getMatchingOre(this.tagWhite),
                 TagExpParser.getMatchingOre(this.tagBlack), this.tagWhite + this.tagBlack);
-        List<GenericStack> order = new ArrayList<>();
+        List<GenericStack> order = new ObjectArrayList<>();
+        final var inventory = this.aeItemHandler.getInventory();
+
         var counter = networkStorage.getAvailableStacks();
         int index = 0;
         for (Object2LongMap.Entry<AEKey> entry : counter) {
@@ -168,8 +175,8 @@ public class TagFilterMEStockBusPartMachine extends MEInputBusPartMachine {
                 long request = networkStorage.extract(what, amount, Actionable.SIMULATE, actionSource);
                 if (request == 0) continue;
                 // Ensure that it is valid to configure with this stack
-                var slot = this.aeItemHandler.getInventory()[index];
-                slot.setConfig(new GenericStack(what, 1));
+                var slot = inventory[index];
+                ((IMESlot) slot).setConfigWithoutNotify(new GenericStack(what, 1));
                 slot.setStock(new GenericStack(what, request));
                 index++;
             }
@@ -182,13 +189,25 @@ public class TagFilterMEStockBusPartMachine extends MEInputBusPartMachine {
                 long request = networkStorage.extract(stack.what(), stack.amount(), Actionable.SIMULATE, actionSource);
                 if (request == 0) continue;
                 // Ensure that it is valid to configure with this stack
-                var slot = this.aeItemHandler.getInventory()[index];
-                slot.setConfig(new GenericStack(stack.what(), 1));
+                var slot = inventory[index];
+                ((IMESlot) slot).setConfigWithoutNotify(new GenericStack(stack.what(), 1));
                 slot.setStock(new GenericStack(stack.what(), request));
                 index++;
             }
         }
         aeItemHandler.clearInventory(index);
+
+        ((IMEPartMachine) aeItemHandler).onConfigChanged();
+    }
+
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        if (getLevel() instanceof ServerLevel serverLevel) {
+            serverLevel.getServer().tell(new TickTask(1, () -> {
+                ((IMEPartMachine) this.aeItemHandler).onConfigChanged();
+            }));
+        }
     }
 
     @Override
@@ -255,8 +274,37 @@ public class TagFilterMEStockBusPartMachine extends MEInputBusPartMachine {
 
     private class ExportOnlyAEStockingItemList extends ExportOnlyAEItemList implements IMEPartMachine {
 
+        protected ObjectArrayList<AEItemKey> configList = new ObjectArrayList<>();
+
+        protected IntArrayList configIndexList = new IntArrayList();
+
         public ExportOnlyAEStockingItemList(MetaMachine holder, int slots) {
             super(holder, slots, ExportOnlyAEStockingItemSlot::new);
+            for (ExportOnlyAEItemSlot exportOnlyAEItemSlot : inventory) {
+                ((IMESlot) exportOnlyAEItemSlot).setOnConfigChanged(this::onConfigChanged);
+            }
+        }
+
+        @Override
+        public void clearInventory(int startIndex) {
+            for (int i = startIndex; i < this.getConfigurableSlots(); ++i) {
+                IConfigurableSlot slot = this.getConfigurableSlot(i);
+                ((IMESlot) slot).setConfigWithoutNotify(null);
+                slot.setStock(null);
+            }
+        }
+
+        @Override
+        public void onConfigChanged() {
+            configList.clear();
+            configIndexList.clear();
+            for (int i = 0, inventoryLength = inventory.length; i < inventoryLength; i++) {
+                final var config = inventory[i].getConfig();
+                if (config != null && config.what() instanceof AEItemKey key) {
+                    configList.add(key);
+                    configIndexList.add(i);
+                }
+            }
         }
 
         @Override
@@ -272,44 +320,59 @@ public class TagFilterMEStockBusPartMachine extends MEInputBusPartMachine {
 
         @Override
         public List<Ingredient> handleRecipeInner(IO io, GTRecipe recipe, List<Ingredient> left, @Nullable String slotName, boolean simulate) {
-            if (io == IO.IN) {
-                boolean changed = false;
-                var listIterator = left.listIterator();
-                while (listIterator.hasNext()) {
-                    Ingredient ingredient = listIterator.next();
-                    if (ingredient.isEmpty()) {
-                        listIterator.remove();
-                    } else {
-                        long amount;
-                        if (ingredient instanceof LongIngredient li) amount = li.getActualAmount();
-                        else if (ingredient instanceof SizedIngredient si) amount = si.getAmount();
-                        else amount = 1;
-                        if (amount < 1) listIterator.remove();
-                        else {
-                            for (ExportOnlyAEItemSlot i : this.inventory) {
-                                GenericStack stored = i.getStock();
-                                if (stored != null && stored.amount() != 0) {
-                                    if (ingredient.test(i.getStackInSlot(0)) && i instanceof LongAEStockingSlot longAEStockingSlot) {
-                                        long extracted = longAEStockingSlot.extractLong(0, amount, simulate, !simulate);
-                                        if (extracted > 0) {
-                                            changed = true;
-                                            amount -= extracted;
+            if (io != IO.IN || left.isEmpty()) {
+                return left;
+            }
+            IGrid grid = getMainNode().getGrid();
+            if (grid == null) {
+                return left;
+            }
+
+            MEStorage aeNetwork = grid.getStorageService().getInventory();
+            boolean changed = false;
+            var listIterator = left.listIterator();
+
+            while (listIterator.hasNext()) {
+                Ingredient ingredient = listIterator.next();
+                if (ingredient.isEmpty()) {
+                    listIterator.remove();
+                } else {
+                    long amount;
+                    if (ingredient instanceof LongIngredient li) amount = li.getActualAmount();
+                    else if (ingredient instanceof SizedIngredient si) amount = si.getAmount();
+                    else amount = 1;
+                    if (amount < 1) listIterator.remove();
+                    else {
+                        for (int i = 0, configListSize = configList.size(); i < configListSize; i++) {
+                            AEItemKey aeItemKey = configList.get(i);
+                            if (ingredient.test(aeItemKey.toStack())) {
+                                long extracted = aeNetwork.extract(aeItemKey, amount, simulate ? Actionable.SIMULATE : Actionable.MODULATE, getActionSource());
+                                if (extracted > 0) {
+                                    changed = true;
+                                    amount -= extracted;
+                                    if (!simulate) {
+                                        var slot = this.inventory[configIndexList.getInt(i)];
+                                        if (slot.getStock() != null) {
+                                            long amt = slot.getStock().amount() - extracted;
+                                            if (amt == 0) slot.setStock(null);
+                                            else slot.setStock(new GenericStack(aeItemKey, amt));
                                         }
                                     }
-                                    if (amount <= 0L) {
-                                        listIterator.remove();
-                                        break;
-                                    }
                                 }
+                            }
+                            if (amount <= 0L) {
+                                listIterator.remove();
+                                break;
                             }
                         }
                     }
                 }
-                if (!simulate && changed) {
-                    setChanged(true);
-                    this.onContentsChanged();
-                }
             }
+            if (!simulate && changed) {
+                setChanged(true);
+                this.onContentsChanged();
+            }
+
             return left.isEmpty() ? null : left;
         }
 
@@ -317,13 +380,13 @@ public class TagFilterMEStockBusPartMachine extends MEInputBusPartMachine {
         public @Nullable Object2LongMap<ItemStack> getMEItemMap() {
             if (getChanged()) {
                 setChanged(false);
-                getItemMap().clear();
-                for (var slot : inventory) {
-                    if (slot instanceof LongAEStockingSlot longAEStockingSlot) {
-                        var pair = longAEStockingSlot.getStackWithLongInSlot();
-                        if (pair != null) {
-                            this.getItemMap().addTo(pair.left(), pair.right());
-                        }
+                final var itemMap = getItemMap();
+                itemMap.clear();
+                final MEStorage aeNetwork = Objects.requireNonNull(getMainNode().getGrid()).getStorageService().getInventory();
+                for (var key : configList) {
+                    long extracted = aeNetwork.extract(key, Long.MAX_VALUE, Actionable.SIMULATE, getActionSource());
+                    if (extracted > 0) {
+                        itemMap.addTo(key.toStack(), extracted);
                     }
                 }
             }
@@ -331,7 +394,7 @@ public class TagFilterMEStockBusPartMachine extends MEInputBusPartMachine {
         }
     }
 
-    private class ExportOnlyAEStockingItemSlot extends ExportOnlyAEItemSlot implements LongAEStockingSlot {
+    private class ExportOnlyAEStockingItemSlot extends ExportOnlyAEConfigureItemSlot {
 
         public ExportOnlyAEStockingItemSlot() {
             super();
@@ -374,44 +437,8 @@ public class TagFilterMEStockBusPartMachine extends MEInputBusPartMachine {
         }
 
         @Override
-        public long extractLong(int slot, long amount, boolean simulate, boolean notifyChanges) {
-            if (slot == 0 && stock != null && config != null) {
-                if (!isOnline()) return 0;
-                IGrid grid = getMainNode().getGrid();
-                if (grid == null) return 0;
-                MEStorage aeNetwork = grid.getStorageService().getInventory();
-                AEKey key = config.what();
-                if (key instanceof AEItemKey) {
-                    long extracted = aeNetwork.extract(key, amount, simulate ? Actionable.SIMULATE : Actionable.MODULATE, actionSource);
-                    if (extracted > 0L) {
-                        if (!simulate) {
-                            this.stock = ExportOnlyAESlot.copy(stock, stock.amount() - extracted);
-                            if (this.stock.amount() == 0) {
-                                this.stock = null;
-                            }
-
-                            if (notifyChanges && this.onContentsChanged != null) {
-                                this.onContentsChanged.run();
-                            }
-                        }
-                        return extracted;
-                    }
-                }
-            }
-            return 0;
-        }
-
-        @Override
         public ExportOnlyAEStockingItemSlot copy() {
             return new ExportOnlyAEStockingItemSlot(this.config == null ? null : copy(this.config), this.stock == null ? null : copy(this.stock));
-        }
-
-        @Override
-        public @Nullable Pair<ItemStack, Long> getStackWithLongInSlot() {
-            if (this.stock != null && this.stock.amount() > 0L) {
-                return this.stock.what() instanceof AEItemKey itemKey ? Pair.of(itemKey.toStack(), this.stock.amount()) : null;
-            }
-            return null;
         }
     }
 

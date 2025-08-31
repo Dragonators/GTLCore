@@ -13,8 +13,10 @@ import com.gregtechceu.gtceu.integration.ae2.slot.ExportOnlyAEFluidSlot;
 import com.lowdragmc.lowdraglib.side.fluid.FluidStack;
 
 import appeng.api.stacks.GenericStack;
-import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import lombok.Getter;
 import lombok.Setter;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -24,7 +26,9 @@ import java.util.*;
 @Mixin(ExportOnlyAEFluidList.class)
 public abstract class ExportOnlyAEFluidListMixin extends NotifiableFluidTank implements IMEPartMachine {
 
-    private Object2LongOpenHashMap<FluidStack> fluidMap;
+    @Getter
+    protected final ObjectArrayList<FluidStack> fluidList = new ObjectArrayList<>();
+
     @Setter
     private boolean changed = true;
 
@@ -86,28 +90,29 @@ public abstract class ExportOnlyAEFluidListMixin extends NotifiableFluidTank imp
     }
 
     @Override
-    public Object2LongOpenHashMap<FluidStack> getFluidMap() {
-        if (fluidMap == null) {
-            fluidMap = new Object2LongOpenHashMap<>();
-        }
+    public boolean getChanged() {
+        return changed;
+    }
+
+    @Override
+    public @NotNull List<FluidStack> getMEFluidList() {
         if (changed) {
             changed = false;
-            fluidMap.clear();
+            fluidList.clear();
             for (var slot : inventory) {
                 GenericStack stock = slot.getStock();
                 if (stock != null && stock.amount() != 0L) {
                     FluidStack stack = slot.getFluid();
-                    if (!stack.isEmpty()) fluidMap.addTo(stack, stock.amount());
+                    if (!stack.isEmpty()) fluidList.add(stack);
                 }
             }
         }
-        return fluidMap.isEmpty() ? null : fluidMap;
+        return fluidList;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public List<Object> getContents() {
-        var fluids = this.getFluidMap();
-        if (fluids == null) return Collections.emptyList();
-        return Arrays.asList(fluids.keySet().toArray());
+        return (List<Object>) (List<?>) getMEFluidList();
     }
 }
