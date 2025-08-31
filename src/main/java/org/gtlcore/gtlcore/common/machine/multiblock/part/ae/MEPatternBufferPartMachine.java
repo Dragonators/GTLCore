@@ -134,7 +134,7 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
 
     private final boolean[] hasPatternArray;
     @DescSynced
-    private final boolean[] cacheRecipe;
+    protected final boolean[] cacheRecipe;
 
     @Getter
     @Persisted
@@ -153,11 +153,11 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
     protected final NotifiableItemStackHandler mePatternCircuitInventory;
 
     @Persisted
-    private final ItemStackTransfer[] catalystItems;
+    protected final ItemStackTransfer[] catalystItems;
 
     @Persisted
     @LazyManaged
-    private final FluidTransferList[] catalystFluids;
+    protected final FluidTransferList[] catalystFluids;
 
     /** Pattern circuit handler for managing circuit logic */
     @Getter
@@ -179,7 +179,7 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
     @DescSynced
     @Persisted
     @Setter
-    private String customName = "";
+    protected String customName = "";
 
     @Persisted
     @Getter
@@ -290,7 +290,7 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
         }
     }
 
-    private void onPatternChange(int index) {
+    protected void onPatternChange(int index) {
         if (isRemote()) return;
 
         var internalInv = internalInventory[index];
