@@ -1,7 +1,6 @@
 package org.gtlcore.gtlcore.api.capability;
 
 import com.gregtechceu.gtceu.api.capability.recipe.IFilteredHandler;
-import com.gregtechceu.gtceu.api.capability.recipe.IO;
 import com.gregtechceu.gtceu.api.capability.recipe.RecipeCapability;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 
@@ -25,16 +24,6 @@ public interface IMERecipeHandler<T extends Predicate<S>, S> extends IFilteredHa
      * @return ItemCAP/FluidCAP
      */
     RecipeCapability<T> getCapability();
-
-    IO getIo();
-
-    default int getPriority() {
-        return switch (getIo()) {
-            case OUT -> 10;
-            case BOTH -> 5;
-            case IN, NONE -> 0;
-        };
-    }
 
     // ==================== Active Slots Management ====================
 
