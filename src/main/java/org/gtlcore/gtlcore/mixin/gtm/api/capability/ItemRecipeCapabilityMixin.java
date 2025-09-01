@@ -8,10 +8,7 @@ import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.content.ContentModifier;
 import com.gregtechceu.gtceu.api.recipe.ingredient.IntProviderIngredient;
 import com.gregtechceu.gtceu.api.recipe.ingredient.SizedIngredient;
-import com.gregtechceu.gtceu.common.valueprovider.AddedFloat;
-import com.gregtechceu.gtceu.common.valueprovider.CastedFloat;
-import com.gregtechceu.gtceu.common.valueprovider.FlooredInt;
-import com.gregtechceu.gtceu.common.valueprovider.MultipliedFloat;
+import com.gregtechceu.gtceu.common.valueprovider.*;
 
 import net.minecraft.util.valueproviders.ConstantFloat;
 import net.minecraft.world.item.crafting.Ingredient;
@@ -56,7 +53,7 @@ public class ItemRecipeCapabilityMixin {
         } else if (content instanceof IntProviderIngredient intProviderIngredient) {
             return new IntProviderIngredient(intProviderIngredient.getInner(), new FlooredInt(new AddedFloat(new MultipliedFloat(new CastedFloat(intProviderIngredient.getCountProvider()), ConstantFloat.of((float) modifier.getMultiplier())), ConstantFloat.of((float) modifier.getAddition()))));
         } else {
-            return SizedIngredient.create(content, modifier.apply(1).intValue());
+            return LongIngredient.create(content, modifier.apply(1).longValue());
         }
     }
 
