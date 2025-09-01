@@ -718,6 +718,22 @@ public class GTLMachines {
                 .tooltipBuilder(GTL_ADD)
                 .register();
 
+        public static final MachineDefinition ME_FINAL_PATTERN_BUFFER = REGISTRATE
+                .machine("me_final_pattern_buffer", (h) -> new MEPatternBufferPartMachine(h, 72, IO.BOTH))
+                .tier(10)
+                .rotationState(RotationState.ALL)
+                .abilities(PartAbility.IMPORT_ITEMS, PartAbility.IMPORT_FLUIDS, PartAbility.EXPORT_ITEMS, PartAbility.EXPORT_FLUIDS)
+                .rotationState(RotationState.ALL)
+                .overlayTieredHullRenderer("me_pattern_buffer")
+                .langValue("ME Final Pattern Buffer")
+                .tooltips(Component.literal("更大, 更强(?)").withStyle(ChatFormatting.GOLD),
+                        Component.translatable("block.gtceu.pattern_buffer.desc.0"),
+                        Component.translatable("block.gtceu.pattern_buffer.desc.1"),
+                        Component.translatable("block.gtceu.pattern_buffer.desc.2"),
+                        Component.translatable("gtceu.universal.enabled"))
+                .tooltipBuilder(GTL_ADD)
+                .register();
+
         public static final MachineDefinition ME_PATTERN_BUFFER_PROXY = REGISTRATE
                 .machine("me_pattern_buffer_proxy", MEPatternBufferProxyPartMachine::new)
                 .tier(8)

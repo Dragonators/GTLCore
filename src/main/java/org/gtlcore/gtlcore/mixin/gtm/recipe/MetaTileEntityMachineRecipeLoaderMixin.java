@@ -281,6 +281,27 @@ public abstract class MetaTileEntityMachineRecipeLoaderMixin {
                             .CWUt(96))
                     .duration(600).EUt(VA[UV]).save(provider);
 
+            ASSEMBLY_LINE_RECIPES.recipeBuilder(GTLCore.id("me_final_pattern_buffer"))
+                    .inputItems(HUGE_INPUT_DUAL_HATCH[UEV], 1)
+                    .inputItems(EMITTER_UEV, 2)
+                    .inputItems(CustomTags.UIV_CIRCUITS, 4)
+                    .inputItems(AEBlocks.PATTERN_PROVIDER.asItem(), 3)
+                    .inputItems(AEBlocks.INTERFACE.asItem(), 3)
+                    .inputItems(AEItems.SPEED_CARD.asItem(), 6)
+                    .inputItems(AEItems.CAPACITY_CARD.asItem(), 4)
+                    .inputItems(plate, DegenerateRhenium, 12)
+                    .inputItems(plate, DegenerateRhenium, 12)
+                    .inputItems(wireFine, Enderite, 48)
+                    .inputItems(wireFine, Enderite, 48)
+                    .inputItems(wireFine, Enderite, 48)
+                    .inputFluids(MutatedLivingSolder.getFluid(L * 4))
+                    .inputFluids(Lubricant.getFluid(500))
+                    .inputFluids(Zylon.getFluid(L * 4))
+                    .outputItems(GTLMachines.GTAEMachines.ME_FINAL_PATTERN_BUFFER)
+                    .stationResearch(b -> b.researchStack(HUGE_INPUT_DUAL_HATCH[UEV].asStack())
+                            .CWUt(288))
+                    .duration(600).EUt(VA[UEV]).save(provider);
+
             ASSEMBLY_LINE_RECIPES.recipeBuilder(GTLCore.id("me_pattern_buffer_proxy"))
                     .inputItems(HULL[UV], 1)
                     .inputItems(SENSOR_UV, 2)
