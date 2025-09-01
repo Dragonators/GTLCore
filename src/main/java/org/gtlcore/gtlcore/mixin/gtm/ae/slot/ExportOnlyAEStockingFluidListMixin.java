@@ -1,29 +1,26 @@
 package org.gtlcore.gtlcore.mixin.gtm.ae.slot;
 
 import org.gtlcore.gtlcore.api.machine.trait.IMESlot;
-import org.gtlcore.gtlcore.api.recipe.ingredient.LongIngredient;
+import org.gtlcore.gtlcore.mixin.gtm.ae.machine.MEHatchPartMachineAccessor;
 
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
 import com.gregtechceu.gtceu.api.machine.MetaMachine;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
-import com.gregtechceu.gtceu.api.recipe.ingredient.SizedIngredient;
-import com.gregtechceu.gtceu.integration.ae2.machine.MEStockingBusPartMachine;
-import com.gregtechceu.gtceu.integration.ae2.slot.ExportOnlyAEItemSlot;
+import com.gregtechceu.gtceu.api.recipe.ingredient.FluidIngredient;
+import com.gregtechceu.gtceu.integration.ae2.machine.MEStockingHatchPartMachine;
+import com.gregtechceu.gtceu.integration.ae2.slot.ExportOnlyAEFluidSlot;
 import com.gregtechceu.gtceu.integration.ae2.slot.IConfigurableSlot;
 import com.gregtechceu.gtceu.integration.ae2.slot.IConfigurableSlotList;
 
-import com.lowdragmc.lowdraglib.misc.ItemStackTransfer;
-
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.Ingredient;
+import com.lowdragmc.lowdraglib.side.fluid.FluidStack;
 
 import appeng.api.config.Actionable;
 import appeng.api.networking.IGrid;
-import appeng.api.stacks.AEItemKey;
+import appeng.api.networking.security.IActionSource;
+import appeng.api.stacks.AEFluidKey;
 import appeng.api.stacks.GenericStack;
 import appeng.api.storage.MEStorage;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
-import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -37,31 +34,31 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Function;
 
-@Mixin(targets = "com.gregtechceu.gtceu.integration.ae2.machine.MEStockingBusPartMachine$ExportOnlyAEStockingItemList", remap = false)
-public abstract class ExportOnlyAEStockingItemListMixin extends ExportOnlyAEItemListMixin implements IConfigurableSlotList {
+@Mixin(targets = "com.gregtechceu.gtceu.integration.ae2.machine.MEStockingHatchPartMachine$ExportOnlyAEStockingFluidList", remap = false)
+public abstract class ExportOnlyAEStockingFluidListMixin extends ExportOnlyAEFluidListMixin implements IConfigurableSlotList {
 
-    protected ObjectArrayList<AEItemKey> configList;
+    protected ObjectArrayList<AEFluidKey> configList;
+
     protected IntArrayList configIndexList;
 
     @SuppressWarnings("target")
     @Shadow(remap = false)
     @Final
-    MEStockingBusPartMachine this$0;
+    MEStockingHatchPartMachine this$0;
 
-    public ExportOnlyAEStockingItemListMixin(MetaMachine machine, int slots, @NotNull IO handlerIO, @NotNull IO capabilityIO, Function<Integer, ItemStackTransfer> transferFactory) {
-        super(machine, slots, handlerIO, capabilityIO, transferFactory);
+    public ExportOnlyAEStockingFluidListMixin(MetaMachine machine, int slots, long capacity, IO io, IO capabilityIO) {
+        super(machine, slots, capacity, io, capabilityIO);
     }
 
     @SuppressWarnings("target")
-    @Inject(method = "<init>(Lcom/gregtechceu/gtceu/integration/ae2/machine/MEStockingBusPartMachine;Lcom/gregtechceu/gtceu/api/machine/MetaMachine;I)V",
+    @Inject(method = "<init>(Lcom/gregtechceu/gtceu/integration/ae2/machine/MEStockingHatchPartMachine;Lcom/gregtechceu/gtceu/api/machine/MetaMachine;I)V",
             at = @At("TAIL"))
-    private void gtl$onInit(MEStockingBusPartMachine holder, MetaMachine slots, int par3, CallbackInfo ci) {
+    private void gtl$onInit(MEStockingHatchPartMachine holder, MetaMachine slots, int par3, CallbackInfo ci) {
         configList = new ObjectArrayList<>();
         configIndexList = new IntArrayList();
-        for (ExportOnlyAEItemSlot exportOnlyAEItemSlot : inventory) {
-            ((IMESlot) exportOnlyAEItemSlot).setOnConfigChanged(this::onConfigChanged);
+        for (ExportOnlyAEFluidSlot exportOnlyAEFluidSlot : inventory) {
+            ((IMESlot) exportOnlyAEFluidSlot).setOnConfigChanged(this::onConfigChanged);
         }
     }
 
@@ -81,7 +78,7 @@ public abstract class ExportOnlyAEStockingItemListMixin extends ExportOnlyAEItem
         configIndexList.clear();
         for (int i = 0, inventoryLength = inventory.length; i < inventoryLength; i++) {
             final var config = inventory[i].getConfig();
-            if (config != null && config.what() instanceof AEItemKey key) {
+            if (config != null && config.what() instanceof AEFluidKey key) {
                 configList.add(key);
                 configIndexList.add(i);
             }
@@ -89,7 +86,7 @@ public abstract class ExportOnlyAEStockingItemListMixin extends ExportOnlyAEItem
     }
 
     @Override
-    public List<Ingredient> handleRecipeInner(IO io, GTRecipe recipe, List<Ingredient> left, @Nullable String slotName, boolean simulate) {
+    public List<FluidIngredient> handleRecipeInner(IO io, GTRecipe recipe, List<FluidIngredient> left, @Nullable String slotName, boolean simulate) {
         if (io != IO.IN || left.isEmpty()) {
             return left;
         }
@@ -103,20 +100,17 @@ public abstract class ExportOnlyAEStockingItemListMixin extends ExportOnlyAEItem
         var listIterator = left.listIterator();
 
         while (listIterator.hasNext()) {
-            Ingredient ingredient = listIterator.next();
+            FluidIngredient ingredient = listIterator.next();
             if (ingredient.isEmpty()) {
                 listIterator.remove();
             } else {
-                long amount;
-                if (ingredient instanceof LongIngredient li) amount = li.getActualAmount();
-                else if (ingredient instanceof SizedIngredient si) amount = si.getAmount();
-                else amount = 1;
+                long amount = ingredient.getAmount();
                 if (amount < 1) listIterator.remove();
                 else {
                     for (int i = 0, configListSize = configList.size(); i < configListSize; i++) {
-                        AEItemKey aeItemKey = configList.get(i);
-                        if (ingredient.test(aeItemKey.toStack())) {
-                            long extracted = aeNetwork.extract(aeItemKey, amount, simulate ? Actionable.SIMULATE : Actionable.MODULATE, this$0.getActionSource());
+                        AEFluidKey aeFluidKey = configList.get(i);
+                        if (ingredient.test(FluidStack.create(aeFluidKey.getFluid(), 1, aeFluidKey.getTag()))) {
+                            long extracted = aeNetwork.extract(aeFluidKey, amount, simulate ? Actionable.SIMULATE : Actionable.MODULATE, ((MEHatchPartMachineAccessor) this$0).getActionSource());
                             if (extracted > 0) {
                                 changed = true;
                                 amount -= extracted;
@@ -125,7 +119,7 @@ public abstract class ExportOnlyAEStockingItemListMixin extends ExportOnlyAEItem
                                     if (slot.getStock() != null) {
                                         long amt = slot.getStock().amount() - extracted;
                                         if (amt == 0) slot.setStock(null);
-                                        else slot.setStock(new GenericStack(aeItemKey, amt));
+                                        else slot.setStock(new GenericStack(aeFluidKey, amt));
                                     }
                                 }
                             }
@@ -139,25 +133,27 @@ public abstract class ExportOnlyAEStockingItemListMixin extends ExportOnlyAEItem
             }
         }
         if (!simulate && changed) {
+            setChanged(true);
             this.onContentsChanged();
         }
-
         return left.isEmpty() ? null : left;
     }
 
     @Override
-    public Object2LongOpenHashMap<ItemStack> getMEItemMap() {
+    public @NotNull List<FluidStack> getMEFluidList() {
         if (getChanged()) {
             setChanged(false);
-            itemMap.clear();
+            final var fluidList = getFluidList();
+            fluidList.clear();
             final MEStorage aeNetwork = Objects.requireNonNull(this$0.getMainNode().getGrid()).getStorageService().getInventory();
+            final IActionSource actionSource = ((MEHatchPartMachineAccessor) this$0).getActionSource();
             for (var key : configList) {
-                long extracted = aeNetwork.extract(key, Long.MAX_VALUE, Actionable.SIMULATE, this$0.getActionSource());
+                long extracted = aeNetwork.extract(key, Long.MAX_VALUE, Actionable.SIMULATE, actionSource);
                 if (extracted > 0) {
-                    itemMap.addTo(key.toStack(), extracted);
+                    fluidList.add(FluidStack.create(key.getFluid(), extracted));
                 }
             }
         }
-        return itemMap.isEmpty() ? null : itemMap;
+        return getFluidList();
     }
 }

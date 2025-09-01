@@ -10,7 +10,6 @@ import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.ingredient.SizedIngredient;
 import com.gregtechceu.gtceu.integration.ae2.slot.ExportOnlyAEItemList;
 import com.gregtechceu.gtceu.integration.ae2.slot.ExportOnlyAEItemSlot;
-import com.gregtechceu.gtceu.utils.ItemStackHashStrategy;
 
 import com.lowdragmc.lowdraglib.misc.ItemStackTransfer;
 
@@ -19,7 +18,7 @@ import net.minecraft.world.item.crafting.Ingredient;
 
 import appeng.api.stacks.GenericStack;
 import com.google.common.primitives.Ints;
-import it.unimi.dsi.fastutil.objects.Object2LongOpenCustomHashMap;
+import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 import lombok.Getter;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
@@ -34,7 +33,7 @@ import java.util.function.Function;
 public abstract class ExportOnlyAEItemListMixin extends NotifiableItemStackHandler implements IMEPartMachine {
 
     @Getter
-    protected final Object2LongOpenCustomHashMap<ItemStack> itemMap = new Object2LongOpenCustomHashMap<>(ItemStackHashStrategy.comparingAllButCount());
+    protected final Object2LongOpenHashMap<ItemStack> itemMap = new Object2LongOpenHashMap<>();
     @Setter
     protected boolean changed = true;
 
@@ -95,7 +94,7 @@ public abstract class ExportOnlyAEItemListMixin extends NotifiableItemStackHandl
     }
 
     @Override
-    public Object2LongOpenCustomHashMap<ItemStack> getMEItemMap() {
+    public Object2LongOpenHashMap<ItemStack> getMEItemMap() {
         if (changed) {
             changed = false;
             itemMap.clear();
