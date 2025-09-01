@@ -2,9 +2,7 @@ package org.gtlcore.gtlcore.api.recipe.ingredient;
 
 import org.gtlcore.gtlcore.mixin.gtm.recipe.Ingredient.IntProviderIngredientAccessor;
 
-import com.gregtechceu.gtceu.api.recipe.ingredient.IntCircuitIngredient;
-import com.gregtechceu.gtceu.api.recipe.ingredient.IntProviderIngredient;
-import com.gregtechceu.gtceu.api.recipe.ingredient.SizedIngredient;
+import com.gregtechceu.gtceu.api.recipe.ingredient.*;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.tags.TagKey;
@@ -20,8 +18,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Arrays;
-import java.util.Objects;
+import java.util.*;
 
 public class LongIngredient extends SizedIngredient {
 
@@ -55,12 +52,14 @@ public class LongIngredient extends SizedIngredient {
 
     public static Ingredient copy(Ingredient ingredient) {
         if (ingredient instanceof LongIngredient longIngredient) {
-            return LongIngredient.create(longIngredient.inner, longIngredient.actualAmount);
+            var copy = LongIngredient.create(longIngredient.inner, longIngredient.actualAmount);
+            copy.hashCode = longIngredient.hashCode;
+            return copy;
         } else if (ingredient instanceof SizedIngredient sizedIngredient) {
             if (sizedIngredient.getInner() instanceof IntProviderIngredient intProviderIngredient) {
                 return copy(intProviderIngredient);
             }
-            return LongIngredient.create(sizedIngredient.getInner(), sizedIngredient.getAmount());
+            return LongIngredient.create(sizedIngredient.getInner(), (long) sizedIngredient.getAmount());
         } else if (ingredient instanceof IntCircuitIngredient circuit) {
             return circuit.copy();
         } else if (ingredient instanceof IntProviderIngredient intProviderIngredient) {
@@ -97,7 +96,7 @@ public class LongIngredient extends SizedIngredient {
         if (itemStacks == null) {
             var items = new ObjectArrayList<ItemStack>(inner.getItems().length);
             for (ItemStack item : this.inner.getItems()) {
-                items.add(item.copyWithCount(amount));
+                items.add(item.copyWithCount(Ints.saturatedCast(actualAmount)));
             }
             itemStacks = items.toArray(new ItemStack[0]);
         }
