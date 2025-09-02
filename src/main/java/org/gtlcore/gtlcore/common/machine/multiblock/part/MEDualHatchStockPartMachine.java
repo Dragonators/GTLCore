@@ -7,6 +7,7 @@ import org.gtlcore.gtlcore.api.machine.trait.IMEPartMachine;
 import org.gtlcore.gtlcore.api.machine.trait.IMESlot;
 import org.gtlcore.gtlcore.api.recipe.ingredient.LongIngredient;
 import org.gtlcore.gtlcore.client.gui.widget.AEDualConfigWidget;
+import org.gtlcore.gtlcore.config.ConfigHolder;
 
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
 import com.gregtechceu.gtceu.api.gui.GuiTextures;
@@ -88,6 +89,8 @@ public class MEDualHatchStockPartMachine extends MEBusPartMachine implements IDa
     private static final IGuiTexture AUTO_PULL_ALL_ICON = new TextTexture("ALL", 0xFFAA00);
     private static final IGuiTexture AUTO_PULL_ITEM_ICON = new ItemStackTexture(Items.IRON_INGOT);
     private static final IGuiTexture AUTO_PULL_FLUID_ICON = new ItemStackTexture(Items.WATER_BUCKET);
+
+    private static final boolean ENABLE_ULTIMATE_ME_STOCKING = ConfigHolder.INSTANCE.enableUltimateMEStocking;
 
     protected ExportOnlyAEItemList aeItemHandler;
 
@@ -475,7 +478,7 @@ public class MEDualHatchStockPartMachine extends MEBusPartMachine implements IDa
 
         @Override
         public @Nullable Object2LongMap<ItemStack> getMEItemMap() {
-            if (getChanged()) {
+            if (ENABLE_ULTIMATE_ME_STOCKING || getChanged()) {
                 setChanged(false);
                 final var itemMap = getItemMap();
                 itemMap.clear();
@@ -638,7 +641,7 @@ public class MEDualHatchStockPartMachine extends MEBusPartMachine implements IDa
 
         @Override
         public @NotNull List<FluidStack> getMEFluidList() {
-            if (getChanged()) {
+            if (ENABLE_ULTIMATE_ME_STOCKING || getChanged()) {
                 setChanged(false);
                 final var fluidList = getFluidList();
                 fluidList.clear();

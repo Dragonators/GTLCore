@@ -1,6 +1,7 @@
 package org.gtlcore.gtlcore.mixin.gtm.ae.slot;
 
 import org.gtlcore.gtlcore.api.machine.trait.IMESlot;
+import org.gtlcore.gtlcore.config.ConfigHolder;
 import org.gtlcore.gtlcore.mixin.gtm.ae.machine.MEHatchPartMachineAccessor;
 
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
@@ -41,6 +42,8 @@ public abstract class ExportOnlyAEStockingFluidListMixin extends ExportOnlyAEFlu
     protected ObjectArrayList<AEFluidKey> configList;
 
     protected IntArrayList configIndexList;
+
+    private static final boolean ENABLE_ULTIMATE_ME_STOCKING = ConfigHolder.INSTANCE.enableUltimateMEStocking;
 
     @SuppressWarnings("target")
     @Shadow(remap = false)
@@ -141,7 +144,7 @@ public abstract class ExportOnlyAEStockingFluidListMixin extends ExportOnlyAEFlu
 
     @Override
     public @NotNull List<FluidStack> getMEFluidList() {
-        if (getChanged()) {
+        if (ENABLE_ULTIMATE_ME_STOCKING || getChanged()) {
             setChanged(false);
             final var fluidList = getFluidList();
             fluidList.clear();
