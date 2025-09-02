@@ -1,17 +1,21 @@
 package org.gtlcore.gtlcore.mixin.gtm.registry;
 
 import org.gtlcore.gtlcore.api.recipe.RecipeResult;
+import org.gtlcore.gtlcore.api.recipe.RecipeRunnerHelper;
 
+import com.gregtechceu.gtceu.api.capability.recipe.IRecipeCapabilityHolder;
 import com.gregtechceu.gtceu.api.machine.MetaMachine;
 import com.gregtechceu.gtceu.api.machine.feature.IRecipeLogicMachine;
 import com.gregtechceu.gtceu.api.machine.multiblock.CoilWorkableElectricMultiblockMachine;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.OverclockingLogic;
 import com.gregtechceu.gtceu.api.recipe.RecipeHelper;
+import com.gregtechceu.gtceu.api.recipe.content.ContentModifier;
 import com.gregtechceu.gtceu.api.recipe.logic.OCParams;
 import com.gregtechceu.gtceu.api.recipe.logic.OCResult;
 import com.gregtechceu.gtceu.common.data.GTRecipeModifiers;
 
+import com.mojang.datafixers.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
@@ -39,5 +43,24 @@ public class GTRecipeModifiersMixin {
                 }
             } else return null;
         } else return null;
+    }
+
+    /**
+     * @author Dragons
+     * @reason 适配me增广输出
+     */
+    @Overwrite(remap = false)
+    public static Pair<GTRecipe, Integer> fastParallel(MetaMachine machine, @NotNull GTRecipe recipe, int maxParallel,
+                                                       boolean modifyDuration) {
+        if (machine instanceof IRecipeCapabilityHolder holder) {
+            while (maxParallel > 0) {
+                var copied = recipe.copy(ContentModifier.multiplier(maxParallel), modifyDuration);
+                if (RecipeRunnerHelper.matchRecipe(holder, copied) && copied.matchTickRecipe(holder).isSuccess()) {
+                    return Pair.of(copied, maxParallel);
+                }
+                maxParallel /= 2;
+            }
+        }
+        return Pair.of(recipe, 1);
     }
 }
