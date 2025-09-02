@@ -2,6 +2,7 @@ package org.gtlcore.gtlcore.mixin.gtm.ae.slot;
 
 import org.gtlcore.gtlcore.api.machine.trait.IMESlot;
 import org.gtlcore.gtlcore.api.recipe.ingredient.LongIngredient;
+import org.gtlcore.gtlcore.config.ConfigHolder;
 
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
 import com.gregtechceu.gtceu.api.machine.MetaMachine;
@@ -44,6 +45,8 @@ public abstract class ExportOnlyAEStockingItemListMixin extends ExportOnlyAEItem
 
     protected ObjectArrayList<AEItemKey> configList;
     protected IntArrayList configIndexList;
+
+    private static final boolean ENABLE_ULTIMATE_ME_STOCKING = ConfigHolder.INSTANCE.enableUltimateMEStocking;
 
     @SuppressWarnings("target")
     @Shadow(remap = false)
@@ -147,7 +150,7 @@ public abstract class ExportOnlyAEStockingItemListMixin extends ExportOnlyAEItem
 
     @Override
     public Object2LongOpenHashMap<ItemStack> getMEItemMap() {
-        if (getChanged()) {
+        if (ENABLE_ULTIMATE_ME_STOCKING || getChanged()) {
             setChanged(false);
             itemMap.clear();
             final MEStorage aeNetwork = Objects.requireNonNull(this$0.getMainNode().getGrid()).getStorageService().getInventory();

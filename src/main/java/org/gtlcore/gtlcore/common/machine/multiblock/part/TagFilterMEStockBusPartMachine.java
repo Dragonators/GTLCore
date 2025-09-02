@@ -4,6 +4,7 @@ import org.gtlcore.gtlcore.api.machine.trait.ExportOnlyAEConfigureItemSlot;
 import org.gtlcore.gtlcore.api.machine.trait.IMEPartMachine;
 import org.gtlcore.gtlcore.api.machine.trait.IMESlot;
 import org.gtlcore.gtlcore.api.recipe.ingredient.LongIngredient;
+import org.gtlcore.gtlcore.config.ConfigHolder;
 
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
 import com.gregtechceu.gtceu.api.gui.GuiTextures;
@@ -79,6 +80,8 @@ public class TagFilterMEStockBusPartMachine extends MEInputBusPartMachine {
 
     protected static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(TagFilterMEStockBusPartMachine.class,
             MEInputBusPartMachine.MANAGED_FIELD_HOLDER);
+
+    private static final boolean ENABLE_ULTIMATE_ME_STOCKING = ConfigHolder.INSTANCE.enableUltimateMEStocking;
 
     @Persisted
     protected String tagWhite = "";
@@ -378,7 +381,7 @@ public class TagFilterMEStockBusPartMachine extends MEInputBusPartMachine {
 
         @Override
         public @Nullable Object2LongMap<ItemStack> getMEItemMap() {
-            if (getChanged()) {
+            if (ENABLE_ULTIMATE_ME_STOCKING || getChanged()) {
                 setChanged(false);
                 final var itemMap = getItemMap();
                 itemMap.clear();

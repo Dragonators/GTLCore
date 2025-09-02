@@ -58,6 +58,10 @@ public class ConfigHolder {
     public int MEPatternOutputMax = 80;
 
     @Configurable
+    @Configurable.Comment("是否启用ME库存极限拉取模式(保证机器不会停机, 但是会大幅降低TPS!)")
+    public boolean enableUltimateMEStocking = false;
+
+    @Configurable
     public String[] mobList1 = new String[] { "chicken", "rabbit", "sheep", "cow", "horse", "pig", "donkey", "skeleton_horse", "iron_golem", "wolf", "goat", "parrot", "camel", "cat", "fox", "llama", "panda", "polar_bear" };
     @Configurable
     public String[] mobList2 = new String[] { "ghast", "zombie", "pillager", "zombie_villager", "skeleton", "drowned", "witch", "spider", "creeper", "husk", "wither_skeleton", "blaze", "zombified_piglin", "slime", "vindicator", "enderman" };
