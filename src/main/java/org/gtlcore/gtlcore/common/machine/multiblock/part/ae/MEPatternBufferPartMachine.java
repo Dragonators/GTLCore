@@ -175,6 +175,7 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
 
     @Persisted
     private final ObjectOpenHashSet<BlockPos> proxies = new ObjectOpenHashSet<>();
+    private final Set<MEPatternBufferProxyPartMachine> proxyMachines = new ReferenceOpenHashSet<>();
 
     @DescSynced
     @Persisted
@@ -250,13 +251,6 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
                 needPatternSync = true;
             }));
         }
-        this.getMERecipeHandlerTraits().forEach(handler -> handler.addChangedListener(() -> getProxies().forEach(proxy -> {
-            if (handler.getCapability() == ItemRecipeCapability.CAP) {
-                proxy.itemProxyHandler.notifyListeners();
-            } else {
-                proxy.fluidProxyHandler.notifyListeners();
-            }
-        })));
         for (int i = 0; i < maxPatternCount; i++) {
             final int index = i;
             catalystItems[index].setOnContentsChanged(() -> reCalculateCatalystItemMap(index));
@@ -327,6 +321,9 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
         for (ItemStackTransfer catalystItem : catalystItems) {
             clearInventory(catalystItem);
         }
+        for (MEPatternBufferProxyPartMachine proxy : this.getProxies()) {
+            proxy.setBuffer(null);
+        }
     }
 
     private void reCalculateCatalystItemMap(int slot) {
@@ -367,20 +364,24 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
 
     public void addProxy(MEPatternBufferProxyPartMachine proxy) {
         proxies.add(proxy.getPos());
+        proxyMachines.add(proxy);
     }
 
     public void removeProxy(MEPatternBufferProxyPartMachine proxy) {
         proxies.remove(proxy.getPos());
+        proxyMachines.remove(proxy);
     }
 
     public Set<MEPatternBufferProxyPartMachine> getProxies() {
-        var activatedProxies = new ObjectOpenHashSet<MEPatternBufferProxyPartMachine>();
-        for (var pos : proxies) {
-            if (MetaMachine.getMachine(Objects.requireNonNull(getLevel()), pos) instanceof MEPatternBufferProxyPartMachine proxy) {
-                activatedProxies.add(proxy);
+        if (proxyMachines.size() != proxies.size()) {
+            proxyMachines.clear();
+            for (var pos : proxies) {
+                if (MetaMachine.getMachine(Objects.requireNonNull(getLevel()), pos) instanceof MEPatternBufferProxyPartMachine proxy) {
+                    proxyMachines.add(proxy);
+                }
             }
         }
-        return activatedProxies;
+        return Collections.unmodifiableSet(proxyMachines);
     }
 
     // ========================================
