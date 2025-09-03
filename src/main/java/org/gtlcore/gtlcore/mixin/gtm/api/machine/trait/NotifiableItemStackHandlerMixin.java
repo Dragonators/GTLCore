@@ -99,13 +99,11 @@ public abstract class NotifiableItemStackHandlerMixin {
                     // Only try this slot if not visited or if visited with the same type of item
                     if (visited[slot] == null || ItemStack.isSameItemSameTags(visited[slot], template)) {
                         int slotLimit = storage.getSlotLimit(slot);
-                        int maxStack = template.getMaxStackSize();
-                        int canHold = Math.min(slotLimit, maxStack) - count;
+                        int canHold = slotLimit - count;
                         if (canHold > 0) {
                             int tryPut = Ints.saturatedCast(Math.min(amount, canHold));
-                            ItemStack toInsert = template.copyWithCount(tryPut);
                             ItemStack remainder = getActioned(storage, slot, recipe.ingredientActions);
-                            if (remainder == null) remainder = storage.insertItem(slot, toInsert, simulate);
+                            if (remainder == null) remainder = storage.insertItem(slot, template.copyWithCount(tryPut), simulate);
                             int actuallyPut = tryPut - remainder.getCount();
                             if (actuallyPut > 0) {
                                 changed = true;
