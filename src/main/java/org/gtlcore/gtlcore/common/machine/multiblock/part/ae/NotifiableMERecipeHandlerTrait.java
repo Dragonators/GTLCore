@@ -8,7 +8,7 @@ import com.gregtechceu.gtceu.api.machine.trait.MachineTrait;
 import com.lowdragmc.lowdraglib.syncdata.ISubscription;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ReferenceArrayList;
 
 import java.util.List;
 import java.util.function.Predicate;
@@ -16,7 +16,7 @@ import java.util.function.Predicate;
 public abstract class NotifiableMERecipeHandlerTrait<T extends Predicate<S>, S> extends MachineTrait implements IMERecipeHandlerTrait<T, S> {
 
     public static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(NotifiableMERecipeHandlerTrait.class);
-    protected List<Runnable> listeners = new ObjectArrayList<>();
+    protected List<Runnable> listeners = new ReferenceArrayList<>();
 
     public NotifiableMERecipeHandlerTrait(MetaMachine machine) {
         super(machine);
@@ -29,6 +29,11 @@ public abstract class NotifiableMERecipeHandlerTrait<T extends Predicate<S>, S> 
     public ISubscription addChangedListener(Runnable listener) {
         this.listeners.add(listener);
         return () -> this.listeners.remove(listener);
+    }
+
+    public ISubscription addBufferChangedListener(Runnable mainListener) {
+        this.listeners.add(0, mainListener);
+        return () -> this.listeners.remove(mainListener);
     }
 
     public void notifyListeners() {

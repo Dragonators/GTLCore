@@ -18,6 +18,8 @@ public interface IMERecipeHandlerTrait<T extends Predicate<S>, S> extends IMERec
 
     ISubscription addChangedListener(Runnable var1);
 
+    ISubscription addBufferChangedListener(Runnable var1);
+
     default int getPriority() {
         return switch (getIo()) {
             case OUT -> 10;

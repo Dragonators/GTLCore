@@ -18,6 +18,7 @@ import com.gregtechceu.gtceu.utils.ResearchManager;
 
 import com.lowdragmc.lowdraglib.gui.modular.ModularUI;
 import com.lowdragmc.lowdraglib.side.fluid.FluidStack;
+import com.lowdragmc.lowdraglib.syncdata.ISubscription;
 import com.lowdragmc.lowdraglib.syncdata.annotation.DescSynced;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
@@ -46,6 +47,8 @@ public class MEPatternBufferProxyPartMachine extends MultiblockPartMachine imple
 
     protected static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(
             MEPatternBufferProxyPartMachine.class, MultiblockPartMachine.MANAGED_FIELD_HOLDER);
+
+    protected final ISubscription[] handlerSubscriptions = new ISubscription[2];
 
     @Getter
     protected MEPatternBufferProxyRecipeHandler<Ingredient, ItemStack> itemProxyHandler;
@@ -79,20 +82,49 @@ public class MEPatternBufferProxyPartMachine extends MultiblockPartMachine imple
     public void setBuffer(@Nullable BlockPos pos) {
         bufferResolved = true;
         var level = getLevel();
-        if (level == null || pos == null) {
-            buffer = null;
-        } else if (MetaMachine.getMachine(getLevel(), pos) instanceof MEPatternBufferPartMachine machine) {
-            bufferPos = pos;
-            buffer = machine;
-            machine.addProxy(this);
-            if (!isRemote()) {
-                var map = machine.getMERecipeHandlerMap();
-                itemProxyHandler.setHandler((IMERecipeHandlerTrait<Ingredient, ItemStack>) map.get(ItemRecipeCapability.CAP));
-                fluidProxyHandler.setHandler((IMERecipeHandlerTrait<FluidIngredient, FluidStack>) map.get(FluidRecipeCapability.CAP));
+        releaseBuffer();
+        if (level != null && pos != null) {
+            if (MetaMachine.getMachine(level, pos) instanceof MEPatternBufferPartMachine machine) {
+                bufferPos = pos;
+                buffer = machine;
+                machine.addProxy(this);
+                if (!isRemote()) {
+                    var map = machine.getMERecipeHandlerMap();
+                    final var itemHandler = (IMERecipeHandlerTrait<Ingredient, ItemStack>) map.get(ItemRecipeCapability.CAP);
+                    final var fluidHandler = (IMERecipeHandlerTrait<FluidIngredient, FluidStack>) map.get(FluidRecipeCapability.CAP);
+                    itemProxyHandler.setHandler(itemHandler);
+                    fluidProxyHandler.setHandler(fluidHandler);
+                    handlerSubscriptions[0] = itemHandler.addChangedListener(() -> itemProxyHandler.notifyListeners());
+                    handlerSubscriptions[1] = fluidHandler.addChangedListener(() -> fluidProxyHandler.notifyListeners());
+                }
             }
-        } else {
-            buffer = null;
         }
+        if (!isRemote()) updateIO();
+    }
+
+    protected void releaseBuffer() {
+        buffer = null;
+        bufferPos = null;
+        if (!isRemote()) {
+            itemProxyHandler.setHandler(null);
+            fluidProxyHandler.setHandler(null);
+            for (int i = 0; i < handlerSubscriptions.length; i++) {
+                if (handlerSubscriptions[i] != null) {
+                    handlerSubscriptions[i].unsubscribe();
+                    handlerSubscriptions[i] = null;
+                }
+            }
+        }
+    }
+
+    protected void updateIO() {
+        for (var controller : this.getControllers()) {
+            if (controller instanceof IRecipeCapabilityMachine machine) {
+                machine.upDate();
+            }
+        }
+        itemProxyHandler.notifyListeners();
+        fluidProxyHandler.notifyListeners();
     }
 
     @Nullable
@@ -129,6 +161,12 @@ public class MEPatternBufferProxyPartMachine extends MultiblockPartMachine imple
         var buf = getBuffer();
         if (buf != null) {
             buf.removeProxy(this);
+        }
+        for (int i = 0; i < handlerSubscriptions.length; i++) {
+            if (handlerSubscriptions[i] != null) {
+                handlerSubscriptions[i].unsubscribe();
+                handlerSubscriptions[i] = null;
+            }
         }
     }
 

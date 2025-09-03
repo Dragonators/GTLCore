@@ -10,7 +10,6 @@ import com.gregtechceu.gtceu.api.machine.feature.multiblock.IDistinctPart;
 import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMultiPart;
 import com.gregtechceu.gtceu.api.machine.multiblock.MultiblockControllerMachine;
 import com.gregtechceu.gtceu.api.machine.multiblock.WorkableMultiblockMachine;
-import com.gregtechceu.gtceu.api.machine.trait.MachineTrait;
 import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 import com.gregtechceu.gtceu.common.machine.multiblock.part.FluidHatchPartMachine;
@@ -120,6 +119,9 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
     }
 
     public void upDate() {
+        MEOutPutBus = false;
+        MEOutPutHatch = false;
+        MEOutPutDual = false;
         capabilities.clear();
         capabilitiesFlat.clear();
         recipeHandleParts.clear();
@@ -128,20 +130,13 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
         recipeHandleMap.clear();
         if (!this.isFormed) return;
 
-        // ME Traits
-        for (MachineTrait trait : this.getTraits()) {
-            if (trait instanceof IMERecipeHandlerTrait<?, ?> meHandlerTrait) {
-                traitSubscriptions.add(meHandlerTrait.addChangedListener(recipeLogic::updateTickSubscription));
-            }
-        }
-
         // IMultiPart
         var distinctParts = new ObjectArrayList<IRecipeHandler<?>>();
         for (IMultiPart part : this.getParts()) {
             if (part instanceof IMEIOPartMachine mePart) {
                 var meHandlers = mePart.getMERecipeHandlerTraits();
                 for (var meHandlerTrait : meHandlers) {
-                    traitSubscriptions.add(meHandlerTrait.addChangedListener(recipeLogic::updateTickSubscription));
+                    traitSubscriptions.add(meHandlerTrait.addBufferChangedListener(recipeLogic::updateTickSubscription));
                 }
                 var me = MERecipeHandlePart.of(mePart);
                 if (mePart.getIO() == IO.OUT) {
