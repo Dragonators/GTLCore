@@ -6,12 +6,10 @@ import org.gtlcore.gtlcore.api.machine.trait.MERecipeHandlePart;
 import org.gtlcore.gtlcore.api.machine.trait.RecipeHandlePart;
 import org.gtlcore.gtlcore.api.recipe.IAdditionalRecipeIterator;
 import org.gtlcore.gtlcore.api.recipe.IRecipeIterator;
-import org.gtlcore.gtlcore.api.recipe.RecipeResult;
 import org.gtlcore.gtlcore.common.machine.multiblock.electric.WorkableElectricMultipleRecipesMachine;
 
 import com.gregtechceu.gtceu.api.capability.recipe.*;
 import com.gregtechceu.gtceu.api.machine.WorkableTieredMachine;
-import com.gregtechceu.gtceu.api.machine.feature.IRecipeLogicMachine;
 import com.gregtechceu.gtceu.api.machine.steam.SteamWorkableMachine;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.GTRecipeType;
@@ -67,10 +65,7 @@ public abstract class GTRecipeLookupMixin {
             if (totalSize == 0) return null;
             List<List<AbstractMapIngredient>> list = new ObjectArrayList<>(totalSize);
             list.addAll(fromHolder(holder));
-            if (list.isEmpty()) {
-                RecipeResult.of((IRecipeLogicMachine) holder, RecipeResult.FAIL_NO_INPUT);
-                return null;
-            }
+            if (list.isEmpty()) return null;
             return list;
         } else if (holder instanceof IRecipeCapabilityMachine machine) {
             if (machine.getRecipeHandleParts().isEmpty() && machine.getMERecipeHandleParts().isEmpty()) return null;
@@ -311,9 +306,6 @@ public abstract class GTRecipeLookupMixin {
 
             if (holder instanceof WorkableElectricMultipleRecipesMachine || holder instanceof CoilWorkableElectricMultipleRecipesMachine) {
                 ((IAdditionalRecipeIterator) iterator).setUseDiveIngredientTreeFind(true);
-            }
-            if (holder instanceof IRecipeLogicMachine irl) {
-                if (!iterator.hasNext()) RecipeResult.of(irl, RecipeResult.FAIL_NO_INPUT);
             }
         }
 
