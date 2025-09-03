@@ -1669,7 +1669,6 @@
     "gtceu.recipe.fail.no.enough.eu.in": "电力输入不足",
     "gtceu.recipe.fail.no.enough.cwu.in": "算力输入不足",
     "gtceu.recipe.fail.no.enough.eu.out": "电力输出空间不足",
-    "gtceu.recipe.fail.no.input": "缺少输入",
     "gtceu.recipe.fail.gravity.low": "未满足无重力条件",
     "gtceu.recipe.fail.gravity.power": "未满足强重力条件",
     "gtceu.recipe.fail.cleanroom": "未满足%s条件",

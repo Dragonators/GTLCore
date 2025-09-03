@@ -25,7 +25,6 @@ public record RecipeResult(boolean isSuccess, @Nullable Component reason) {
     public static final RecipeResult FAIL_NO_ENOUGH_EU_IN = fail(Component.translatable("gtceu.recipe.fail.no.enough.eu.in"));
     public static final RecipeResult FAIL_NO_ENOUGH_EU_OUT = fail(Component.translatable("gtceu.recipe.fail.no.enough.eu.out"));
     public static final RecipeResult FAIL_NO_ENOUGH_CWU_IN = fail(Component.translatable("gtceu.recipe.fail.no.enough.cwu.in"));
-    public static final RecipeResult FAIL_NO_INPUT = fail(Component.translatable("gtceu.recipe.fail.no.input"));
     public static final RecipeResult FAIL_NO_SKYLIGHT = fail(Component.translatable("gtceu.recipe.fail.no.skylight"));
     public static final RecipeResult FAIL_PROCESSING_PLANT_NO_INPUT = fail(Component.translatable("gtceu.recipe.fail.processing.plant.no.input"));
     public static final RecipeResult FAIL_PROCESSING_PLANT_WRONG_INPUT = fail(Component.translatable("gtceu.recipe.fail.processing.plant.wrong.input"));
