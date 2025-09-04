@@ -1688,6 +1688,8 @@
     "gtceu.recipe.fail.no.venting": "排气口已堵塞",
     "gtceu.recipe.fail.nano_forge.tier": "纳米煅炉等级不足",
     "gtceu.recipe.fail.no.enough.recipe.tier": "机器等级不足",
+    "gtceu.recipe.fail.rotor.different": "转子支架输入异常",
+    "gtceu.recipe.fail.rotor.isEmpty": "缺少涡轮转子",
     "gtceu.recipe.fail.no.input.item": "缺少输入物品(%s)",
     "gtceu.recipe.fail.no.input.fluid": "缺少输入液体(%s)",
     "gtceu.machine.structure_check": "更新结构检查",
