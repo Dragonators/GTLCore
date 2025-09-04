@@ -27,6 +27,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.gtlcore.gtlcore.api.recipe.RecipeRunnerHelper.matchRecipe;
+
 /**
  * @author EasterFG on 2024/10/27
  */
@@ -70,7 +72,7 @@ public class AdvancedInfiniteDrillLogic extends RecipeLogic {
             var match = getFluidDrillRecipe();
             if (match != null) {
                 var copied = match.copy(new ContentModifier(match.duration, 0));
-                if (match.matchRecipe(this.machine).isSuccess() && copied.matchTickRecipe(this.machine).isSuccess()) {
+                if (matchRecipe(this.machine, match) && copied.matchTickRecipe(this.machine).isSuccess()) {
                     setupRecipe(match);
                 }
             }
@@ -89,7 +91,7 @@ public class AdvancedInfiniteDrillLogic extends RecipeLogic {
                             .toArray(FluidStack[]::new))
                     .buildRawRecipe();
             recipe = recipe.copy(ContentModifier.multiplier(getMachine().getRate()), false);
-            if (recipe.matchRecipe(getMachine()).isSuccess() && recipe.matchTickRecipe(getMachine()).isSuccess()) {
+            if (matchRecipe(getMachine(), recipe) && recipe.matchTickRecipe(getMachine()).isSuccess()) {
                 return recipe;
             }
         }
@@ -144,7 +146,7 @@ public class AdvancedInfiniteDrillLogic extends RecipeLogic {
         var match = getFluidDrillRecipe();
         if (match != null) {
             var copied = match.copy(new ContentModifier(match.duration, 0));
-            if (match.matchRecipe(this.machine).isSuccess() && copied.matchTickRecipe(this.machine).isSuccess()) {
+            if (matchRecipe(this.machine, match) && copied.matchTickRecipe(this.machine).isSuccess()) {
                 setupRecipe(match);
                 return;
             }

@@ -1,5 +1,6 @@
 package org.gtlcore.gtlcore.common.machine.multiblock.generator;
 
+import org.gtlcore.gtlcore.api.recipe.RecipeResult;
 import org.gtlcore.gtlcore.common.machine.multiblock.part.RotorHatchPartMachine;
 
 import com.gregtechceu.gtceu.api.GTValues;
@@ -31,14 +32,12 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.world.item.ItemStack;
 
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
@@ -90,7 +89,7 @@ public class MegaTurbineMachine extends WorkableElectricMultiblockMachine implem
         super.onStructureFormed();
         for (IMultiPart part : getParts()) {
             if (part instanceof RotorHolderPartMachine rotorHolderPartMachine) {
-                rotorHolderMachines = Objects.requireNonNullElseGet(rotorHolderMachines, HashSet::new);
+                rotorHolderMachines = Objects.requireNonNullElseGet(rotorHolderMachines, ObjectOpenHashSet::new);
                 rotorHolderMachines.add(rotorHolderPartMachine);
             }
 
@@ -145,6 +144,15 @@ public class MegaTurbineMachine extends WorkableElectricMultiblockMachine implem
     public static GTRecipe recipeModifier(MetaMachine machine, @NotNull GTRecipe recipe, @NotNull OCParams params,
                                           @NotNull OCResult result) {
         if (machine instanceof MegaTurbineMachine turbineMachine) {
+            String rotor = "";
+            for (var part : turbineMachine.rotorHolderMachines) {
+                String partRotor = part.getRotorStack().getHoverName().getString();
+                if (rotor.isEmpty()) rotor = partRotor;
+                else if (!rotor.equals(partRotor)) {
+                    RecipeResult.of(turbineMachine, RecipeResult.fail(Component.translatable("gtceu.recipe.fail.rotor.different")));
+                    return null;
+                }
+            }
             RotorHolderPartMachine rotorHolder = turbineMachine.getRotorHolder();
             long EUt = RecipeHelper.getOutputEUt(recipe);
             if (rotorHolder == null || EUt <= 0) return null;
