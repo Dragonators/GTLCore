@@ -28,9 +28,8 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import lombok.Getter;
 import lombok.Setter;
-import org.spongepowered.asm.mixin.Final;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
+import org.jetbrains.annotations.Nullable;
+import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -38,7 +37,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.*;
 
 @Mixin(WorkableMultiblockMachine.class)
-public abstract class WorkableMultiblockMachineMixin extends MultiblockControllerMachine implements IRecipeCapabilityMachine {
+public abstract class WorkableMultiblockMachineMixin extends MultiblockControllerMachine implements IRecipeCapabilityMachine, IRecipeLogicMachine {
 
     @Shadow(remap = false)
     @Final
@@ -80,8 +79,8 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
         if (this.getLevel() instanceof ServerLevel sl) {
             sl.getServer().tell(new TickTask(1, this::upDate));
         }
-        RecipeResult.of((IRecipeLogicMachine) this, null);
-        RecipeResult.ofWorking((IRecipeLogicMachine) this, null);
+        RecipeResult.of(this, null);
+        RecipeResult.ofWorking(this, null);
     }
 
     @Inject(method = "onStructureInvalid", at = @At("TAIL"), remap = false)
@@ -96,6 +95,31 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
         MEOutPutBus = false;
         MEOutPutHatch = false;
         MEOutPutDual = false;
+    }
+
+    /**
+     * @author .
+     * @reason .
+     */
+    @Overwrite(remap = false)
+    public boolean onWorking() {
+        return IRecipeLogicMachine.super.onWorking();
+    }
+
+    /**
+     * @author .
+     * @reason .
+     */
+    @Overwrite(remap = false)
+    public void onWaiting() {}
+
+    /**
+     * @author .
+     * @reason .
+     */
+    @Overwrite(remap = false)
+    public boolean beforeWorking(@Nullable GTRecipe recipe) {
+        return IRecipeLogicMachine.super.beforeWorking(recipe);
     }
 
     @Override

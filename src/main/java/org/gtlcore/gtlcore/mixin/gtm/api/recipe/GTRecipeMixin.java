@@ -26,6 +26,8 @@ public abstract class GTRecipeMixin {
 
     @Unique
     private int tier = -1;
+    @Unique
+    private boolean hasTick;
 
     @Shadow(remap = false)
     public ResourceLocation id;
@@ -40,6 +42,16 @@ public abstract class GTRecipeMixin {
             remap = false)
     public void GTRecipe(GTRecipeType recipeType, ResourceLocation id, Map inputs, Map outputs, Map tickInputs, Map tickOutputs, Map inputChanceLogics, Map outputChanceLogics, Map tickInputChanceLogics, Map tickOutputChanceLogics, List conditions, List ingredientActions, CompoundTag data, int duration, boolean isFuel, CallbackInfo ci) {
         this.tier = this.data.getInt("euTier");
+        this.hasTick = !tickInputs.isEmpty() || !tickOutputs.isEmpty();
+    }
+
+    /**
+     * @author .
+     * @reason .
+     */
+    @Overwrite(remap = false)
+    public boolean hasTick() {
+        return this.hasTick;
     }
 
     /**
@@ -75,6 +87,4 @@ public abstract class GTRecipeMixin {
     @Shadow(remap = false)
     protected abstract GTRecipe.ActionResult matchRecipe(IRecipeCapabilityHolder holder, boolean tick);
 
-    @Shadow(remap = false)
-    public abstract boolean hasTick();
 }

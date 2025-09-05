@@ -89,9 +89,6 @@ public abstract class RecipeLogicMixin implements ILockRecipe, IRecipeStatus {
     public abstract RecipeLogic.Status getStatus();
 
     @Shadow(remap = false)
-    public abstract void setupRecipe(GTRecipe recipe);
-
-    @Shadow(remap = false)
     public abstract void updateTickSubscription();
 
     @Shadow(remap = false)
@@ -148,6 +145,32 @@ public abstract class RecipeLogicMixin implements ILockRecipe, IRecipeStatus {
         }
         if (this.status == RecipeLogic.Status.WAITING) {
             this.doDamping();
+        }
+    }
+
+    /**
+     * @author .
+     * @reason .
+     */
+    @Overwrite(remap = false)
+    public void setupRecipe(GTRecipe recipe) {
+        if (!this.machine.beforeWorking(recipe)) {
+            this.setStatus(RecipeLogic.Status.IDLE);
+            this.progress = 0;
+            this.duration = 0;
+            this.isActive = false;
+            return;
+        }
+        if (this.handleRecipeIO(recipe, IO.IN)) {
+            if (this.lastRecipe != null && !recipe.equals(this.lastRecipe)) {
+                this.chanceCaches.clear();
+            }
+            this.recipeDirty = false;
+            this.lastRecipe = recipe;
+            this.setStatus(RecipeLogic.Status.WORKING);
+            this.progress = 0;
+            this.duration = recipe.duration;
+            this.isActive = true;
         }
     }
 

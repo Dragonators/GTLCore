@@ -31,13 +31,9 @@ public abstract class ChanceLogicOrMixin extends ChanceLogic {
     }
 
     @Unique
-    private static boolean gTLCore$passesChance(int chance, int maxChance) {
-        return chance >= maxChance;
-    }
-
-    @Unique
     private static int gTLCore$getCachedChance(Content entry, @Nullable Object2IntMap<?> cache) {
-        return cache != null && cache.containsKey(entry.content) ? cache.getInt(entry.content) : GTValues.RNG.nextInt(entry.maxChance);
+        if (cache == null) return GTValues.RNG.nextInt(entry.maxChance);
+        return cache.getOrDefault(entry.content, GTValues.RNG.nextInt(entry.maxChance));
     }
 
     @Unique
@@ -74,12 +70,12 @@ public abstract class ChanceLogicOrMixin extends ChanceLogic {
 
             int cached = gTLCore$getCachedChance(entry, cache);
             int chance = newChance + cached;
-            if (gTLCore$passesChance(chance, maxChance)) {
+            if (chance >= maxChance) {
                 do {
                     out.add(entry.copy(cap, preciseDivision(1, times)));
                     chance -= maxChance;
                     newChance -= maxChance;
-                } while (gTLCore$passesChance(chance, maxChance));
+                } while (chance >= maxChance);
             }
 
             gTLCore$updateCachedChance(entry.content, cache, newChance / 2 + cached);
