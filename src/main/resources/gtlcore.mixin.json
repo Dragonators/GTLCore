@@ -28,6 +28,7 @@
     "ae2.CPUSelectionListMixin",
     "ae2.CursedInternalSlotMixin",
     "ae2.IOPortBlockEntityMixin",
+    "ae2.KeyCounterMixin",
     "ae2.MixinCowMap",
     "ae2.MixinGenericSlotCapacities",
     "ae2.MixinGenericStackInv",

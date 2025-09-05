@@ -86,5 +86,4 @@ public abstract class GTRecipeMixin {
 
     @Shadow(remap = false)
     protected abstract GTRecipe.ActionResult matchRecipe(IRecipeCapabilityHolder holder, boolean tick);
-
 }

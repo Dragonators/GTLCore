@@ -2,6 +2,7 @@ package org.gtlcore.gtlcore.mixin.gtm.ae.machine;
 
 import org.gtlcore.gtlcore.api.machine.trait.IMEPartMachine;
 import org.gtlcore.gtlcore.api.machine.trait.IMESlot;
+import org.gtlcore.gtlcore.integration.ae2.stacks.*;
 
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.common.item.IntCircuitBehaviour;
@@ -15,15 +16,10 @@ import net.minecraft.server.level.ServerLevel;
 
 import appeng.api.config.Actionable;
 import appeng.api.networking.IGrid;
-import appeng.api.stacks.AEFluidKey;
-import appeng.api.stacks.AEKey;
-import appeng.api.stacks.GenericStack;
-import appeng.api.stacks.KeyCounter;
+import appeng.api.stacks.*;
 import appeng.api.storage.MEStorage;
 import it.unimi.dsi.fastutil.objects.Object2LongMap;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Overwrite;
-import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.*;
 
 import java.util.function.Predicate;
 
@@ -53,7 +49,8 @@ public abstract class MEStockingHatchPartMachineMixin extends MEInputHatchPartMa
             this.aeFluidHandler.clearInventory(0);
         } else {
             MEStorage networkStorage = grid.getStorageService().getInventory();
-            KeyCounter counter = networkStorage.getAvailableStacks();
+            VariantCounter counter = IKeyCounter.of(networkStorage.getAvailableStacks()).getVariantCounter();
+            if (counter == null) return;
 
             int index = 0;
 
@@ -116,9 +113,7 @@ public abstract class MEStockingHatchPartMachineMixin extends MEInputHatchPartMa
     public void onLoad() {
         super.onLoad();
         if (getLevel() instanceof ServerLevel serverLevel) {
-            serverLevel.getServer().tell(new TickTask(1, () -> {
-                ((IMEPartMachine) this.aeFluidHandler).onConfigChanged();
-            }));
+            serverLevel.getServer().tell(new TickTask(1, () -> ((IMEPartMachine) this.aeFluidHandler).onConfigChanged()));
         }
     }
 }
