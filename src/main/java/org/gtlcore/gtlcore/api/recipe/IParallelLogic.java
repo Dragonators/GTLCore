@@ -11,6 +11,7 @@ import com.gregtechceu.gtceu.api.recipe.RecipeHelper;
 import com.gregtechceu.gtceu.api.recipe.content.Content;
 import com.gregtechceu.gtceu.api.recipe.content.ContentModifier;
 import com.gregtechceu.gtceu.api.recipe.ingredient.FluidIngredient;
+import com.gregtechceu.gtceu.api.recipe.ingredient.SizedIngredient;
 import com.gregtechceu.gtceu.utils.IngredientEquality;
 import com.gregtechceu.gtceu.utils.ItemStackHashStrategy;
 
@@ -105,6 +106,8 @@ public interface IParallelLogic {
                 long ingredientCount;
                 if (ingredient instanceof LongIngredient longIngredient) {
                     ingredientCount = longIngredient.getAmount();
+                } else if (ingredient instanceof SizedIngredient sizedIngredient) {
+                    ingredientCount = sizedIngredient.getAmount();
                 } else ingredientCount = 1;
                 if (content.chance > 0) {
                     countableMap.addTo(ingredient, ingredientCount);
@@ -229,6 +232,8 @@ public interface IParallelLogic {
                 long ingredientCount;
                 if (ingredient instanceof LongIngredient longIngredient) {
                     ingredientCount = longIngredient.getAmount();
+                } else if (ingredient instanceof SizedIngredient sizedIngredient) {
+                    ingredientCount = sizedIngredient.getAmount();
                 } else ingredientCount = 1;
                 maxCount = Math.max(maxCount, ingredientCount);
                 ingredients.add(ingredient);

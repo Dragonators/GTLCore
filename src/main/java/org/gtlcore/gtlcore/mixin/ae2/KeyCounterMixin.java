@@ -23,22 +23,13 @@ public class KeyCounterMixin implements IKeyCounter {
     @Unique
     private VariantCounter getSubIndex(AEKey key) {
         if (key.getFuzzySearchMaxValue() > 0) {
-            return this.lists.computeIfAbsent(key.getPrimaryKey(), (k) -> new VariantCounter.FuzzyVariantMap());
+            return this.getLists().computeIfAbsent(key.getPrimaryKey(), (k) -> new VariantCounter.FuzzyVariantMap());
         } else {
-            if (this.variantCounter == null) {
+            if (this.getLists().isEmpty() || this.variantCounter == null) {
                 this.variantCounter = new VariantCounter.UnorderedVariantMap();
-                this.lists.put(OBJECT, this.variantCounter);
+                this.getLists().put(OBJECT, this.variantCounter);
             }
             return this.variantCounter;
-        }
-    }
-
-    @Unique
-    private VariantCounter getSubIndexOrNull(AEKey key) {
-        if (this.lists == null) {
-            return null;
-        } else {
-            return key.getFuzzySearchMaxValue() > 0 ? this.lists.get(key.getPrimaryKey()) : this.variantCounter;
         }
     }
 
@@ -48,19 +39,14 @@ public class KeyCounterMixin implements IKeyCounter {
      */
     @Overwrite(remap = false)
     public Collection<Object2LongMap.Entry<AEKey>> findFuzzy(AEKey key, FuzzyMode fuzzy) {
-        if (this.lists == null) {
+        if (this.getLists() == null) {
             return Collections.emptyList();
         } else {
-            if (key.getFuzzySearchMaxValue() > 0) {
-                var subIndex = this.lists.get(key.getPrimaryKey());
-                if (subIndex != null) {
-                    return subIndex.findFuzzy(key, fuzzy);
-                }
-            } else if (this.variantCounter != null) {
-                long value = this.variantCounter.getOrMin(key);
-                if (value > Long.MIN_VALUE) {
-                    return Collections.singleton(new IKeyCounter.Entry(value, key));
-                }
+            if (this.variantCounter != null) {
+                return this.variantCounter.findFuzzy(key, fuzzy);
+            } else {
+                var subIndex = this.getLists().get(key.getPrimaryKey());
+                if (subIndex != null) return subIndex.findFuzzy(key, fuzzy);
             }
             return Collections.emptyList();
         }
@@ -72,14 +58,12 @@ public class KeyCounterMixin implements IKeyCounter {
      */
     @Overwrite(remap = false)
     public void removeZeros() {
-        if (this.lists == null) return;
-        for (var it = this.lists.object2ObjectEntrySet().fastIterator(); it.hasNext();) {
+        if (this.getLists() == null) return;
+        for (var it = this.getLists().object2ObjectEntrySet().fastIterator(); it.hasNext();) {
             var entry = it.next();
             var variantList = entry.getValue();
             variantList.removeZeros();
-            if (variantList.isEmpty()) {
-                it.remove();
-            }
+            if (variantList.isEmpty()) it.remove();
         }
     }
 
@@ -93,12 +77,12 @@ public class KeyCounterMixin implements IKeyCounter {
         if (list == null) return;
         for (var it = list.object2ObjectEntrySet().fastIterator(); it.hasNext();) {
             var entry = it.next();
-            var ourSubIndex = lists.get(entry.getKey());
+            var ourSubIndex = getLists().get(entry.getKey());
             if (ourSubIndex == null) {
-                lists.put(entry.getKey(), entry.getValue().copy());
-            } else {
-                ourSubIndex.addAll(entry.getValue());
-            }
+                var value = entry.getValue().copy();
+                if (entry.getKey() == OBJECT) this.variantCounter = value;
+                getLists().put(entry.getKey(), value);
+            } else ourSubIndex.addAll(entry.getValue());
         }
     }
 
@@ -112,14 +96,13 @@ public class KeyCounterMixin implements IKeyCounter {
         if (list == null) return;
         for (var it = list.object2ObjectEntrySet().fastIterator(); it.hasNext();) {
             var entry = it.next();
-            var ourSubIndex = lists.get(entry.getKey());
+            var ourSubIndex = getLists().get(entry.getKey());
             if (ourSubIndex == null) {
                 var copied = entry.getValue().copy();
                 copied.invert();
-                lists.put(entry.getKey(), copied);
-            } else {
-                ourSubIndex.removeAll(entry.getValue());
-            }
+                if (entry.getKey() == OBJECT) this.variantCounter = copied;
+                getLists().put(entry.getKey(), copied);
+            } else ourSubIndex.removeAll(entry.getValue());
         }
     }
 
@@ -146,6 +129,18 @@ public class KeyCounterMixin implements IKeyCounter {
      * @reason .
      */
     @Overwrite(remap = false)
+    public long remove(AEKey key) {
+        var subIndex = getSubIndex(key);
+        var ret = subIndex.remove(key);
+        if (subIndex.isEmpty()) lists.remove(key.getPrimaryKey());
+        return ret;
+    }
+
+    /**
+     * @author .
+     * @reason .
+     */
+    @Overwrite(remap = false)
     public void set(AEKey key, long amount) {
         this.getSubIndex(key).set(key, amount);
     }
@@ -156,8 +151,9 @@ public class KeyCounterMixin implements IKeyCounter {
      */
     @Overwrite(remap = false)
     public long get(AEKey key) {
-        if (this.lists == null) return 0L;
-        var subIndex = this.getSubIndexOrNull(key);
+        if (this.getLists() == null) return 0L;
+        var subIndex = key.getFuzzySearchMaxValue() > 0 ?
+                this.getLists().get(key.getPrimaryKey()) : this.variantCounter;
         return subIndex == null ? 0L : subIndex.get(key);
     }
 
@@ -167,10 +163,9 @@ public class KeyCounterMixin implements IKeyCounter {
      */
     @Overwrite(remap = false)
     public void reset() {
-        if (this.lists != null) {
-            for (var it = this.lists.object2ObjectEntrySet().fastIterator(); it.hasNext();) {
-                var entry = it.next();
-                entry.getValue().reset();
+        if (this.getLists() != null) {
+            for (var it = this.getLists().object2ObjectEntrySet().fastIterator(); it.hasNext();) {
+                it.next().getValue().reset();
             }
         }
     }
@@ -181,10 +176,9 @@ public class KeyCounterMixin implements IKeyCounter {
      */
     @Overwrite(remap = false)
     public void clear() {
-        if (this.lists != null) {
-            for (var it = this.lists.object2ObjectEntrySet().fastIterator(); it.hasNext();) {
-                var entry = it.next();
-                entry.getValue().clear();
+        if (this.getLists() != null) {
+            for (var it = this.getLists().object2ObjectEntrySet().fastIterator(); it.hasNext();) {
+                it.next().getValue().clear();
             }
         }
     }
@@ -195,8 +189,8 @@ public class KeyCounterMixin implements IKeyCounter {
      */
     @Overwrite(remap = false)
     public boolean isEmpty() {
-        if (this.lists != null) {
-            for (var it = this.lists.object2ObjectEntrySet().fastIterator(); it.hasNext();) {
+        if (this.getLists() != null) {
+            for (var it = this.getLists().object2ObjectEntrySet().fastIterator(); it.hasNext();) {
                 var entry = it.next();
                 if (!entry.getValue().isEmpty()) return false;
             }
@@ -210,9 +204,9 @@ public class KeyCounterMixin implements IKeyCounter {
      */
     @Overwrite(remap = false)
     public int size() {
-        if (this.lists == null) return 0;
+        if (this.getLists() == null) return 0;
         int tot = 0;
-        for (var it = this.lists.object2ObjectEntrySet().fastIterator(); it.hasNext(); tot += it.next().getValue().size()) {}
+        for (var it = this.getLists().object2ObjectEntrySet().fastIterator(); it.hasNext(); tot += it.next().getValue().size()) {}
         return tot;
     }
 
@@ -222,8 +216,8 @@ public class KeyCounterMixin implements IKeyCounter {
      */
     @Overwrite(remap = false)
     public Iterator<Object2LongMap.Entry<AEKey>> iterator() {
-        return this.lists == null ? Collections.emptyListIterator() :
-                Iterators.concat(Iterators.transform(this.lists.values().iterator(), Iterable::iterator));
+        return this.getLists() == null ? Collections.emptyListIterator() :
+                Iterators.concat(Iterators.transform(this.getLists().values().iterator(), Iterable::iterator));
     }
 
     /**
@@ -252,8 +246,8 @@ public class KeyCounterMixin implements IKeyCounter {
      */
     @Overwrite(remap = false)
     public Object2LongMap.Entry<AEKey> getFirstEntry() {
-        if (this.lists != null) {
-            for (var it = this.lists.object2ObjectEntrySet().fastIterator(); it.hasNext();) {
+        if (this.getLists() != null) {
+            for (var it = this.getLists().object2ObjectEntrySet().fastIterator(); it.hasNext();) {
                 var entry = it.next();
                 var iter = entry.getValue().iterator();
                 if (iter.hasNext()) return iter.next();
@@ -268,8 +262,8 @@ public class KeyCounterMixin implements IKeyCounter {
      */
     @Overwrite(remap = false)
     public <T extends AEKey> Object2LongMap.Entry<AEKey> getFirstEntry(Class<T> keyClass) {
-        if (this.lists != null) {
-            for (var it = this.lists.object2ObjectEntrySet().fastIterator(); it.hasNext();) {
+        if (this.getLists() != null) {
+            for (var it = this.getLists().object2ObjectEntrySet().fastIterator(); it.hasNext();) {
                 var entry = it.next();
                 for (var iter : entry.getValue()) {
                     if (keyClass.isInstance(iter.getKey())) return iter;
@@ -285,11 +279,10 @@ public class KeyCounterMixin implements IKeyCounter {
      */
     @Overwrite(remap = false)
     public Set<AEKey> keySet() {
-        if (this.lists == null) {
-            return Collections.emptySet();
-        } else {
+        if (this.getLists() == null) return Collections.emptySet();
+        else {
             var keys = new ObjectOpenHashSet<AEKey>(this.size());
-            for (var it = this.lists.object2ObjectEntrySet().fastIterator(); it.hasNext();) {
+            for (var it = this.getLists().object2ObjectEntrySet().fastIterator(); it.hasNext();) {
                 var entry = it.next();
                 for (var iter : entry.getValue()) keys.add(iter.getKey());
             }
