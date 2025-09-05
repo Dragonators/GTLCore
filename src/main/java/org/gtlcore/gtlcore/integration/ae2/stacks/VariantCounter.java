@@ -3,31 +3,61 @@ package org.gtlcore.gtlcore.integration.ae2.stacks;
 import appeng.api.config.FuzzyMode;
 import appeng.api.stacks.AEKey;
 import it.unimi.dsi.fastutil.objects.*;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
 public abstract class VariantCounter implements Iterable<Object2LongMap.Entry<AEKey>> {
 
-    public abstract int size();
+    private boolean dropZeros;
 
-    public abstract boolean isEmpty();
+    public boolean isDropZeros() {
+        return dropZeros;
+    }
 
-    public abstract long getOrMin(AEKey key);
+    public void setDropZeros(boolean dropZeros) {
+        this.dropZeros = dropZeros;
+    }
 
-    public abstract long get(AEKey key);
+    public int size() {
+        if (!dropZeros) return getRecords().size();
+        var size = 0;
+        for (var value : getRecords().values()) if (value != 0) size++;
+        return size;
+    }
 
-    public abstract long remove(AEKey key);
+    public boolean isEmpty() {
+        if (!dropZeros) return getRecords().isEmpty();
+        for (var value : getRecords().values()) if (value != 0) return false;
+        return true;
+    }
+
+    public long get(AEKey key) {
+        return this.getRecords().getOrDefault(key, 0);
+    }
+
+    public long remove(AEKey key) {
+        return getRecords().removeLong(key);
+    }
 
     public abstract Collection<Object2LongMap.Entry<AEKey>> findFuzzy(AEKey key, FuzzyMode var2);
 
     abstract AEKey2LongMap getRecords();
 
-    public abstract void reset();
+    public void reset() {
+        if (dropZeros) getRecords().clear();
+        else getRecords().replaceAll((key, value) -> 0L);
+    }
 
-    public abstract void clear();
+    public void clear() {
+        getRecords().clear();
+    }
 
-    public abstract void removeZeros();
+    public void removeZeros() {
+        for (var it = Object2LongMaps.fastIterator(getRecords()); it.hasNext();) {
+            var entry = it.next();
+            if (entry.getLongValue() == 0L) it.remove();
+        }
+    }
 
     public abstract VariantCounter copy();
 
@@ -36,7 +66,11 @@ public abstract class VariantCounter implements Iterable<Object2LongMap.Entry<AE
     }
 
     public void set(AEKey key, long amount) {
-        this.getRecords().put(key, amount);
+        if (dropZeros && amount == 0) {
+            getRecords().removeLong(key);
+        } else {
+            getRecords().put(key, amount);
+        }
     }
 
     public void addAll(VariantCounter other) {
@@ -60,38 +94,18 @@ public abstract class VariantCounter implements Iterable<Object2LongMap.Entry<AE
         }
     }
 
+    @Override
+    public Iterator<Object2LongMap.Entry<AEKey>> iterator() {
+        return Object2LongMaps.fastIterator(getRecords());
+    }
+
     public static class UnorderedVariantMap extends VariantCounter {
 
-        private AEKey2LongMap records = new AEKey2LongMap.OpenHashMap();
-
-        @Override
-        public long getOrMin(AEKey key) {
-            return this.records.getOrDefault(key, Long.MIN_VALUE);
-        }
-
-        @Override
-        public long get(AEKey key) {
-            return this.records.getLong(key);
-        }
-
-        @Override
-        public long remove(AEKey key) {
-            return 0;
-        }
+        private final AEKey2LongMap records = new AEKey2LongMap.OpenHashMap();
 
         @Override
         public Collection<Object2LongMap.Entry<AEKey>> findFuzzy(AEKey filter, FuzzyMode fuzzy) {
             return records.object2LongEntrySet();
-        }
-
-        @Override
-        public int size() {
-            return records.size();
-        }
-
-        @Override
-        public boolean isEmpty() {
-            return records.isEmpty();
         }
 
         @Override
@@ -100,68 +114,20 @@ public abstract class VariantCounter implements Iterable<Object2LongMap.Entry<AE
         }
 
         @Override
-        public void reset() {
-            records.replaceAll((key, value) -> 0L);
-        }
-
-        @Override
-        public void clear() {
-            records.clear();
-        }
-
-        @Override
-        public void removeZeros() {
-            for (var it = Object2LongMaps.fastIterator(records); it.hasNext();) {
-                var entry = it.next();
-                if (entry.getLongValue() == 0L) it.remove();
-            }
-        }
-
-        @Override
         public VariantCounter copy() {
             var result = new UnorderedVariantMap();
             result.records.putAll(records);
             return result;
         }
-
-        @Override
-        public @NotNull Iterator<Object2LongMap.Entry<AEKey>> iterator() {
-            return records.iterator();
-        }
     }
 
     public static class FuzzyVariantMap extends VariantCounter {
 
-        private AEKey2LongMap.AVLTreeMap records = FuzzySearch.createMap2Long();
-
-        @Override
-        public long getOrMin(AEKey key) {
-            return this.records.getOrDefault(key, Long.MIN_VALUE);
-        }
-
-        @Override
-        public long get(AEKey key) {
-            return records.getLong(key);
-        }
-
-        @Override
-        public long remove(AEKey key) {
-            return records.removeLong(key);
-        }
+        private final AEKey2LongMap.AVLTreeMap records = FuzzySearch.createMap2Long();
 
         @Override
         public Collection<Object2LongMap.Entry<AEKey>> findFuzzy(AEKey key, FuzzyMode fuzzy) {
             return FuzzySearch.findFuzzy((Object2LongSortedMap<AEKey>) records, key, fuzzy).object2LongEntrySet();
-        }
-
-        @Override
-        public int size() {
-            return records.size();
-        }
-
-        @Override
-        public boolean isEmpty() {
-            return records.isEmpty();
         }
 
         @Override
@@ -170,33 +136,10 @@ public abstract class VariantCounter implements Iterable<Object2LongMap.Entry<AE
         }
 
         @Override
-        public void reset() {
-            records.replaceAll((key, value) -> 0L);
-        }
-
-        @Override
-        public void clear() {
-            records.clear();
-        }
-
-        @Override
-        public void removeZeros() {
-            for (var it = Object2LongMaps.fastIterator(records); it.hasNext();) {
-                var entry = it.next();
-                if (entry.getLongValue() == 0L) it.remove();
-            }
-        }
-
-        @Override
         public VariantCounter copy() {
             var result = new FuzzyVariantMap();
             result.records.putAll(records);
             return result;
-        }
-
-        @Override
-        public @NotNull Iterator<Object2LongMap.Entry<AEKey>> iterator() {
-            return records.iterator();
         }
     }
 }
