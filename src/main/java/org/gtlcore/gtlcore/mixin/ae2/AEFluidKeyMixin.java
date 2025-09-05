@@ -9,8 +9,6 @@ import net.minecraft.world.level.material.Fluid;
 import appeng.api.stacks.AEFluidKey;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.*;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.ModifyArg;
 
 @Mixin(AEFluidKey.class)
 public class AEFluidKeyMixin {
@@ -27,14 +25,6 @@ public class AEFluidKeyMixin {
     public AEFluidKeyMixin(Fluid fluid, @Nullable CompoundTag tag) {
         this.fluid = fluid;
         this.tag = tag;
-    }
-
-    @ModifyArg(method = "toTag",
-               at = @At(value = "INVOKE", target = "Lnet/minecraft/nbt/CompoundTag;putString(Ljava/lang/String;Ljava/lang/String;)V"),
-               index = 1,
-               remap = false)
-    public String toTag(String key) {
-        return ((IFluid) this.fluid).getResourceLocation().toString();
     }
 
     /**

@@ -12,13 +12,8 @@ import net.minecraft.world.item.ItemStack;
 
 import appeng.api.config.Actionable;
 import appeng.api.networking.security.IActionSource;
-import appeng.api.stacks.AEItemKey;
-import appeng.api.stacks.AEKey;
-import appeng.api.stacks.AEKeyType;
-import appeng.api.stacks.KeyCounter;
-import appeng.api.storage.cells.CellState;
-import appeng.api.storage.cells.ISaveProvider;
-import appeng.api.storage.cells.StorageCell;
+import appeng.api.stacks.*;
+import appeng.api.storage.cells.*;
 import appeng.core.AELog;
 import it.unimi.dsi.fastutil.objects.*;
 import lombok.Getter;
@@ -94,12 +89,13 @@ public class InfinityCellInventory implements StorageCell {
             }
             return;
         }
-        ListTag keys = new ListTag();
-        ListTag amount = new ListTag();
-        BigInteger count = BigInteger.ZERO;
+        var keys = new ListTag();
+        var amount = new ListTag();
+        var count = BigInteger.ZERO;
 
-        for (var entry : storedMap.object2ObjectEntrySet()) {
-            BigInteger a = entry.getValue();
+        for (var it = storedMap.object2ObjectEntrySet().fastIterator(); it.hasNext();) {
+            var entry = it.next();
+            var a = entry.getValue();
             if (a.compareTo(BigInteger.ZERO) > 0) {
                 count = count.add(a);
                 keys.add(entry.getKey().toTagGeneric());
@@ -153,7 +149,7 @@ public class InfinityCellInventory implements StorageCell {
     }
 
     private boolean isStorageCell(AEItemKey key) {
-        InfinityCell type = getStorageCell(key);
+        var type = getStorageCell(key);
         return type != null;
     }
 
@@ -195,21 +191,21 @@ public class InfinityCellInventory implements StorageCell {
             return;
         }
 
-        ListTag amounts = getDiskStorage().amounts;
-        ListTag stackKeys = getDiskStorage().stackKeys;
+        var amounts = getDiskStorage().amounts;
+        var stackKeys = getDiskStorage().stackKeys;
         if (amounts.size() != stackKeys.size()) {
             AELog.warn("Loading storage cell with mismatched amounts/tags: %d != %d", amounts.size(), stackKeys.size());
         }
 
         for (int i = 0; i < amounts.size(); i++) {
-            String amount = amounts.getString(i);
-            AEKey key = AEKey.fromTagGeneric(stackKeys.getCompound(i));
+            var amount = amounts.getString(i);
+            var key = AEKey.fromTagGeneric(stackKeys.getCompound(i));
             if (amount.isEmpty() || key == null) corruptedTag = true;
             else storedMap.put(key, new BigInteger(amount));
         }
 
         if (corruptedTag) {
-            this.saveChanges();
+            this.saveChanges(0, true);
         }
     }
 
@@ -217,16 +213,22 @@ public class InfinityCellInventory implements StorageCell {
         return GTLCore.STORAGE_INSTANCE;
     }
 
-    protected void saveChanges() {
-        this.storedItemCount = 0;
-        for (var it = Object2ObjectMaps.fastIterator(this.storedMap); it.hasNext();) {
-            BigInteger storedAmount = it.next().getValue();
-            if (this.storedItemCount < 0) {
-                this.storedItemCount = Double.MAX_VALUE;
-                break;
+    protected void saveChanges(double incur, boolean isLoad) {
+        if (!isLoad) {
+            this.storedItemCount += incur;
+            if (this.storedItemCount < 0) this.storedItemCount = Double.MAX_VALUE;
+        } else {
+            this.storedItemCount = 0;
+            for (var it = Object2ObjectMaps.fastIterator(this.storedMap); it.hasNext();) {
+                var storedAmount = it.next().getValue();
+                if (this.storedItemCount < 0) {
+                    this.storedItemCount = Double.MAX_VALUE;
+                    break;
+                }
+                this.storedItemCount += storedAmount.doubleValue();
             }
-            this.storedItemCount += storedAmount.doubleValue();
         }
+
         this.isPersisted = false;
         if (this.container != null) {
             this.container.saveChanges();
@@ -246,7 +248,7 @@ public class InfinityCellInventory implements StorageCell {
         }
 
         if (what instanceof AEItemKey itemKey && this.isStorageCell(itemKey)) {
-            InfinityCellInventory meInventory = createInventory(itemKey.toStack(), null);
+            var meInventory = createInventory(itemKey.toStack(), null);
             if (!isCellEmpty(meInventory)) {
                 return 0;
             }
@@ -266,7 +268,7 @@ public class InfinityCellInventory implements StorageCell {
         if (mode == Actionable.MODULATE) {
             BigInteger finalAmount = BigInteger.valueOf(amount);
             getCellItems().compute(what, (k, v) -> v == null ? finalAmount : v.add(finalAmount));
-            this.saveChanges();
+            this.saveChanges(finalAmount.doubleValue(), false);
         }
 
         return amount;
@@ -274,21 +276,22 @@ public class InfinityCellInventory implements StorageCell {
 
     @Override
     public long extract(AEKey what, long amount, Actionable mode, IActionSource source) {
-        BigInteger currentAmount = getCellItems().get(what);
+        var currentAmount = getCellItems().get(what);
         if (currentAmount == null) {
             return 0L;
         } else if (currentAmount.signum() > 0) {
-            BigInteger extractAmount = BigInteger.valueOf(amount);
+            var extractAmount = BigInteger.valueOf(amount);
             if (currentAmount.compareTo(extractAmount) < 1) {
                 if (mode == Actionable.MODULATE) {
                     this.storedMap.remove(what);
-                    this.saveChanges();
+                    this.saveChanges(-currentAmount.doubleValue(), false);
                 }
                 return currentAmount.longValue();
             } else {
                 if (mode == Actionable.MODULATE) {
-                    this.storedMap.put(what, currentAmount.subtract(extractAmount));
-                    this.saveChanges();
+                    var sub = currentAmount.subtract(extractAmount);
+                    this.storedMap.put(what, sub);
+                    this.saveChanges(-sub.doubleValue(), false);
                 }
                 return amount;
             }

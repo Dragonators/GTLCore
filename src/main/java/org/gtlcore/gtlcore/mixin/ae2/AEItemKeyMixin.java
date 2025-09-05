@@ -9,8 +9,6 @@ import net.minecraft.world.item.Item;
 import appeng.api.stacks.AEItemKey;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.*;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.ModifyArg;
 
 @Mixin(AEItemKey.class)
 public abstract class AEItemKeyMixin {
@@ -27,14 +25,6 @@ public abstract class AEItemKeyMixin {
 
     public AEItemKeyMixin(Item item) {
         this.item = item;
-    }
-
-    @ModifyArg(method = "toTag",
-               at = @At(value = "INVOKE", target = "Lnet/minecraft/nbt/CompoundTag;putString(Ljava/lang/String;Ljava/lang/String;)V"),
-               index = 1,
-               remap = false)
-    public String toTag(String key) {
-        return ((IItem) this.item).getResourceLocation().toString();
     }
 
     /**

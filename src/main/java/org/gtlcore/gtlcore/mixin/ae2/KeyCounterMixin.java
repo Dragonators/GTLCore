@@ -18,13 +18,10 @@ public class KeyCounterMixin implements IKeyCounter {
     @Unique
     private VariantCounter variantCounter;
     @Unique
-    private Object2ObjectOpenHashMap<Object, VariantCounter> lists;
+    private Object2ObjectOpenHashMap<Object, VariantCounter> lists = new Object2ObjectOpenHashMap<>();
 
     @Unique
     private VariantCounter getSubIndex(AEKey key) {
-        if (this.lists == null) {
-            this.lists = new Object2ObjectOpenHashMap<>();
-        }
         if (key.getFuzzySearchMaxValue() > 0) {
             return this.lists.computeIfAbsent(key.getPrimaryKey(), (k) -> new VariantCounter.FuzzyVariantMap());
         } else {
