@@ -1,16 +1,13 @@
 package org.gtlcore.gtlcore.common.machine.multiblock.part;
 
-import org.gtlcore.gtlcore.api.machine.trait.ExportOnlyAEConfigureItemSlot;
-import org.gtlcore.gtlcore.api.machine.trait.IMEPartMachine;
-import org.gtlcore.gtlcore.api.machine.trait.IMESlot;
+import org.gtlcore.gtlcore.api.machine.trait.*;
 import org.gtlcore.gtlcore.api.recipe.ingredient.LongIngredient;
 import org.gtlcore.gtlcore.config.ConfigHolder;
+import org.gtlcore.gtlcore.integration.ae2.stacks.IKeyCounter;
 
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
 import com.gregtechceu.gtceu.api.gui.GuiTextures;
-import com.gregtechceu.gtceu.api.gui.fancy.ConfiguratorPanel;
-import com.gregtechceu.gtceu.api.gui.fancy.IFancyConfigurator;
-import com.gregtechceu.gtceu.api.gui.fancy.IFancyConfiguratorButton;
+import com.gregtechceu.gtceu.api.gui.fancy.*;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.MetaMachine;
 import com.gregtechceu.gtceu.api.machine.trait.NotifiableItemStackHandler;
@@ -18,17 +15,11 @@ import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.ingredient.SizedIngredient;
 import com.gregtechceu.gtceu.common.item.IntCircuitBehaviour;
 import com.gregtechceu.gtceu.integration.ae2.machine.MEInputBusPartMachine;
-import com.gregtechceu.gtceu.integration.ae2.slot.ExportOnlyAEItemList;
-import com.gregtechceu.gtceu.integration.ae2.slot.ExportOnlyAEItemSlot;
-import com.gregtechceu.gtceu.integration.ae2.slot.ExportOnlyAESlot;
-import com.gregtechceu.gtceu.integration.ae2.slot.IConfigurableSlot;
+import com.gregtechceu.gtceu.integration.ae2.slot.*;
 
 import com.lowdragmc.lowdraglib.gui.texture.IGuiTexture;
 import com.lowdragmc.lowdraglib.gui.texture.TextTexture;
-import com.lowdragmc.lowdraglib.gui.widget.LabelWidget;
-import com.lowdragmc.lowdraglib.gui.widget.TextFieldWidget;
-import com.lowdragmc.lowdraglib.gui.widget.Widget;
-import com.lowdragmc.lowdraglib.gui.widget.WidgetGroup;
+import com.lowdragmc.lowdraglib.gui.widget.*;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 
@@ -48,25 +39,18 @@ import net.minecraftforge.registries.ForgeRegistries;
 import appeng.api.config.Actionable;
 import appeng.api.networking.IGrid;
 import appeng.api.networking.storage.IStorageService;
-import appeng.api.stacks.AEItemKey;
-import appeng.api.stacks.AEKey;
-import appeng.api.stacks.GenericStack;
+import appeng.api.stacks.*;
 import appeng.api.storage.MEStorage;
 import appeng.util.prioritylist.IPartitionList;
 import com.glodblock.github.extendedae.common.me.taglist.TagExpParser;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
-import it.unimi.dsi.fastutil.objects.Object2LongMap;
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import it.unimi.dsi.fastutil.objects.Reference2BooleanMap;
-import it.unimi.dsi.fastutil.objects.Reference2BooleanOpenHashMap;
+import it.unimi.dsi.fastutil.objects.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
@@ -161,7 +145,8 @@ public class TagFilterMEStockBusPartMachine extends MEInputBusPartMachine {
         List<GenericStack> order = new ObjectArrayList<>();
         final var inventory = this.aeItemHandler.getInventory();
 
-        var counter = networkStorage.getAvailableStacks();
+        var counter = IKeyCounter.of(networkStorage.getAvailableStacks()).getVariantCounter();
+        if (counter == null) return;
         int index = 0;
         for (Object2LongMap.Entry<AEKey> entry : counter) {
             if (!isCountSort && index >= CONFIG_SIZE) break;
@@ -207,9 +192,7 @@ public class TagFilterMEStockBusPartMachine extends MEInputBusPartMachine {
     public void onLoad() {
         super.onLoad();
         if (getLevel() instanceof ServerLevel serverLevel) {
-            serverLevel.getServer().tell(new TickTask(1, () -> {
-                ((IMEPartMachine) this.aeItemHandler).onConfigChanged();
-            }));
+            serverLevel.getServer().tell(new TickTask(1, () -> ((IMEPartMachine) this.aeItemHandler).onConfigChanged()));
         }
     }
 
