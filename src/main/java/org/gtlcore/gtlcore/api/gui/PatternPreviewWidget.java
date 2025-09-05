@@ -52,7 +52,6 @@ import java.util.stream.Stream;
 @OnlyIn(Dist.CLIENT)
 public class PatternPreviewWidget extends WidgetGroup {
 
-    private boolean isLoaded;
     private static TrackedDummyWorld LEVEL;
     private static BlockPos LAST_POS = new BlockPos(0, 50, 0);
     private static final Map<MultiblockMachineDefinition, MBPattern[]> CACHE = new Object2ObjectOpenHashMap<>();
@@ -171,7 +170,10 @@ public class PatternPreviewWidget extends WidgetGroup {
     }
 
     public void setPage(int index, ClickData x) {
-        if (x != null && x.isShiftClick) index = 0;
+        if (x != null) {
+            if (x.isShiftClick) index = 0;
+            else if (x.isCtrlClick) index = patterns.length - 1;
+        }
         if (index >= patterns.length || index < 0) return;
         this.index = index;
         this.layer = -1;

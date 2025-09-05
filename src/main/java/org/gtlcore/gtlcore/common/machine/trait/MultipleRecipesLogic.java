@@ -118,7 +118,6 @@ public class MultipleRecipesLogic extends RecipeLogic implements ILockRecipe {
     public void onRecipeFinish() {
         machine.afterWorking();
         if (lastRecipe != null) {
-            lastRecipe.postWorking(this.machine);
             handleRecipeOutput(this.machine, lastRecipe);
         }
         var match = getRecipe();

@@ -91,7 +91,6 @@ public class UltimateTerminalBehavior implements IItemUIFactory {
     }
 
     private Widget createWidget(Player player) {
-        if (tierBlockMap.isEmpty()) build();
         ItemStack handItem = player.getMainHandItem();
         WidgetGroup group = new WidgetGroup(0, 0, 190, 136);
         DraggableScrollableWidgetGroup contain = new DraggableScrollableWidgetGroup(4, 4, 182, 128)
