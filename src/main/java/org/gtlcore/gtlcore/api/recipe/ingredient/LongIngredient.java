@@ -2,9 +2,12 @@ package org.gtlcore.gtlcore.api.recipe.ingredient;
 
 import org.gtlcore.gtlcore.mixin.gtm.recipe.Ingredient.IntProviderIngredientAccessor;
 
+import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.api.recipe.ingredient.*;
+import com.gregtechceu.gtceu.core.mixins.*;
 
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -12,34 +15,45 @@ import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraftforge.common.crafting.IIngredientSerializer;
 
 import com.google.common.primitives.Ints;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import lombok.Getter;
-import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
 public class LongIngredient extends SizedIngredient {
 
+    public static final ResourceLocation TYPE = GTCEu.id("Long");
+
     @Getter
-    @Setter
     protected long actualAmount;
     private int hashCode = 0;
+    private boolean changed = true;
+    @Getter
+    private final boolean isEmpty;
+    private final Value value;
 
     protected LongIngredient(Ingredient inner, long actualAmount) {
         super(inner, Ints.saturatedCast(actualAmount));
         this.actualAmount = actualAmount;
+        this.isEmpty = inner.isEmpty();
+        if (isEmpty || inner.getClass() != Ingredient.class) {
+            this.value = null;
+        } else {
+            var values = ((IngredientAccessor) inner).getValues();
+            this.value = values.length == 1 ? values[0] : null;
+        }
     }
 
     protected LongIngredient(@NotNull TagKey<Item> tag, long actualAmount) {
-        super(tag, Ints.saturatedCast(actualAmount));
-        this.actualAmount = actualAmount;
+        this(Ingredient.of(tag), actualAmount);
     }
 
     protected LongIngredient(ItemStack itemStack, long actualAmount) {
-        super(itemStack);
-        this.actualAmount = actualAmount;
+        this(itemStack.hasTag() ? NBTIngredient.createNBTIngredient(itemStack) : Ingredient.of(itemStack), actualAmount);
     }
 
     public static LongIngredient create(Ingredient inner, long amount) {
@@ -89,16 +103,40 @@ public class LongIngredient extends SizedIngredient {
     }
 
     @Override
+    public @NotNull JsonElement toJson() {
+        JsonObject json = new JsonObject();
+        json.addProperty("type", TYPE.toString());
+        json.addProperty("actualAmount", this.actualAmount);
+        json.add("ingredient", this.inner.toJson());
+        return json;
+    }
+
+    @Override
+    public boolean test(@Nullable ItemStack stack) {
+        if (stack == null) return false;
+        if (this.isEmpty) return stack.isEmpty();
+
+        if (this.value instanceof TagValueAccessor tagValue) {
+            return stack.is(tagValue.getTag());
+        } else if (this.value instanceof ItemValueAccessor itemValue) {
+            return ItemStack.isSameItem(stack, itemValue.getItem());
+        }
+        return this.inner.test(stack);
+    }
+
+    @Override
     public ItemStack @NotNull [] getItems() {
         if (getInner() instanceof IntProviderIngredient intProviderIngredient) {
             return intProviderIngredient.getItems();
         }
-        if (itemStacks == null) {
+        if (changed || itemStacks == null) {
+            if (isEmpty) return new ItemStack[0];
             var items = new ObjectArrayList<ItemStack>(inner.getItems().length);
             for (ItemStack item : this.inner.getItems()) {
                 items.add(item.copyWithCount(Ints.saturatedCast(actualAmount)));
             }
             itemStacks = items.toArray(new ItemStack[0]);
+            changed = false;
         }
         return itemStacks;
     }
@@ -111,6 +149,11 @@ public class LongIngredient extends SizedIngredient {
         return this.hashCode;
     }
 
+    public void setActualAmount(long actualAmount) {
+        this.actualAmount = actualAmount;
+        this.changed = true;
+    }
+
     public static final IIngredientSerializer<LongIngredient> SERIALIZER = new IIngredientSerializer<>() {
 
         @Override
@@ -121,7 +164,7 @@ public class LongIngredient extends SizedIngredient {
 
         @Override
         public @NotNull LongIngredient parse(JsonObject json) {
-            long amount = json.get("count").getAsLong();
+            long amount = json.get("actualAmount").getAsLong();
             Ingredient inner = Ingredient.fromJson(json.get("ingredient"));
             return new LongIngredient(inner, amount);
         }

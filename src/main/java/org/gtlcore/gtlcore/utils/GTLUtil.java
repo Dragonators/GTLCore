@@ -1,13 +1,12 @@
 package org.gtlcore.gtlcore.utils;
 
+import org.gtlcore.gtlcore.api.data.*;
+
 import com.gregtechceu.gtceu.GTCEu;
-import com.gregtechceu.gtceu.api.recipe.GTRecipe;
-import com.gregtechceu.gtceu.api.recipe.GTRecipeSerializer;
+import com.gregtechceu.gtceu.api.recipe.*;
 
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtOps;
-import net.minecraft.nbt.Tag;
+import net.minecraft.nbt.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -20,14 +19,12 @@ import org.jetbrains.annotations.Nullable;
  */
 public class GTLUtil {
 
-    @SuppressWarnings("deprecation")
     public static String getItemId(Item item) {
-        return BuiltInRegistries.ITEM.getKey(item).toString();
+        return ((IItem) item).getIdString();
     }
 
-    @SuppressWarnings("deprecation")
     public static String getFluidId(Fluid fluid) {
-        return BuiltInRegistries.FLUID.getKey(fluid).toString();
+        return ((IFluid) fluid).getIdString();
     }
 
     @SuppressWarnings("deprecation")

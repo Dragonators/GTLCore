@@ -2,6 +2,7 @@ package org.gtlcore.gtlcore.api.recipe;
 
 import org.gtlcore.gtlcore.api.machine.trait.IRecipeCapabilityMachine;
 import org.gtlcore.gtlcore.api.machine.trait.MERecipeHandlePart;
+import org.gtlcore.gtlcore.api.recipe.ingredient.LongIngredient;
 
 import com.gregtechceu.gtceu.api.capability.recipe.*;
 import com.gregtechceu.gtceu.api.machine.feature.IRecipeLogicMachine;
@@ -10,7 +11,6 @@ import com.gregtechceu.gtceu.api.recipe.RecipeHelper;
 import com.gregtechceu.gtceu.api.recipe.content.Content;
 import com.gregtechceu.gtceu.api.recipe.content.ContentModifier;
 import com.gregtechceu.gtceu.api.recipe.ingredient.FluidIngredient;
-import com.gregtechceu.gtceu.api.recipe.ingredient.SizedIngredient;
 import com.gregtechceu.gtceu.utils.IngredientEquality;
 import com.gregtechceu.gtceu.utils.ItemStackHashStrategy;
 
@@ -101,13 +101,13 @@ public interface IParallelLogic {
             if (machine.getRecipeHandleParts().isEmpty() && machine.getMERecipeHandleParts().isEmpty()) return 0;
             Object2LongOpenCustomHashMap<Ingredient> countableMap = new Object2LongOpenCustomHashMap<>(IngredientEquality.IngredientHashStrategy.INSTANCE);
             for (Content content : recipe.getInputContents(ItemRecipeCapability.CAP)) {
-                Ingredient recipeIngredient = ItemRecipeCapability.CAP.of(content.content);
+                Ingredient ingredient = ItemRecipeCapability.CAP.of(content.content);
                 long ingredientCount;
-                if (recipeIngredient instanceof SizedIngredient sizedIngredient) {
-                    ingredientCount = sizedIngredient.getAmount();
+                if (ingredient instanceof LongIngredient longIngredient) {
+                    ingredientCount = longIngredient.getAmount();
                 } else ingredientCount = 1;
                 if (content.chance > 0) {
-                    countableMap.addTo(recipeIngredient, ingredientCount);
+                    countableMap.addTo(ingredient, ingredientCount);
                 }
             }
             if (countableMap.isEmpty()) return parallelAmount;
@@ -225,13 +225,13 @@ public interface IParallelLogic {
             long maxCount = 0L;
             List<Ingredient> ingredients = new ObjectArrayList<>(contents.size());
             for (var content : contents) {
-                Ingredient recipeIngredient = ItemRecipeCapability.CAP.of(content.content);
+                Ingredient ingredient = ItemRecipeCapability.CAP.of(content.content);
                 long ingredientCount;
-                if (recipeIngredient instanceof SizedIngredient sizedIngredient) {
-                    ingredientCount = sizedIngredient.getAmount();
+                if (ingredient instanceof LongIngredient longIngredient) {
+                    ingredientCount = longIngredient.getAmount();
                 } else ingredientCount = 1;
                 maxCount = Math.max(maxCount, ingredientCount);
-                ingredients.add(recipeIngredient);
+                ingredients.add(ingredient);
             }
             if (maxCount == 0L) return multiplier;
             var handlers = machine.getCapabilitiesFlat(IO.OUT, ItemRecipeCapability.CAP);

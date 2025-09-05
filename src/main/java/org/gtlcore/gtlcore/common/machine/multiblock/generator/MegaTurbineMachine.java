@@ -107,6 +107,12 @@ public class MegaTurbineMachine extends WorkableElectricMultiblockMachine implem
         rotorHatchPartMachine = null;
     }
 
+    @Override
+    public boolean onWorking() {
+        for (var part : this.rotorHolderMachines) if (!part.onWorking(this)) return false;
+        return super.onWorking();
+    }
+
     @Nullable
     private RotorHolderPartMachine getRotorHolder() {
         if (rotorHolderMachines != null) {
