@@ -62,7 +62,7 @@ public abstract class VariantCounter implements Iterable<Object2LongMap.Entry<AE
 
     public static class UnorderedVariantMap extends VariantCounter {
 
-        private final AEKey2LongMap records = new AEKey2LongMap.OpenHashMap();
+        private AEKey2LongMap records = new AEKey2LongMap.OpenHashMap();
 
         @Override
         public long getOrMin(AEKey key) {
@@ -101,7 +101,7 @@ public abstract class VariantCounter implements Iterable<Object2LongMap.Entry<AE
 
         @Override
         public void reset() {
-            Object2LongMaps.fastForEach(records, (entry) -> entry.setValue(0));
+            records.replaceAll((key, value) -> 0L);
         }
 
         @Override
@@ -132,7 +132,7 @@ public abstract class VariantCounter implements Iterable<Object2LongMap.Entry<AE
 
     public static class FuzzyVariantMap extends VariantCounter {
 
-        private final AEKey2LongMap.AVLTreeMap records = FuzzySearch.createMap2Long();
+        private AEKey2LongMap.AVLTreeMap records = FuzzySearch.createMap2Long();
 
         @Override
         public long getOrMin(AEKey key) {
@@ -171,7 +171,7 @@ public abstract class VariantCounter implements Iterable<Object2LongMap.Entry<AE
 
         @Override
         public void reset() {
-            Object2LongMaps.fastForEach(records, (entry) -> entry.setValue(0));
+            records.replaceAll((key, value) -> 0L);
         }
 
         @Override

@@ -103,7 +103,7 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
      */
     @Overwrite(remap = false)
     public boolean onWorking() {
-        return IRecipeLogicMachine.super.onWorking();
+        return this.self().getDefinition().getOnWorking().test(this);
     }
 
     /**
@@ -119,7 +119,7 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
      */
     @Overwrite(remap = false)
     public boolean beforeWorking(@Nullable GTRecipe recipe) {
-        return IRecipeLogicMachine.super.beforeWorking(recipe);
+        return this.self().getDefinition().getBeforeWorking().test(this, recipe);
     }
 
     @Override
