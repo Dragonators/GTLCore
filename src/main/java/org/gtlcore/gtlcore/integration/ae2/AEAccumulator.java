@@ -1,4 +1,4 @@
-package org.gtlcore.gtlcore.common.machine.multiblock.part.ae;
+package org.gtlcore.gtlcore.integration.ae2;
 
 import appeng.api.stacks.AEKey;
 import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;

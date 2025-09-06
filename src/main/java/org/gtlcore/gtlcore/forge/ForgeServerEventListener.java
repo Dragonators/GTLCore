@@ -1,7 +1,7 @@
 package org.gtlcore.gtlcore.forge;
 
 import org.gtlcore.gtlcore.GTLCore;
-import org.gtlcore.gtlcore.common.machine.multiblock.part.ae.AEWriteService;
+import org.gtlcore.gtlcore.integration.ae2.AEWriteService;
 
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.server.ServerStoppingEvent;

@@ -1,18 +1,15 @@
-package org.gtlcore.gtlcore.common.machine.multiblock.part.ae;
+package org.gtlcore.gtlcore.integration.ae2;
 
 import org.gtlcore.gtlcore.api.recipe.ingredient.LongIngredient;
 
-import com.gregtechceu.gtceu.api.recipe.ingredient.FluidIngredient;
-import com.gregtechceu.gtceu.api.recipe.ingredient.IntProviderIngredient;
+import com.gregtechceu.gtceu.api.recipe.ingredient.*;
 
 import com.lowdragmc.lowdraglib.side.fluid.FluidStack;
 
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 
-import appeng.api.stacks.AEFluidKey;
-import appeng.api.stacks.AEItemKey;
-import appeng.api.stacks.AEKey;
+import appeng.api.stacks.*;
 import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 
 import java.lang.ref.WeakReference;

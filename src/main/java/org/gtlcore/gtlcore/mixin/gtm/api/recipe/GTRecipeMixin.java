@@ -28,6 +28,8 @@ public abstract class GTRecipeMixin {
     private int tier = -1;
     @Unique
     private boolean hasTick;
+    @Unique
+    private IO io;
 
     @Shadow(remap = false)
     public ResourceLocation id;
@@ -43,6 +45,7 @@ public abstract class GTRecipeMixin {
     public void GTRecipe(GTRecipeType recipeType, ResourceLocation id, Map inputs, Map outputs, Map tickInputs, Map tickOutputs, Map inputChanceLogics, Map outputChanceLogics, Map tickInputChanceLogics, Map tickOutputChanceLogics, List conditions, List ingredientActions, CompoundTag data, int duration, boolean isFuel, CallbackInfo ci) {
         this.tier = this.data.getInt("euTier");
         this.hasTick = !tickInputs.isEmpty() || !tickOutputs.isEmpty();
+        this.io = tickInputs.isEmpty() ? (tickOutputs.isEmpty() ? IO.NONE : IO.OUT) : IO.IN;
     }
 
     /**
@@ -61,7 +64,7 @@ public abstract class GTRecipeMixin {
     @Overwrite(remap = false)
     public GTRecipe.ActionResult matchTickRecipe(IRecipeCapabilityHolder holder) {
         if (!this.hasTick()) return GTRecipe.ActionResult.SUCCESS;
-        if (holder instanceof WorkableElectricMultiblockMachine machine) {
+        if (holder instanceof WorkableElectricMultiblockMachine machine && this.io == IO.IN) {
             GTRecipe lastRecipe = machine.getRecipeLogic().getLastOriginRecipe();
             if (lastRecipe == null || !this.id.equals(lastRecipe.id)) {
                 this.tier = tier == -1 ? this.data.getInt("euTier") : tier;

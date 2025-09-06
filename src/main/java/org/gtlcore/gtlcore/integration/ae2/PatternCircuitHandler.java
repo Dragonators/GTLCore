@@ -1,4 +1,4 @@
-package org.gtlcore.gtlcore.common.machine.multiblock.part.ae;
+package org.gtlcore.gtlcore.integration.ae2;
 
 import org.gtlcore.gtlcore.api.machine.trait.NotifiableCircuitItemStackHandler;
 

@@ -1,5 +1,8 @@
 package org.gtlcore.gtlcore.common.machine.multiblock.part.ae;
 
+import org.gtlcore.gtlcore.integration.ae2.AEAccumulator;
+import org.gtlcore.gtlcore.integration.ae2.AEWriteService;
+
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.recipe.ingredient.FluidIngredient;
 
@@ -19,7 +22,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.gtlcore.gtlcore.common.machine.multiblock.part.ae.AEUtils.reFunds;
+import static org.gtlcore.gtlcore.integration.ae2.AEUtils.reFunds;
 
 public class MEExtendedAsyncOutputPartMachine extends MEExtendedOutputPartMachine {
 

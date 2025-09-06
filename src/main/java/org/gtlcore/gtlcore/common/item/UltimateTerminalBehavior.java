@@ -3,7 +3,6 @@ package org.gtlcore.gtlcore.common.item;
 import org.gtlcore.gtlcore.api.gui.BlockMapSelectorWidget;
 
 import com.gregtechceu.gtceu.api.block.MetaMachineBlock;
-import com.gregtechceu.gtceu.api.capability.IParallelHatch;
 import com.gregtechceu.gtceu.api.gui.GuiTextures;
 import com.gregtechceu.gtceu.api.item.component.IItemUIFactory;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
@@ -279,12 +278,7 @@ public class UltimateTerminalBehavior implements IItemUIFactory {
                 GTRegistries.MACHINES.forEach(d -> {
                     if (d.getRecipeTypes() != null || d instanceof MultiblockMachineDefinition) return;
                     var block = d.getBlock();
-                    if (d.createMetaMachine((IMachineBlockEntity) d.getBlockEntityType().create(BlockPos.ZERO, block.defaultBlockState())) instanceof MultiblockPartMachine partMachine)
-                        if (partMachine instanceof TieredIOPartMachine ||
-                                partMachine instanceof IParallelHatch ||
-                                partMachine instanceof IMaintenanceMachine) {
-                                    Set.add(block);
-                                }
+                    if (d.createMetaMachine((IMachineBlockEntity) d.getBlockEntityType().create(BlockPos.ZERO, block.defaultBlockState())) instanceof MultiblockPartMachine) Set.add(block);
                 });
             }
         }
