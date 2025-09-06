@@ -1,19 +1,27 @@
 package org.gtlcore.gtlcore.common.machine.multiblock.part.ae;
 
+import org.gtlcore.gtlcore.api.machine.MEExtendedOutputFancyConfigurator;
 import org.gtlcore.gtlcore.integration.ae2.AEAccumulator;
 import org.gtlcore.gtlcore.integration.ae2.AEWriteService;
 
+import com.gregtechceu.gtceu.api.gui.fancy.TabsWidget;
+import com.gregtechceu.gtceu.api.gui.widget.IntInputWidget;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.recipe.ingredient.FluidIngredient;
 
+import com.lowdragmc.lowdraglib.gui.modular.ModularUI;
 import com.lowdragmc.lowdraglib.side.fluid.FluidStack;
+import com.lowdragmc.lowdraglib.utils.Position;
 
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 
 import appeng.api.networking.IGridNode;
 import appeng.api.networking.ticking.IGridTickable;
 import appeng.api.networking.ticking.TickRateModulation;
+import appeng.api.networking.ticking.TickingRequest;
 import appeng.api.stacks.AEKey;
 import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 
@@ -24,7 +32,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.gtlcore.gtlcore.integration.ae2.AEUtils.reFunds;
 
-public class MEExtendedAsyncOutputPartMachine extends MEExtendedOutputPartMachine {
+public class MEExtendedAsyncOutputPartMachine extends MEExtendedOutputPartMachineBase {
 
     private final AEAccumulator accumulator = new AEAccumulator();
     private final WeakReference<AEAccumulator> accRef = new WeakReference<>(accumulator);
@@ -51,14 +59,49 @@ public class MEExtendedAsyncOutputPartMachine extends MEExtendedOutputPartMachin
     }
 
     @Override
+    public void onMachineRemoved() {
+        accumulator.clear();
+        super.onMachineRemoved();
+    }
+
+    // ========================================
+    // GUI SYSTEM
+    // ========================================
+
+    @Override
+    public ModularUI createUI(Player entityPlayer) {
+        final var ui = super.createUI(entityPlayer);
+        ui.registerCloseListener(this::updatePriority);
+        return ui;
+    }
+
+    @Override
+    public void attachSideTabs(TabsWidget sideTabs) {
+        super.attachSideTabs(sideTabs);
+        sideTabs.attachSubTab(new MEExtendedOutputFancyConfigurator(() -> new IntInputWidget(new Position(10, 10), this::getPriority, this::setPriority)
+                .setMin(10)
+                .setMax(100000)) {
+
+            @Override
+            public List<Component> getTabTooltips() {
+                return List.of(Component.literal("更改优先级"));
+            }
+        });
+    }
+
+    @Override
     protected NotifiableMERecipeHandlerTrait<Ingredient, ItemStack> createItemOutputHandler() {
         return new MEItemOutputHandler(this) {
 
+            public MEExtendedAsyncOutputPartMachine getMachine() {
+                return (MEExtendedAsyncOutputPartMachine) this.machine;
+            }
+
             @Override
-            public boolean meHandleRecipeOutputInner(List<Ingredient> left, boolean simulate) {
-                if (simulate) return true; // Todo Filter
+            public List<Ingredient> meHandleRecipeOutputInner(List<Ingredient> left, boolean simulate) {
+                if (simulate) return List.of();
                 AEWriteService.INSTANCE.submitIngredientLeft(accRef, left);
-                return true;
+                return List.of();
             }
         };
     }
@@ -67,62 +110,67 @@ public class MEExtendedAsyncOutputPartMachine extends MEExtendedOutputPartMachin
     protected NotifiableMERecipeHandlerTrait<FluidIngredient, FluidStack> createFluidOutputHandler() {
         return new MEFluidOutputHandler(this) {
 
+            public MEExtendedAsyncOutputPartMachine getMachine() {
+                return (MEExtendedAsyncOutputPartMachine) this.machine;
+            }
+
             @Override
-            public boolean meHandleRecipeOutputInner(List<FluidIngredient> left, boolean simulate) {
-                if (simulate) return true; // Todo Filter
+            public List<FluidIngredient> meHandleRecipeOutputInner(List<FluidIngredient> left, boolean simulate) {
+                if (simulate) return List.of();
                 AEWriteService.INSTANCE.submitFluidIngredientLeft(accRef, left);
-                return true;
+                return List.of();
             }
         };
     }
 
     @Override
     protected void registerDefaultServices() {
-        getMainNode().addService(IGridTickable.class, new Ticker() {
+        getMainNode().addService(IGridTickable.class, new Ticker());
+    }
 
-            @Override
-            public TickRateModulation tickingRequest(IGridNode node, int ticksSinceLastCall) {
-                final boolean isActive = getMainNode().isActive();
-                final boolean dataMerged = mergeFromPendingData();
-                final boolean hasPendingWork = pendingData.get() != null || !accumulator.isEmpty();
+    protected class Ticker implements IGridTickable {
 
+        @Override
+        public TickingRequest getTickingRequest(IGridNode node) {
+            return new TickingRequest(MIN_FREQUENCY, MAX_FREQUENCY, false, true);
+        }
+
+        @Override
+        public TickRateModulation tickingRequest(IGridNode node, int ticksSinceLastCall) {
+            final boolean isActive = getMainNode().isActive();
+            final boolean dataMerged = mergeFromPendingData();
+            final boolean hasPendingWork = pendingData.get() != null || !accumulator.isEmpty();
+
+            if (hasPendingWork) {
+                requestAsyncDrain();
+            }
+
+            if (!isActive) {
                 if (hasPendingWork) {
-                    requestAsyncDrain();
-                }
-
-                if (!isActive) {
-                    if (hasPendingWork) {
-                        return TickRateModulation.FASTER;
-                    } else {
-                        if (ticksSinceLastCall >= MAX_FREQUENCY) {
-                            isSleeping = true;
-                            return TickRateModulation.SLEEP;
-                        } else return TickRateModulation.SLOWER;
-                    }
-                }
-
-                if (buffer.isEmpty()) {
-                    if (hasPendingWork) {
-                        return TickRateModulation.FASTER;
-                    }
+                    return TickRateModulation.FASTER;
+                } else {
                     if (ticksSinceLastCall >= MAX_FREQUENCY) {
                         isSleeping = true;
                         return TickRateModulation.SLEEP;
                     } else return TickRateModulation.SLOWER;
-                } else {
-                    if (reFunds(buffer, getMainNode().getGrid(), actionSource) || dataMerged) {
-                        return TickRateModulation.URGENT;
-                    } else {
-                        return TickRateModulation.SLOWER;
-                    }
                 }
             }
-        });
-    }
 
-    @Override
-    public void onMachineRemoved() {
-        accumulator.clear();
-        super.onMachineRemoved();
+            if (buffer.isEmpty()) {
+                if (hasPendingWork) {
+                    return TickRateModulation.FASTER;
+                }
+                if (ticksSinceLastCall >= MAX_FREQUENCY) {
+                    isSleeping = true;
+                    return TickRateModulation.SLEEP;
+                } else return TickRateModulation.SLOWER;
+            } else {
+                if (reFunds(buffer, getMainNode().getGrid(), actionSource) || dataMerged) {
+                    return TickRateModulation.URGENT;
+                } else {
+                    return TickRateModulation.SLOWER;
+                }
+            }
+        }
     }
 }

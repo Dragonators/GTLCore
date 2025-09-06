@@ -56,6 +56,8 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
     private boolean MEOutPutHatch = false;
     @Getter
     private boolean MEOutPutDual = false;
+    @Getter
+    private boolean MEOutPutWithFilter = false;
     @Persisted
     @DescSynced
     @Getter
@@ -157,11 +159,20 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
 
     @Override
     public boolean isRecipeOutput(GTRecipe recipe) {
-        if (MEOutPutDual) return true;
+        if (MEOutPutWithFilter) return false;
+        else if (MEOutPutDual) return true;
         else if (MEOutPutBus || recipe.getOutputContents(ItemRecipeCapability.CAP).isEmpty()) {
             return MEOutPutHatch || recipe.getOutputContents(FluidRecipeCapability.CAP).isEmpty();
         }
         return false;
+    }
+
+    @Override
+    public void sortMEOutput() {
+        if (!mERecipeOutputHandleParts.isEmpty()) {
+            mERecipeOutputHandleParts.sort(MERecipeHandlePart.COMPARATOR.reversed());
+            MEOutPutWithFilter = mERecipeOutputHandleParts.get(0).getIoMachine().hasFilter();
+        }
     }
 
     @Override
@@ -179,6 +190,7 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
         MEOutPutBus = false;
         MEOutPutHatch = false;
         MEOutPutDual = false;
+        MEOutPutWithFilter = false;
         parallelHatch = null;
         mufflerMachine = null;
         maintenanceMachine = null;
@@ -251,7 +263,7 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
             else if (part instanceof IMaintenanceMachine maintenance) this.maintenanceMachine = maintenance;
             else if (part instanceof IDataAccessHatch data) this.dataAccessHatch = data;
         }
-        if (!mERecipeOutputHandleParts.isEmpty()) mERecipeOutputHandleParts.sort(MERecipeHandlePart.COMPARATOR.reversed());
+        sortMEOutput();
         if (!distinctParts.isEmpty()) recipeHandleParts.add(RecipeHandlePart.of(IO.IN, distinctParts));
         for (var recipeHandle : getRecipeHandleParts()) {
             this.addHandlerList(recipeHandle);

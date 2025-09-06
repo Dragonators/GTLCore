@@ -103,8 +103,16 @@ public interface IMERecipeHandler<T extends Predicate<S>, S> extends IFilteredHa
      * 由具体实现类提供处理逻辑
      *
      * @param contents 类型化的内容列表
+     * @return 剩余内容
      */
-    boolean meHandleRecipeOutputInner(List<T> contents, boolean simulate);
+    List<T> meHandleRecipeOutputInner(List<T> contents, boolean simulate);
+
+    /**
+     * @return 当前MERecipeHandler是否配置过滤
+     */
+    default boolean outputHasFilter() {
+        return false;
+    }
 
     // ==================== Content Preparation ====================
 
@@ -133,17 +141,17 @@ public interface IMERecipeHandler<T extends Predicate<S>, S> extends IFilteredHa
      * 只有非simulate模式
      *
      * @param leftContents 待处理输出内容
+     * @return 剩余内容
      */
-    default boolean meHandleRecipeOutput(List<?> leftContents, boolean simulate) {
-        if (leftContents.isEmpty()) return true;
-        if (simulate) return meHandleRecipeOutputInner(List.of(), true);
+    default List<T> meHandleRecipeOutput(List<?> leftContents, boolean simulate) {
+        if (leftContents.isEmpty() || (simulate && !outputHasFilter())) return List.of();
 
         List<T> typedContents = new ObjectArrayList<>(leftContents.size());
         for (Object leftObj : leftContents) {
             typedContents.add(this.copyContent(leftObj));
         }
 
-        return meHandleRecipeOutputInner(typedContents, false);
+        return meHandleRecipeOutputInner(typedContents, simulate);
     }
 
     /**

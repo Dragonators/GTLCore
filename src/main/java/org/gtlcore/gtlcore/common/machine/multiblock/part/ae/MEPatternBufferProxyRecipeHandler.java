@@ -74,11 +74,11 @@ public class MEPatternBufferProxyRecipeHandler<T extends Predicate<S>, S> extend
     }
 
     @Override
-    public boolean meHandleRecipeOutputInner(List<T> contents, boolean simulate) {
+    public List<T> meHandleRecipeOutputInner(List<T> contents, boolean simulate) {
         if (handler != null) {
             return handler.meHandleRecipeOutputInner(contents, simulate);
         }
-        return false;
+        return contents;
     }
 
     @Override
