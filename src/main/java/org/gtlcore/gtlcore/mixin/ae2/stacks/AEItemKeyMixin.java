@@ -1,4 +1,4 @@
-package org.gtlcore.gtlcore.mixin.ae2;
+package org.gtlcore.gtlcore.mixin.ae2.stacks;
 
 import org.gtlcore.gtlcore.api.data.IItem;
 

@@ -1,4 +1,4 @@
-package org.gtlcore.gtlcore.mixin.ae2;
+package org.gtlcore.gtlcore.mixin.ae2.stacks;
 
 import org.gtlcore.gtlcore.integration.ae2.stacks.*;
 
@@ -217,7 +217,7 @@ public class KeyCounterMixin implements IKeyCounter {
     @Overwrite(remap = false)
     public Iterator<Object2LongMap.Entry<AEKey>> iterator() {
         return this.getLists() == null ? Collections.emptyListIterator() :
-                Iterators.concat(Iterators.transform(this.getLists().values().iterator(), Iterable::iterator));
+                Iterators.concat(Iterators.transform(this.getLists().values().iterator(), VariantCounter::iterator));
     }
 
     /**
@@ -298,5 +298,13 @@ public class KeyCounterMixin implements IKeyCounter {
     @Override
     public VariantCounter getVariantCounter() {
         return this.variantCounter;
+    }
+
+    @Override
+    public void removeEmptySubmaps() {
+        for (var it = this.getLists().object2ObjectEntrySet().fastIterator(); it.hasNext();) {
+            var entry = it.next();
+            if (entry.getValue().isEmpty()) it.remove();
+        }
     }
 }
