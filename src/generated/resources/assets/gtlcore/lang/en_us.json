@@ -173,5 +173,6 @@
   "gtlcore.machine.me_dual_hatch_stock.turns.0": "自动拉取已禁用",
   "gtlcore.machine.me_dual_hatch_stock.turns.1": "拉取流体/物品",
   "gtlcore.machine.me_dual_hatch_stock.turns.2": "仅拉取物品",
-  "gtlcore.machine.me_dual_hatch_stock.turns.3": "仅拉取流体"
+  "gtlcore.machine.me_dual_hatch_stock.turns.3": "仅拉取流体",
+  "gtlcore.gui.filter_config.title": "Filter Settings"
 }

@@ -79,4 +79,23 @@ public class AEUtils {
             }
         }
     }
+
+    public static <T extends AEKey> ListTag createListTag(Function<T, CompoundTag> keySerializer, ObjectSet<T> map) {
+        ListTag tag = new ListTag();
+        for (T t : map) {
+            var ct = keySerializer.apply(t);
+            tag.add(ct);
+        }
+        return tag;
+    }
+
+    public static <K> void loadInventory(ListTag tag, Function<CompoundTag, K> keyExtractor, ObjectSet<K> targetMap) {
+        for (Tag t : tag) {
+            if (!(t instanceof CompoundTag ct)) continue;
+            K key = keyExtractor.apply(ct);
+            if (key != null) {
+                targetMap.add(key);
+            }
+        }
+    }
 }

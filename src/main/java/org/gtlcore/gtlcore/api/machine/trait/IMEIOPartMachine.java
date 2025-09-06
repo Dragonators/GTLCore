@@ -9,4 +9,8 @@ public interface IMEIOPartMachine {
     void notifySelfIO();
 
     Iterable<IMERecipeHandlerTrait<?, ?>> getMERecipeHandlerTraits();
+
+    default boolean hasFilter() {
+        return false;
+    }
 }

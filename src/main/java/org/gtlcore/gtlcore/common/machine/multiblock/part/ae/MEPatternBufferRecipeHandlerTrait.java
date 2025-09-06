@@ -156,7 +156,7 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
         public Int2ObjectMap<List<Object>> getActiveAndUnCachedSlotsLimitContentsMap() {
             var map = new Int2ObjectArrayMap<List<Object>>();
             var machine = getMachine();
-            var shared = machine.getShareInventory().getContents();
+            var shared = machine.getSharedCatalystInventory().getContents();
             for (int slot : getActiveAndUnCachedSlots()) {
                 var inputs = machine.getInternalInventory()[slot].getLimitItemStackInput();
 
@@ -194,10 +194,10 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
         public void prepareMEHandleContents(GTRecipe recipe, List<Ingredient> left, boolean simulate) {
             if (simulate) {
                 // 处理总成配置的电路
-                getMachine().getMePatternCircuitInventory().handleRecipeInner(IO.IN, recipe, left, null, true);
+                getMachine().getSharedCircuitInventory().handleRecipeInner(IO.IN, recipe, left, null, true);
 
                 // 处理共享库存
-                getMachine().getShareInventory().handleRecipeInner(IO.IN, recipe, left, null, true);
+                getMachine().getSharedCatalystInventory().handleRecipeInner(IO.IN, recipe, left, null, true);
 
                 // simulate时left会包含Circuit
                 setPreparedMEHandleContents(ingredientsMapWithOutCircuit(left, this::setPreparedCircuitConfig));
@@ -207,8 +207,8 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
         }
 
         @Override
-        public boolean meHandleRecipeOutputInner(List<Ingredient> left, boolean simulate) {
-            if (simulate) return true;
+        public List<Ingredient> meHandleRecipeOutputInner(List<Ingredient> left, boolean simulate) {
+            if (simulate) return List.of();
             for (Ingredient ingredient : left) {
                 if (ingredient instanceof IntProviderIngredient intProvider) {
                     intProvider.setItemStacks(null);
@@ -223,7 +223,7 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
                     }
                 }
             }
-            return true;
+            return List.of();
         }
     }
 
@@ -263,7 +263,7 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
         public Int2ObjectMap<List<Object>> getActiveAndUnCachedSlotsLimitContentsMap() {
             var map = new Int2ObjectArrayMap<List<Object>>();
             var machine = getMachine();
-            var shared = machine.getShareTank().getContents();
+            var shared = machine.getSharedCatalystTank().getContents();
             for (int slot : getActiveAndUnCachedSlots()) {
                 var inputs = machine.getInternalInventory()[slot].getLimitFluidStackInput();
                 inputs.addAll(shared);
@@ -293,14 +293,14 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
         @Override
         public void prepareMEHandleContents(GTRecipe recipe, List<FluidIngredient> left, boolean simulate) {
             if (simulate) {
-                getMachine().getShareTank().handleRecipeInner(IO.IN, recipe, left, null, true);
+                getMachine().getSharedCatalystTank().handleRecipeInner(IO.IN, recipe, left, null, true);
             }
             setPreparedMEHandleContents(fluidIngredientsMap(left));
         }
 
         @Override
-        public boolean meHandleRecipeOutputInner(List<FluidIngredient> left, boolean simulate) {
-            if (simulate) return true;
+        public List<FluidIngredient> meHandleRecipeOutputInner(List<FluidIngredient> left, boolean simulate) {
+            if (simulate) return List.of();;
             for (FluidIngredient fluidIngredient : left) {
                 if (!fluidIngredient.isEmpty()) {
                     FluidStack[] fluids = fluidIngredient.getStacks();
@@ -310,7 +310,7 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
                     }
                 }
             }
-            return true;
+            return List.of();
         }
     }
 

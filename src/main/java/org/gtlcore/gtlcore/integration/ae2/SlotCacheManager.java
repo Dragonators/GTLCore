@@ -6,7 +6,6 @@ import com.gregtechceu.gtceu.api.recipe.ingredient.FluidIngredient;
 import com.gregtechceu.gtceu.common.item.IntCircuitBehaviour;
 
 import com.lowdragmc.lowdraglib.syncdata.ITagSerializable;
-import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -36,10 +35,8 @@ public class SlotCacheManager implements ITagSerializable<CompoundTag> {
     }
 
     @Getter
-    @Persisted
     private int circuitCache = -1;
     @Getter
-    @Persisted
     private ItemStack circuitStack = ItemStack.EMPTY;
 
     /**

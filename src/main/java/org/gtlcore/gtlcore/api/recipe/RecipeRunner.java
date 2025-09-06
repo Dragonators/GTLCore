@@ -227,7 +227,8 @@ public class RecipeRunner {
     private boolean handleOutput(List<MERecipeHandlePart> meHandlers) {
         if (meHandlers.isEmpty()) return false;
         for (MERecipeHandlePart meHandler : meHandlers) {
-            if (meHandler.meHandleOutput(recipeContent, simulated)) return true;
+            recipeContent = meHandler.meHandleOutput(recipeContent, simulated);
+            if (recipeContent.isEmpty()) return true;
         }
         return false;
     }

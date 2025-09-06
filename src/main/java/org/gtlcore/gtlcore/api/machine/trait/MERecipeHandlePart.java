@@ -167,16 +167,26 @@ public class MERecipeHandlePart implements IRecipeHandlePart {
         return false;
     }
 
-    public boolean meHandleOutput(Reference2ObjectMap<RecipeCapability<?>, List<Object>> contents, boolean simulate) {
+    public Reference2ObjectOpenHashMap<RecipeCapability<?>, List<Object>> meHandleOutput(Reference2ObjectOpenHashMap<RecipeCapability<?>, List<Object>> contents, boolean simulate) {
+        boolean hasOutput = false;
         for (var it = Reference2ObjectMaps.fastIterator(contents); it.hasNext();) {
             var entry = it.next();
-            var cap = entry.getKey();
             var content = entry.getValue();
+            if (content.isEmpty()) {
+                it.remove();
+                continue;
+            }
+            var cap = entry.getKey();
             var meHandler = getMECapability(cap);
-            if (!meHandler.meHandleRecipeOutput(content, simulate)) return false;
+            var result = meHandler.meHandleRecipeOutput(content, simulate);
+            if (result.size() != content.size()) {
+                hasOutput = true;
+                if (result.isEmpty()) it.remove();
+                else entry.setValue(new ObjectArrayList<>(result));
+            }
         }
-        if (!simulate) ioMachine.notifySelfIO();
-        return true;
+        if (!simulate && hasOutput) ioMachine.notifySelfIO();
+        return contents;
     }
 
     @Override

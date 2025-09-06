@@ -110,27 +110,39 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
         }
     };
 
-    protected final int maxPatternCount;
+    // ========================================
+    // Info
+    // ========================================
 
+    @DescSynced
+    @Persisted
+    @Setter
+    protected String customName = "";
+    protected final int maxPatternCount;
     private final boolean[] hasPatternArray;
     @DescSynced
     protected final boolean[] cacheRecipe;
+    private boolean needPatternSync;
+
+    // ========================================
+    // Inventory
+    // ========================================
 
     @Getter
     @Persisted
     private final ItemStackTransfer patternInventory;
 
     @Getter
-    @Persisted
-    protected final CatalystItemStackHandler shareInventory;
+    @Persisted(key = "shareInventory")
+    protected final CatalystItemStackHandler sharedCatalystInventory;
 
     @Getter
-    @Persisted
-    protected final CatalystFluidStackHandler shareTank;
+    @Persisted(key = "shareTank")
+    protected final CatalystFluidStackHandler sharedCatalystTank;
 
     @Getter
-    @Persisted
-    protected final NotifiableItemStackHandler mePatternCircuitInventory;
+    @Persisted(key = "mePatternCircuitInventory")
+    protected final NotifiableItemStackHandler sharedCircuitInventory;
 
     @Persisted
     protected final ItemStackTransfer[] catalystItems;
@@ -139,28 +151,17 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
     @LazyManaged
     protected final FluidTransferList[] catalystFluids;
 
-    /** Pattern circuit handler for managing circuit logic */
-    @Getter
-    protected final PatternCircuitHandler circuitHandler;
-
     @Getter
     @Persisted
     protected final InternalSlot[] internalInventory;
 
-    protected final Int2ObjectMap<GTRecipe> gtRecipeCacheMap = new Int2ObjectArrayMap<>();
+    // ========================================
+    // Handlers
+    // ========================================
 
-    private final BiMap<IPatternDetails, Integer> patternSlotMap;
-
-    private boolean needPatternSync;
-
-    @Persisted
-    private final ObjectOpenHashSet<BlockPos> proxies = new ObjectOpenHashSet<>();
-    private final Set<MEPatternBufferProxyPartMachine> proxyMachines = new ReferenceOpenHashSet<>();
-
-    @DescSynced
-    @Persisted
-    @Setter
-    protected String customName = "";
+    /** Pattern circuit handler for managing circuit logic */
+    @Getter
+    protected final PatternCircuitHandler circuitHandler;
 
     @Persisted
     @Getter
@@ -168,6 +169,21 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
 
     /** Recipe handler trait for ME Pattern Buffer */
     protected final MEPatternBufferRecipeHandlerTrait recipeHandler;
+
+    // ========================================
+    // Cache Map
+    // ========================================
+
+    protected final Int2ObjectMap<GTRecipe> gtRecipeCacheMap = new Int2ObjectArrayMap<>();
+    private final BiMap<IPatternDetails, Integer> patternSlotMap;
+
+    // ========================================
+    // Proxy
+    // ========================================
+
+    @Persisted
+    private final ObjectOpenHashSet<BlockPos> proxies = new ObjectOpenHashSet<>();
+    private final Set<MEPatternBufferProxyPartMachine> proxyMachines = new ReferenceOpenHashSet<>();
 
     public MEPatternBufferPartMachine(IMachineBlockEntity holder, int maxPatternCount, IO io) {
         super(holder, io);
@@ -201,10 +217,10 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
         }
 
         this.pendingRefundData = new PendingRefundData();
-        this.mePatternCircuitInventory = new NotifiableCircuitItemStackHandler(this);
-        this.circuitHandler = new PatternCircuitHandler((NotifiableCircuitItemStackHandler) mePatternCircuitInventory);
-        this.shareInventory = new CatalystItemStackHandler(this, 9, IO.IN, IO.NONE);
-        this.shareTank = new CatalystFluidStackHandler(this, 9, 16 * FluidHelper.getBucket(), IO.IN, IO.NONE);
+        this.sharedCircuitInventory = new NotifiableCircuitItemStackHandler(this);
+        this.circuitHandler = new PatternCircuitHandler((NotifiableCircuitItemStackHandler) sharedCircuitInventory);
+        this.sharedCatalystInventory = new CatalystItemStackHandler(this, 9, IO.IN, IO.NONE);
+        this.sharedCatalystTank = new CatalystFluidStackHandler(this, 9, 16 * FluidHelper.getBucket(), IO.IN, IO.NONE);
         this.recipeHandler = new MEPatternBufferRecipeHandlerTrait(this, pendingRefundData, io);
     }
 
@@ -297,7 +313,7 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
     @Override
     public void onMachineRemoved() {
         clearInventory(patternInventory);
-        clearInventory(shareInventory);
+        clearInventory(sharedCatalystInventory);
         for (ItemStackTransfer catalystItem : catalystItems) {
             clearInventory(catalystItem);
         }
@@ -442,18 +458,18 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
                 .setTooltips(List.of(Component.translatable("gui.gtceu.refund_all.desc"))));
 
         // Circuit configurator
-        configuratorPanel.attachConfigurators(new CircuitFancyConfigurator(mePatternCircuitInventory.storage));
+        configuratorPanel.attachConfigurators(new CircuitFancyConfigurator(sharedCircuitInventory.storage));
 
         // Share inventory configurator
         configuratorPanel.attachConfigurators(new FancyInvConfigurator(
-                shareInventory.storage, Component.translatable("gui.gtceu.share_inventory.title"))
+                sharedCatalystInventory.storage, Component.translatable("gui.gtceu.share_inventory.title"))
                 .setTooltips(List.of(
                         Component.translatable("gui.gtceu.share_inventory.desc.0"),
                         Component.translatable("gui.gtceu.share_inventory.desc.1"))));
 
         // Share tank configurator
         configuratorPanel.attachConfigurators(new FancyTankConfigurator(
-                shareTank.getStorages(), Component.translatable("gui.gtceu.share_tank.title"))
+                sharedCatalystTank.getStorages(), Component.translatable("gui.gtceu.share_tank.title"))
                 .setTooltips(List.of(
                         Component.translatable("gui.gtceu.share_tank.desc.0"),
                         Component.translatable("gui.gtceu.share_inventory.desc.1"))));
@@ -597,7 +613,7 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
                         Component.literal(customName),
                         Collections.emptyList());
             } else {
-                ItemStack circuitStack = mePatternCircuitInventory.storage.getStackInSlot(0);
+                ItemStack circuitStack = sharedCircuitInventory.storage.getStackInSlot(0);
                 int circuitConfiguration = circuitStack.isEmpty() ? -1 :
                         IntCircuitBehaviour.getCircuitConfiguration(circuitStack);
 
@@ -757,10 +773,10 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
         public boolean isActive(RecipeCapability<?> recipeCapability) {
             if (recipeCapability == ItemRecipeCapability.CAP) {
                 return hasPatternArray[slotIndex] &&
-                        (!itemInventory.isEmpty() || !shareInventory.isEmpty() || !circuitHandler.getCircuitForRecipe(cacheManager.getCircuitStack()).isEmpty() || !itemCatalystInventory.isEmpty());
+                        (!itemInventory.isEmpty() || !sharedCatalystInventory.isEmpty() || !circuitHandler.getCircuitForRecipe(cacheManager.getCircuitStack()).isEmpty() || !itemCatalystInventory.isEmpty());
             } else {
                 return hasPatternArray[slotIndex] &&
-                        (!fluidInventory.isEmpty() || !shareTank.isEmpty() || !fluidCatalystInventory.isEmpty());
+                        (!fluidInventory.isEmpty() || !sharedCatalystTank.isEmpty() || !fluidCatalystInventory.isEmpty());
             }
         }
 
