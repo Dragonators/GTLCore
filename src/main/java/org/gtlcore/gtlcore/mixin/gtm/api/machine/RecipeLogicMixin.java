@@ -20,7 +20,7 @@ import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 
 import net.minecraft.network.chat.Component;
 
-import it.unimi.dsi.fastutil.objects.*;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import lombok.Getter;
 import lombok.Setter;
 import org.jetbrains.annotations.Nullable;
@@ -186,12 +186,6 @@ public abstract class RecipeLogicMixin implements ILockRecipe, IRecipeStatus {
                 if (this.checkMatchedRecipeAvailable(match)) {
                     return;
                 }
-
-                if (this.lastFailedMatches == null) {
-                    this.lastFailedMatches = new ObjectArrayList<>();
-                }
-
-                this.lastFailedMatches.add(match);
             }
         }
     }
@@ -203,7 +197,6 @@ public abstract class RecipeLogicMixin implements ILockRecipe, IRecipeStatus {
     @Overwrite(remap = false)
     public void findAndHandleRecipe() {
         this.lastRecipe = null;
-        this.lastFailedMatches = null;
         if (this.isLock && lockRecipe != null) {
             this.lastOriginRecipe = lockRecipe;
             GTRecipe modified = machine.fullModifyRecipe(lastOriginRecipe.copy(), this.ocParams, this.ocResult);
@@ -230,7 +223,6 @@ public abstract class RecipeLogicMixin implements ILockRecipe, IRecipeStatus {
             }
             if (this.lastRecipe != null && this.getStatus() == RecipeLogic.Status.WORKING) {
                 this.lastOriginRecipe = match;
-                this.lastFailedMatches = null;
                 if (this.isLock) this.lockRecipe = match;
                 return true;
             }
