@@ -1,11 +1,13 @@
 package org.gtlcore.gtlcore.mixin.gtm.registry;
 
+import org.gtlcore.gtlcore.api.machine.trait.IRecipeCapabilityMachine;
 import org.gtlcore.gtlcore.api.recipe.RecipeResult;
 import org.gtlcore.gtlcore.api.recipe.RecipeRunnerHelper;
 
 import com.gregtechceu.gtceu.api.capability.recipe.IRecipeCapabilityHolder;
 import com.gregtechceu.gtceu.api.machine.MetaMachine;
 import com.gregtechceu.gtceu.api.machine.feature.IRecipeLogicMachine;
+import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMultiController;
 import com.gregtechceu.gtceu.api.machine.multiblock.CoilWorkableElectricMultiblockMachine;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.OverclockingLogic;
@@ -13,6 +15,7 @@ import com.gregtechceu.gtceu.api.recipe.RecipeHelper;
 import com.gregtechceu.gtceu.api.recipe.content.ContentModifier;
 import com.gregtechceu.gtceu.api.recipe.logic.OCParams;
 import com.gregtechceu.gtceu.api.recipe.logic.OCResult;
+import com.gregtechceu.gtceu.api.recipe.modifier.ParallelLogic;
 import com.gregtechceu.gtceu.common.data.GTRecipeModifiers;
 
 import com.mojang.datafixers.util.Pair;
@@ -43,6 +46,28 @@ public class GTRecipeModifiersMixin {
                 }
             } else return null;
         } else return null;
+    }
+
+    /**
+     * @author .
+     * @reason .
+     */
+    @Overwrite(remap = false)
+    public static GTRecipe hatchParallel(MetaMachine machine, @NotNull GTRecipe recipe, boolean modifyDuration,
+                                         @NotNull OCParams params, @NotNull OCResult result) {
+        if (machine instanceof IMultiController controller && controller instanceof IRecipeCapabilityMachine) {
+            if (controller.isFormed()) {
+                var hatch = ((IRecipeCapabilityMachine) controller).getParallelHatch();
+                if (hatch != null) {
+                    long recipeEU = RecipeHelper.getInputEUt(recipe);
+                    var parallelRecipe = ParallelLogic.applyParallel(machine, recipe, hatch.getCurrentParallel(), modifyDuration);
+                    if (parallelRecipe.getSecond() == 0) return null;
+                    result.init(recipeEU, recipe.duration, parallelRecipe.getSecond(), params.getOcAmount());
+                    return parallelRecipe.getFirst();
+                }
+            }
+        }
+        return recipe;
     }
 
     /**
