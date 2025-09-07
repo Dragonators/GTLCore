@@ -1,8 +1,7 @@
 package org.gtlcore.gtlcore.api.machine.trait;
 
-import com.gregtechceu.gtceu.api.capability.recipe.IO;
-import com.gregtechceu.gtceu.api.capability.recipe.IRecipeHandler;
-import com.gregtechceu.gtceu.api.capability.recipe.RecipeCapability;
+import com.gregtechceu.gtceu.api.capability.IParallelHatch;
+import com.gregtechceu.gtceu.api.capability.recipe.*;
 import com.gregtechceu.gtceu.api.gui.GuiTextures;
 import com.gregtechceu.gtceu.api.gui.fancy.ConfiguratorPanel;
 import com.gregtechceu.gtceu.api.gui.fancy.IFancyConfiguratorButton;
@@ -86,6 +85,10 @@ public interface IRecipeCapabilityMachine {
 
     default boolean isRecipeOutput(GTRecipe recipe) {
         return false;
+    }
+
+    default IParallelHatch getParallelHatch() {
+        return null;
     }
 
     static void attachConfigurators(ConfiguratorPanel configuratorPanel, WorkableElectricMultiblockMachine machine) {
