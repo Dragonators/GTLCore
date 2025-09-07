@@ -12,6 +12,7 @@ import com.google.common.collect.Iterables;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Group;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
@@ -23,7 +24,73 @@ import static appeng.crafting.execution.CraftingCpuHelper.reinjectPatternInputs;
 @Mixin(CraftingCpuHelper.class)
 public class CraftingCpuHelperMixin {
 
-    @Inject(method = "extractPatternInputs", at = @At("HEAD"), cancellable = true, remap = false)
+    @Group(name = "extractInputs", min = 1)
+    @Inject(method = "extractPatternInputs" +
+            "(Lappeng/api/crafting/IPatternDetails;" +
+            "Lappeng/crafting/inv/ICraftingInventory;" +
+            "Lnet/minecraft/world/level/Level;" +
+            "Lappeng/api/stacks/KeyCounter;" +
+            "Lappeng/api/stacks/KeyCounter;" +
+            ")[Lappeng/api/stacks/KeyCounter;",
+            at = @At("HEAD"),
+            cancellable = true,
+            remap = false,
+            require = 0)
+    private static void extractPatternInputs(IPatternDetails details,
+                                             ICraftingInventory sourceInv,
+                                             Level level,
+                                             KeyCounter expectedOutputs,
+                                             KeyCounter expectedContainerItems,
+                                             CallbackInfoReturnable<KeyCounter[]> cir) {
+        if (details instanceof AEProcessingPattern) {
+            IPatternDetails.IInput[] inputs = details.getInputs();
+            KeyCounter[] inputHolder = new KeyCounter[inputs.length];
+            boolean found = true;
+
+            for (int x = 0; x < inputs.length; x++) {
+                var list = inputHolder[x] = new KeyCounter();
+                long remainingMultiplier = inputs[x].getMultiplier();
+                for (var template : getValidItemTemplate(inputs[x], level)) {
+                    long extracted = extractTemplates(sourceInv, template, remainingMultiplier);
+                    list.add(template.key(), extracted * template.amount());
+
+                    var containerItem = inputs[x].getRemainingKey(template.key());
+                    if (containerItem != null) {
+                        expectedContainerItems.add(containerItem, extracted);
+                    }
+
+                    remainingMultiplier -= extracted;
+                    if (remainingMultiplier == 0)
+                        break;
+                }
+
+                if (remainingMultiplier > 0) {
+                    found = false;
+                    break;
+                }
+            }
+
+            if (!found) {
+                reinjectPatternInputs(sourceInv, inputHolder);
+                cir.setReturnValue(null);
+            } else {
+                for (var output : details.getOutputs()) expectedOutputs.add(output.what(), output.amount());
+                cir.setReturnValue(inputHolder);
+            }
+        }
+    }
+
+    @Group(name = "extractInputs")
+    @Inject(method = "extractPatternInputs" +
+            "(Lappeng/api/crafting/IPatternDetails;" +
+            "Lappeng/crafting/inv/ICraftingInventory;" +
+            "Lnet/minecraft/world/level/Level;" +
+            "Lappeng/api/stacks/KeyCounter;" +
+            ")[Lappeng/api/stacks/KeyCounter;",
+            at = @At("HEAD"),
+            cancellable = true,
+            remap = false,
+            require = 0)
     private static void extractPatternInputs(IPatternDetails details,
                                              ICraftingInventory sourceInv,
                                              Level level,
