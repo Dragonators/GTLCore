@@ -8,9 +8,7 @@ import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMultiController;
 import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMultiPart;
 import com.gregtechceu.gtceu.api.pattern.*;
-import com.gregtechceu.gtceu.api.pattern.error.PatternError;
-import com.gregtechceu.gtceu.api.pattern.error.PatternStringError;
-import com.gregtechceu.gtceu.api.pattern.error.SinglePredicateError;
+import com.gregtechceu.gtceu.api.pattern.error.*;
 import com.gregtechceu.gtceu.api.pattern.predicates.SimplePredicate;
 import com.gregtechceu.gtceu.api.pattern.util.PatternMatchContext;
 import com.gregtechceu.gtceu.api.pattern.util.RelativeDirection;
@@ -78,42 +76,6 @@ public abstract class BlockPatternMixin {
 
     @Shadow(remap = false)
     protected abstract void resetFacing(BlockPos pos, BlockState blockState, Direction facing, BiFunction<BlockPos, Direction, Boolean> checker, Consumer<BlockState> consumer);
-
-    /**
-     * @author .
-     * @reason .
-     */
-    @Overwrite(remap = false)
-    public boolean checkPatternAt(MultiblockState worldState, boolean savePredicate) {
-        IMultiController controller = worldState.getController();
-        if (controller == null) {
-            worldState.setError(new PatternStringError("no controller found"));
-            return false;
-        } else {
-            BlockPos centerPos = controller.self().getPos();
-            Direction frontFacing = controller.self().getFrontFacing();
-            Direction[] facings = controller.hasFrontFacing() ? new Direction[] { frontFacing } : new Direction[] { Direction.SOUTH, Direction.NORTH, Direction.EAST, Direction.WEST };
-            Direction upwardsFacing = controller.self().getUpwardsFacing();
-            boolean allowsFlip = controller.self().allowFlip();
-
-            for (Direction direction : facings) {
-                boolean result = this.checkPatternAt(worldState, centerPos, direction, upwardsFacing, false, savePredicate);
-                if (result) {
-                    if (worldState instanceof IMultiblockStateGet stateGet) stateGet.setErrorNormal(null);
-                    return true;
-                } else if (worldState instanceof IMultiblockStateGet stateGet) stateGet.setErrorNormal(worldState.error);
-
-                if (allowsFlip) {
-                    boolean is = this.checkPatternAt(worldState, centerPos, direction, upwardsFacing, true, savePredicate);
-                    if (is) {
-                        if (worldState instanceof IMultiblockStateGet stateGet) stateGet.setErrorFlip(null);
-                        return true;
-                    } else if (worldState instanceof IMultiblockStateGet stateGet) stateGet.setErrorFlip(worldState.error);
-                }
-            }
-            return false;
-        }
-    }
 
     /**
      * @author .
