@@ -2,15 +2,23 @@ package org.gtlcore.gtlcore.integration.ae2;
 
 import net.minecraft.nbt.*;
 
+import appeng.api.config.Actionable;
+import appeng.api.crafting.IPatternDetails;
 import appeng.api.networking.IGrid;
 import appeng.api.networking.security.IActionSource;
 import appeng.api.stacks.AEKey;
+import appeng.api.stacks.GenericStack;
+import appeng.api.stacks.KeyCounter;
 import appeng.api.storage.MEStorage;
 import appeng.api.storage.StorageHelper;
+import appeng.crafting.inv.ICraftingInventory;
+import appeng.crafting.pattern.AEProcessingPattern;
 import it.unimi.dsi.fastutil.objects.*;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Function;
+
+import static appeng.crafting.execution.CraftingCpuHelper.reinjectPatternInputs;
 
 public class AEUtils {
 
@@ -97,5 +105,57 @@ public class AEUtils {
                 targetMap.add(key);
             }
         }
+    }
+
+    // ========================================
+    // ME Processing Pattern Multiply
+    // ========================================
+
+    public static void pushInputsToMEPatternBufferInventory(KeyCounter[] inputHolder, IPatternDetails.PatternInputSink inputSink) {
+        for (var inputList : inputHolder) {
+            for (var input : inputList) {
+                inputSink.pushInput(input.getKey(), input.getLongValue());
+            }
+        }
+    }
+
+    public static KeyCounter[] extractForMEPatternBuffer(AEProcessingPattern originDetail,
+                                                         ICraftingInventory sourceInv,
+                                                         long multiplier,
+                                                         KeyCounter expectedOutputs) {
+        IPatternDetails.IInput[] inputs = originDetail.getInputs();
+        KeyCounter[] inputHolder = new KeyCounter[inputs.length];
+        boolean found = true;
+
+        for (int x = 0; x < inputs.length; x++) {
+            var list = inputHolder[x] = new KeyCounter();
+            AEKey key = inputs[x].getPossibleInputs()[0].what();
+            long amount = inputs[x].getMultiplier() * multiplier;
+            long extracted = AEUtils.extractTemplates(sourceInv, key, amount);
+            list.add(key, extracted);
+            if (extracted < amount) {
+                found = false;
+                break;
+            }
+        }
+
+        if (!found) {
+            reinjectPatternInputs(sourceInv, inputHolder);
+            return null;
+        } else {
+            for (GenericStack output : originDetail.getOutputs()) {
+                expectedOutputs.add(output.what(), output.amount() * multiplier);
+            }
+            return inputHolder;
+        }
+    }
+
+    private static long extractTemplates(ICraftingInventory inv, AEKey key, long amount) {
+        if (amount == 0 || inv.extract(key, amount, Actionable.SIMULATE) == 0) return 0;
+        long extracted = inv.extract(key, amount, Actionable.MODULATE);
+        if (extracted == 0 || extracted != amount) {
+            throw new IllegalStateException("Failed to correctly extract whole number. Invalid simulation!");
+        }
+        return amount;
     }
 }

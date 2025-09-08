@@ -40,7 +40,6 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
 
     protected static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(
             MEPatternBufferPartMachine.class);
-    protected List<Runnable> listeners = new ArrayList<>();
 
     @Getter
     protected final MEItemInputHandler meItemHandler;
@@ -67,9 +66,8 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
         return MANAGED_FIELD_HOLDER;
     }
 
-    public void onChanged() {
-        listeners.forEach(Runnable::run);
-    }
+    @Override
+    public void onChanged() {}
 
     public List<IMERecipeHandlerTrait<? extends Predicate<?>, ?>> getMERecipeHandlers() {
         return List.of(meItemHandler, meFluidHandler);

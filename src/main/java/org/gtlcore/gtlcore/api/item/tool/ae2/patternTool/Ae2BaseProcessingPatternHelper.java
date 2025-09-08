@@ -5,9 +5,7 @@ import org.gtlcore.gtlcore.GTLCore;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
 
-import appeng.api.crafting.IPatternDetails;
 import appeng.api.crafting.PatternDetailsHelper;
 import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.AEKeyType;
@@ -20,16 +18,6 @@ import java.util.Arrays;
 import java.util.List;
 
 public class Ae2BaseProcessingPatternHelper {
-
-    public static IPatternDetails multiplyScale(long scale, AEProcessingPattern patternDetail, Level level) {
-        var input = patternDetail.getSparseInputs();
-        var output = patternDetail.getOutputs();
-        var mulInput = new GenericStack[input.length];
-        var mulOutput = new GenericStack[output.length];
-        modifyStacks(input, mulInput, scale);
-        modifyStacks(output, mulOutput, scale);
-        return PatternDetailsHelper.decodePattern(PatternDetailsHelper.encodeProcessingPattern(mulInput, mulOutput), level);
-    }
 
     // 乘或除 输入解码后样板，输出编码后样板
     public static ItemStack multiplyScale(int scale, boolean div, AEProcessingPattern patternDetail, long maxItemStack, long maxFluidStack) {
@@ -120,15 +108,6 @@ public class Ae2BaseProcessingPatternHelper {
         for (int i = 0; i < stacks.length; i++) {
             if (stacks[i] != null) {
                 long amt = div ? stacks[i].amount() / scale : stacks[i].amount() * scale;
-                des[i] = new GenericStack(stacks[i].what(), amt);
-            }
-        }
-    }
-
-    private static void modifyStacks(GenericStack[] stacks, GenericStack[] des, long scale) {
-        for (int i = 0; i < stacks.length; i++) {
-            if (stacks[i] != null) {
-                long amt = stacks[i].amount() * scale;
                 des[i] = new GenericStack(stacks[i].what(), amt);
             }
         }
