@@ -685,6 +685,7 @@
     "gtceu.machine.lightning_rod.tooltip.2": "如果存储能量已满，机器将会爆炸",
     "gtceu.machine.module": "已安装的模块数量：%s",
     "gtceu.machine.me.me_dual_hatch_stock.data_stick.name":"§oME库存输入总成配置数据",
+    "gtceu.machine.me.me_extended_export_buffer.data_stick.name":"§oME增广输出总成配置数据",
     "gtceu.machine.multiple_recipes.tooltip": "支持跨配方并行",
     "gtceu.machine.nano_core.tooltip.0": "能够运行任意等级的纳米锻炉配方",
     "gtceu.machine.nano_core.tooltip.1": "处理速度固定为20倍",

@@ -10,6 +10,7 @@ import com.gregtechceu.gtceu.api.capability.recipe.IO;
 import com.gregtechceu.gtceu.api.capability.recipe.ItemRecipeCapability;
 import com.gregtechceu.gtceu.api.capability.recipe.RecipeCapability;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
+import com.gregtechceu.gtceu.api.machine.feature.IDataStickInteractable;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.ingredient.FluidIngredient;
 
@@ -24,6 +25,9 @@ import com.lowdragmc.lowdraglib.utils.Position;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 
@@ -39,7 +43,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-public abstract class MEExtendedOutputPartMachineBase extends MEIOPartMachine {
+public abstract class MEExtendedOutputPartMachineBase extends MEIOPartMachine implements IDataStickInteractable {
 
     @Override
     public @NotNull ManagedFieldHolder getFieldHolder() {
@@ -115,6 +119,49 @@ public abstract class MEExtendedOutputPartMachineBase extends MEIOPartMachine {
                 machine.sortMEOutput();
             }
         }
+    }
+
+    // ========================================
+    // DataStick Copy
+    // ========================================
+
+    @Override
+    public InteractionResult onDataStickRightClick(Player player, ItemStack dataStick) {
+        CompoundTag tag = dataStick.getTag();
+        if (tag == null || !tag.contains("MEExtendedExportBuffer")) {
+            return InteractionResult.PASS;
+        }
+
+        if (!isRemote()) {
+            readConfigFromTag(tag.getCompound("MEExtendedExportBuffer"));
+            player.sendSystemMessage(Component.translatable("gtceu.machine.me.import_paste_settings"));
+        }
+        return InteractionResult.sidedSuccess(isRemote());
+    }
+
+    @Override
+    public boolean onDataStickLeftClick(Player player, ItemStack dataStick) {
+        if (!isRemote()) {
+            CompoundTag tag = new CompoundTag();
+            tag.put("MEExtendedExportBuffer", writeConfigToTag());
+            dataStick.setTag(tag);
+            dataStick.setHoverName(Component.translatable("gtceu.machine.me.me_extended_export_buffer.data_stick.name"));
+            player.sendSystemMessage(Component.translatable("gtceu.machine.me.import_copy_settings"));
+        }
+        return true;
+    }
+
+    protected CompoundTag writeConfigToTag() {
+        CompoundTag tag = new CompoundTag();
+        tag.putInt("priority", priority);
+        return tag;
+    }
+
+    protected void readConfigFromTag(CompoundTag tag) {
+        if (tag.contains("priority")) {
+            this.priority = tag.getInt("priority");
+        }
+        updatePriority();
     }
 
     // ========================================

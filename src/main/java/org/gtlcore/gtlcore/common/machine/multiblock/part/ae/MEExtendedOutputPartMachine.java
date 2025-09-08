@@ -14,6 +14,7 @@ import com.lowdragmc.lowdraglib.syncdata.annotation.LazyManaged;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
@@ -47,10 +48,12 @@ public class MEExtendedOutputPartMachine extends MEExtendedOutputPartMachineBase
 
     public MEExtendedOutputPartMachine(IMachineBlockEntity holder) {
         super(holder);
-        filterHandler = new MEOutputFilterHandler(FILTER_ROW, FILTER_COL, () -> {
-            markDirty();
-            notifyHandlers();
-        }, this::updatePriority, this::getPriority, this::setPriority);
+        filterHandler = new MEOutputFilterHandler(FILTER_ROW, FILTER_COL, this::onFilterChanged, this::updatePriority, this::getPriority, this::setPriority);
+    }
+
+    private void onFilterChanged() {
+        markDirty();
+        notifyHandlers();
     }
 
     @Override
@@ -73,6 +76,24 @@ public class MEExtendedOutputPartMachine extends MEExtendedOutputPartMachineBase
     public void attachSideTabs(TabsWidget sideTabs) {
         super.attachSideTabs(sideTabs);
         sideTabs.attachSubTab(new MEExtendedOutputFancyConfigurator(filterHandler::createMainWidgetGroup));
+    }
+
+    // ========================================
+    // DataStick Copy
+    // ========================================
+
+    protected CompoundTag writeConfigToTag() {
+        var tag = super.writeConfigToTag();
+        tag.put("meOutputFilterHandler", filterHandler.serializeNBT());
+        return tag;
+    }
+
+    protected void readConfigFromTag(CompoundTag tag) {
+        super.readConfigFromTag(tag);
+        if (tag.contains("meOutputFilterHandler")) {
+            filterHandler.deserializeNBT(tag.getCompound("meOutputFilterHandler"));
+            onFilterChanged();
+        }
     }
 
     // ========================================
