@@ -2,7 +2,6 @@ package org.gtlcore.gtlcore.mixin.gtm.ae.machine;
 
 import org.gtlcore.gtlcore.api.machine.trait.IMEPartMachine;
 import org.gtlcore.gtlcore.api.machine.trait.IMESlot;
-import org.gtlcore.gtlcore.integration.ae2.stacks.*;
 
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.common.item.IntCircuitBehaviour;
@@ -49,8 +48,7 @@ public abstract class MEStockingHatchPartMachineMixin extends MEInputHatchPartMa
             this.aeFluidHandler.clearInventory(0);
         } else {
             MEStorage networkStorage = grid.getStorageService().getInventory();
-            VariantCounter counter = IKeyCounter.of(networkStorage.getAvailableStacks()).getVariantCounter();
-            if (counter == null) return;
+            var counter = networkStorage.getAvailableStacks();
 
             int index = 0;
 

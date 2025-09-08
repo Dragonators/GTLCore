@@ -3,7 +3,6 @@ package org.gtlcore.gtlcore.common.machine.multiblock.part;
 import org.gtlcore.gtlcore.api.machine.trait.*;
 import org.gtlcore.gtlcore.api.recipe.ingredient.LongIngredient;
 import org.gtlcore.gtlcore.config.ConfigHolder;
-import org.gtlcore.gtlcore.integration.ae2.stacks.IKeyCounter;
 
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
 import com.gregtechceu.gtceu.api.gui.GuiTextures;
@@ -145,8 +144,7 @@ public class TagFilterMEStockBusPartMachine extends MEInputBusPartMachine {
         List<GenericStack> order = new ObjectArrayList<>();
         final var inventory = this.aeItemHandler.getInventory();
 
-        var counter = IKeyCounter.of(networkStorage.getAvailableStacks()).getVariantCounter();
-        if (counter == null) return;
+        var counter = networkStorage.getAvailableStacks();
         int index = 0;
         for (Object2LongMap.Entry<AEKey> entry : counter) {
             if (!isCountSort && index >= CONFIG_SIZE) break;

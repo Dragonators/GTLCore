@@ -45,9 +45,8 @@
     "ae2.logic.PatternProviderLogicMixin",
     "ae2.service.CraftingServiceMixin",
     "ae2.service.StorageServiceMixin",
-    "ae2.stacks.AEFluidKeyMixin",
     "ae2.stacks.AEItemKeyMixin",
-    "ae2.stacks.KeyCounterMixin",
+    "ae2.stacks.AEKey2LongMapMixin",
     "extendedae.ContainerPatternModifierMixin",
     "extendedae.InfinityCellMixin",
     "extendedae.PartExPatternProviderMixin",
@@ -146,8 +145,6 @@
     "gtmt.WirelessEnergyReceiveCoverMixin",
     "ldlib.AsyncThreadDataMixin",
     "ldlib.ItemStackTransferMixin",
-    "mc.FluidMixin",
-    "mc.ItemMixin",
     "travelanchors.EventListenerMixin"
   ],
   "injectors": {
