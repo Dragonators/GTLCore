@@ -85,7 +85,7 @@ import java.util.stream.Stream;
 import static org.gtlcore.gtlcore.integration.ae2.AEUtils.createListTag;
 import static org.gtlcore.gtlcore.integration.ae2.AEUtils.loadInventory;
 
-public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInteractedMachine, IMEPatternCraftingProvider, PatternContainer, IMEPatternPartMachine {
+public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInteractedMachine, ICraftingProvider, PatternContainer, IMEPatternPartMachine {
 
     protected static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(
             MEPatternBufferPartMachine.class, MEIOPartMachine.MANAGED_FIELD_HOLDER);
@@ -561,23 +561,7 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
 
         var slotIndex = patternSlotMap.get(patternDetails);
         if (slotIndex != null && slotIndex >= 0) {
-            internalInventory[slotIndex].pushPattern(patternDetails, inputHolder);
-            recipeHandler.onChanged();
-            return true;
-        }
-        return false;
-    }
-
-    @Override
-    public boolean pushMultiplyPattern(IPatternDetails originPatternDetails, IPatternDetails multiplyPatternDetails, KeyCounter[] inputHolder) {
-        if (!getMainNode().isActive() || !patternSlotMap.containsKey(originPatternDetails) || !checkInput(inputHolder)) {
-            return false;
-        }
-
-        var slotIndex = patternSlotMap.get(originPatternDetails);
-        if (slotIndex != null && slotIndex >= 0) {
-            internalInventory[slotIndex].pushPattern(multiplyPatternDetails, inputHolder);
-            recipeHandler.onChanged();
+            internalInventory[slotIndex].pushPattern(inputHolder);
             return true;
         }
         return false;
@@ -590,11 +574,12 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
 
     private boolean checkInput(KeyCounter[] inputHolder) {
         for (KeyCounter input : inputHolder) {
-            var illegal = input.keySet().stream()
-                    .map(AEKey::getType)
-                    .map(AEKeyType::getId)
-                    .anyMatch(id -> !id.equals(AEKeyType.items().getId()) && !id.equals(AEKeyType.fluids().getId()));
-            if (illegal) return false;
+            for (AEKey key : input.keySet()) {
+                var typeId = key.getType().getId();
+                if (!typeId.equals(AEKeyType.items().getId()) && !typeId.equals(AEKeyType.fluids().getId())) {
+                    return false;
+                }
+            }
         }
         return true;
     }
@@ -864,8 +849,8 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
             return limitInput;
         }
 
-        public void pushPattern(IPatternDetails patternDetails, KeyCounter[] inputHolder) {
-            patternDetails.pushInputsToExternalInventory(inputHolder, this::add);
+        public void pushPattern(KeyCounter[] inputHolder) {
+            AEUtils.pushInputsToMEPatternBufferInventory(inputHolder, this::add);
             onContentsChanged.run();
         }
 

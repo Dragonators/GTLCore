@@ -24,6 +24,7 @@ import static appeng.crafting.execution.CraftingCpuHelper.reinjectPatternInputs;
 @Mixin(CraftingCpuHelper.class)
 public class CraftingCpuHelperMixin {
 
+    @SuppressWarnings("all")
     @Group(name = "extractInputs", min = 1)
     @Inject(method = "extractPatternInputs" +
             "(Lappeng/api/crafting/IPatternDetails;" +
@@ -80,6 +81,7 @@ public class CraftingCpuHelperMixin {
         }
     }
 
+    @SuppressWarnings("all")
     @Group(name = "extractInputs")
     @Inject(method = "extractPatternInputs" +
             "(Lappeng/api/crafting/IPatternDetails;" +

@@ -1,14 +1,13 @@
 package org.gtlcore.gtlcore.mixin.ae2.logic;
 
-import org.gtlcore.gtlcore.api.item.tool.ae2.patternTool.Ae2BaseProcessingPatternHelper;
-import org.gtlcore.gtlcore.api.machine.trait.IMEPatternCraftingProvider;
+import org.gtlcore.gtlcore.api.machine.trait.IMEPatternPartMachine;
+import org.gtlcore.gtlcore.integration.ae2.AEUtils;
 import org.gtlcore.gtlcore.integration.ae2.Ae2CompatMH;
 
 import net.minecraft.world.level.Level;
 
 import appeng.api.config.Actionable;
 import appeng.api.config.PowerMultiplier;
-import appeng.api.crafting.IPatternDetails;
 import appeng.api.networking.energy.IEnergyService;
 import appeng.api.stacks.KeyCounter;
 import appeng.crafting.execution.CraftingCpuHelper;
@@ -19,10 +18,7 @@ import appeng.crafting.pattern.AEProcessingPattern;
 import appeng.me.cluster.implementations.CraftingCPUCluster;
 import appeng.me.service.CraftingService;
 import org.jetbrains.annotations.Nullable;
-import org.spongepowered.asm.mixin.Final;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Overwrite;
-import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.*;
 
 @Mixin(CraftingCpuLogic.class)
 public abstract class CraftingCpuLogicNewMixin {
@@ -63,19 +59,17 @@ public abstract class CraftingCpuLogicNewMixin {
             var details = task.getKey();
             final boolean isProcessing = details instanceof AEProcessingPattern;
 
-            var expectedOutputs = new KeyCounter();
-            var expectedContainerItems = new KeyCounter();
+            KeyCounter expectedOutputs = new KeyCounter(), expectedContainerItems = new KeyCounter();
             @Nullable
             KeyCounter[] craftingContainer = null;
 
             boolean needExtract = true;
 
             for (var provider : craftingService.getProviders(details)) {
-                final boolean isMEPatternProvider = provider instanceof IMEPatternCraftingProvider;
-                IPatternDetails useDetails = (isProcessing && isMEPatternProvider) ? Ae2BaseProcessingPatternHelper.multiplyScale(taskProgress.getValue(), (AEProcessingPattern) details, level) : details;
+                final boolean isMEPatternProvider = isProcessing && provider instanceof IMEPatternPartMachine;
 
                 if (needExtract) {
-                    craftingContainer = Ae2CompatMH.extractPatternInputs5Args(useDetails, inventory, level, expectedOutputs, expectedContainerItems);
+                    craftingContainer = isMEPatternProvider ? AEUtils.extractForMEPatternBuffer((AEProcessingPattern) details, inventory, taskProgress.getValue(), expectedOutputs) : Ae2CompatMH.extractPatternInputs5Args(details, inventory, level, expectedOutputs, expectedContainerItems);
                     needExtract = false;
                     if (craftingContainer == null) {
                         break;
@@ -89,8 +83,7 @@ public abstract class CraftingCpuLogicNewMixin {
                     break;
                 }
 
-                boolean pushed = isMEPatternProvider ? ((IMEPatternCraftingProvider) provider).pushMultiplyPattern(details, useDetails, craftingContainer) : provider.pushPattern(useDetails, craftingContainer);
-                if (pushed) {
+                if (provider.pushPattern(details, craftingContainer)) {
                     energyService.extractAEPower(patternPower, Actionable.MODULATE, PowerMultiplier.CONFIG);
                     pushedPatterns++;
 
