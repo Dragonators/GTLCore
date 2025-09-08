@@ -2,6 +2,7 @@
   "required": true,
   "minVersion": "0.8",
   "package": "org.gtlcore.gtlcore.mixin",
+  "plugin": "org.gtlcore.gtlcore.mixin.AE2VersionPlugin",
   "compatibilityLevel": "JAVA_17",
   "client": [
     "ae2.client.BuiltInModelHooksAccessor",
@@ -37,7 +38,8 @@
     "ae2.gui.PatternEncodingTermMenuMixin",
     "ae2.gui.ProcessingEncodingPanelMixin",
     "ae2.gui.StyleManagerMixin",
-    "ae2.logic.CraftingCpuLogicMixin",
+    "ae2.logic.CraftingCpuLogicNewMixin",
+    "ae2.logic.CraftingCpuLogicOldMixin",
     "ae2.logic.ExecutingCraftingJobAccessor",
     "ae2.logic.ExecutingCraftingJobTaskProgressAccessor",
     "ae2.logic.PatternProviderLogicMixin",
