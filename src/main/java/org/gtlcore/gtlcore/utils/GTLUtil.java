@@ -1,7 +1,5 @@
 package org.gtlcore.gtlcore.utils;
 
-import org.gtlcore.gtlcore.api.data.*;
-
 import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.api.recipe.*;
 
@@ -20,11 +18,11 @@ import org.jetbrains.annotations.Nullable;
 public class GTLUtil {
 
     public static String getItemId(Item item) {
-        return ((IItem) item).getIdString();
+        return BuiltInRegistries.ITEM.getKey(item).toString();
     }
 
     public static String getFluidId(Fluid fluid) {
-        return ((IFluid) fluid).getIdString();
+        return BuiltInRegistries.FLUID.getKey(fluid).toString();
     }
 
     @SuppressWarnings("deprecation")

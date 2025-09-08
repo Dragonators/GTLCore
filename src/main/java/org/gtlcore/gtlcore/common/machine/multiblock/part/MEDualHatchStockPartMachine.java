@@ -5,7 +5,6 @@ import org.gtlcore.gtlcore.api.machine.trait.*;
 import org.gtlcore.gtlcore.api.recipe.ingredient.LongIngredient;
 import org.gtlcore.gtlcore.client.gui.widget.AEDualConfigWidget;
 import org.gtlcore.gtlcore.config.ConfigHolder;
-import org.gtlcore.gtlcore.integration.ae2.stacks.IKeyCounter;
 
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
 import com.gregtechceu.gtceu.api.gui.GuiTextures;
@@ -144,8 +143,7 @@ public class MEDualHatchStockPartMachine extends MEBusPartMachine implements IDa
         final var inventory = this.aeItemHandler.getInventory();
         final var fluidInventory = this.aeFluidHandler.getInventory();
 
-        var counter = IKeyCounter.of(networkStorage.getAvailableStacks()).getVariantCounter();
-        if (counter == null) return;
+        var counter = networkStorage.getAvailableStacks();
         int index = 0;
         for (Object2LongMap.Entry<AEKey> entry : counter) {
             if (index >= CONFIG_SIZE) break;
