@@ -2,6 +2,7 @@ package org.gtlcore.gtlcore.mixin.ae2.logic;
 
 import org.gtlcore.gtlcore.api.item.tool.ae2.patternTool.Ae2BaseProcessingPatternHelper;
 import org.gtlcore.gtlcore.api.machine.trait.IMEPatternCraftingProvider;
+import org.gtlcore.gtlcore.integration.ae2.Ae2CompatMH;
 
 import net.minecraft.world.level.Level;
 
@@ -24,7 +25,7 @@ import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
 
 @Mixin(CraftingCpuLogic.class)
-public abstract class CraftingCpuLogicMixin {
+public abstract class CraftingCpuLogicNewMixin {
 
     @Shadow(remap = false)
     private ExecutingCraftingJob job;
@@ -63,6 +64,7 @@ public abstract class CraftingCpuLogicMixin {
             final boolean isProcessing = details instanceof AEProcessingPattern;
 
             var expectedOutputs = new KeyCounter();
+            var expectedContainerItems = new KeyCounter();
             @Nullable
             KeyCounter[] craftingContainer = null;
 
@@ -73,7 +75,7 @@ public abstract class CraftingCpuLogicMixin {
                 IPatternDetails useDetails = (isProcessing && isMEPatternProvider) ? Ae2BaseProcessingPatternHelper.multiplyScale(taskProgress.getValue(), (AEProcessingPattern) details, level) : details;
 
                 if (needExtract) {
-                    craftingContainer = CraftingCpuHelper.extractPatternInputs(useDetails, inventory, level, expectedOutputs);
+                    craftingContainer = Ae2CompatMH.extractPatternInputs5Args(useDetails, inventory, level, expectedOutputs, expectedContainerItems);
                     needExtract = false;
                     if (craftingContainer == null) {
                         break;
@@ -96,6 +98,12 @@ public abstract class CraftingCpuLogicMixin {
                         job.getWaitingFor().insert(expectedOutput.getKey(), expectedOutput.getLongValue(),
                                 Actionable.MODULATE);
                     }
+                    for (var expectedContainerItem : expectedContainerItems) {
+                        job.getWaitingFor().insert(expectedContainerItem.getKey(), expectedContainerItem.getLongValue(),
+                                Actionable.MODULATE);
+                        Ae2CompatMH.elapsedTimeTrackerAddMaxItems(job.getTimeTracker(), expectedContainerItem.getLongValue(),
+                                expectedContainerItem.getKey().getType());
+                    }
 
                     cluster.markDirty();
 
@@ -117,6 +125,7 @@ public abstract class CraftingCpuLogicMixin {
                     }
 
                     expectedOutputs.reset();
+                    expectedContainerItems.reset();
                     needExtract = true;
                 }
             }
