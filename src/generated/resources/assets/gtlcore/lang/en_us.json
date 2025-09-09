@@ -142,7 +142,7 @@
   "item.gtlcore.structure_detect.error.2": "[%s, %s, %s]-(%s)",
   "item.gtlcore.structure_detect.error.3": "翻转坐标",
   "item.gtlcore.structure_detect.error.4": "正常坐标",
-  "item.gtlcore.structure_detect.tooltip.0": "潜行右键多方快结构主方块即可",
+  "item.gtlcore.structure_detect.tooltip.0": "右键多方快结构主方块即可",
   "item.gtlcore.structure_detect.tooltip.1": "检测大型结构时可能会出现卡顿",
   "itemGroup.gtlcore.creative_tab": "GTL Core",
   "gtlcore.machine.me_dual_hatch_stock.turns.0": "自动拉取已禁用",

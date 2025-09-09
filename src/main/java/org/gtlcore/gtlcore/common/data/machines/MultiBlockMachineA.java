@@ -3165,7 +3165,7 @@ public class MultiBlockMachineA {
             .recipeType(GTLRecipeTypes.INTEGRATED_ORE_PROCESSOR)
             .tooltips(Component.translatable("gtceu.machine.integrated_ore_processor.tooltip.0"))
             .tooltips(Component.translatable("gtceu.machine.advanced_integrated_ore_processor.tooltip.0"))
-            .tooltips(Component.translatable("gtceu.multiblock.laser.tooltip"))
+            .tooltips(Component.translatable("gtceu.multiblock.only.laser.tooltip"))
             .tooltips(Component.translatable("gtceu.machine.multiple_recipes.tooltip"))
             .tooltips(Component.translatable("gtceu.machine.available_recipe_map_1.tooltip",
                     Component.translatable("gtceu.integrated_ore_processor")))
