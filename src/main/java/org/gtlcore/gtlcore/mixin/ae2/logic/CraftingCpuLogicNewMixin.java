@@ -102,6 +102,7 @@ public abstract class CraftingCpuLogicNewMixin {
 
                     // 1) MEPatternBuffer
                     if (isMEPatternProvider) {
+                        taskProgress.setValue(0);
                         it.remove();
                         continue taskLoop;
                     }

@@ -151,11 +151,13 @@ public class AEUtils {
     }
 
     private static long extractTemplates(ICraftingInventory inv, AEKey key, long amount) {
-        if (amount == 0 || inv.extract(key, amount, Actionable.SIMULATE) == 0) return 0;
-        long extracted = inv.extract(key, amount, Actionable.MODULATE);
-        if (extracted == 0 || extracted != amount) {
+        if (amount == 0) return 0;
+        long simEx = inv.extract(key, amount, Actionable.SIMULATE);
+        if (simEx == 0) return 0;
+        long extracted = inv.extract(key, simEx, Actionable.MODULATE);
+        if (extracted == 0 || extracted != simEx) {
             throw new IllegalStateException("Failed to correctly extract whole number. Invalid simulation!");
         }
-        return amount;
+        return extracted;
     }
 }
