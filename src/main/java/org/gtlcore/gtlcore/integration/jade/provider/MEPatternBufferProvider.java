@@ -1,7 +1,7 @@
 package org.gtlcore.gtlcore.integration.jade.provider;
 
 import org.gtlcore.gtlcore.common.machine.multiblock.part.ae.MEPatternBufferPartMachine;
-import org.gtlcore.gtlcore.common.machine.multiblock.part.ae.MEPatternBufferRecipeHandlerTrait;
+import org.gtlcore.gtlcore.integration.ae2.AEUtils;
 import org.gtlcore.gtlcore.utils.NumberUtils;
 
 import com.gregtechceu.gtceu.GTCEu;
@@ -125,7 +125,7 @@ public class MEPatternBufferProvider implements IBlockComponentProvider, IServer
     public static void putTag(CompoundTag compoundTag, MEPatternBufferPartMachine buffer) {
         compoundTag.putInt("proxies", buffer.getProxies().size());
 
-        var merged = MEPatternBufferRecipeHandlerTrait.mergeInternalSlot(buffer.getInternalInventory());
+        var merged = AEUtils.mergeInternalSlot(buffer.getInternalInventory());
         var items = merged.getLeft();
         var fluids = merged.getRight();
 

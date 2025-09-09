@@ -1,24 +1,19 @@
 package org.gtlcore.gtlcore.common.machine.multiblock.part.ae;
 
 import org.gtlcore.gtlcore.api.machine.trait.IMERecipeHandlerTrait;
-import org.gtlcore.gtlcore.api.recipe.ingredient.CacheHashStrategies;
-import org.gtlcore.gtlcore.api.recipe.ingredient.LongIngredient;
+import org.gtlcore.gtlcore.integration.ae2.AEUtils;
 
 import com.gregtechceu.gtceu.api.capability.recipe.*;
 import com.gregtechceu.gtceu.api.machine.trait.MachineTrait;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.ingredient.FluidIngredient;
 import com.gregtechceu.gtceu.api.recipe.ingredient.IntProviderIngredient;
-import com.gregtechceu.gtceu.common.data.GTItems;
-import com.gregtechceu.gtceu.common.item.IntCircuitBehaviour;
 
 import com.lowdragmc.lowdraglib.side.fluid.FluidStack;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraft.world.level.material.Fluid;
 
 import appeng.api.stacks.AEFluidKey;
 import appeng.api.stacks.AEItemKey;
@@ -27,11 +22,8 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.objects.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.*;
-import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -198,9 +190,9 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
                 getMachine().getSharedCatalystInventory().handleRecipeInner(IO.IN, recipe, left, null, true);
 
                 // simulate时left会包含Circuit
-                setPreparedMEHandleContents(ingredientsMapWithOutCircuit(left, this::setPreparedCircuitConfig));
+                setPreparedMEHandleContents(AEUtils.ingredientsMapWithOutCircuit(left, this::setPreparedCircuitConfig));
             } else {
-                setPreparedMEHandleContents(ingredientsMap(left));
+                setPreparedMEHandleContents(AEUtils.ingredientsMap(left));
             }
         }
 
@@ -293,7 +285,7 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
             if (simulate) {
                 getMachine().getSharedCatalystTank().handleRecipeInner(IO.IN, recipe, left, null, true);
             }
-            setPreparedMEHandleContents(fluidIngredientsMap(left));
+            setPreparedMEHandleContents(AEUtils.fluidIngredientsMap(left));
         }
 
         @Override
@@ -310,60 +302,5 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
             }
             return List.of();
         }
-    }
-
-    // Utility Methods
-    public static Pair<Object2LongOpenHashMap<Item>, Object2LongOpenHashMap<Fluid>> mergeInternalSlot(MEPatternBufferPartMachine.InternalSlot[] internalSlots) {
-        Object2LongOpenHashMap<Item> items = new Object2LongOpenHashMap<>();
-        Object2LongOpenHashMap<Fluid> fluids = new Object2LongOpenHashMap<>();
-        for (var internalSlot : Arrays.stream(internalSlots).filter(MEPatternBufferPartMachine.InternalSlot::isActive).toList()) {
-            for (var it = Object2LongMaps.fastIterator(internalSlot.getItemInventory()); it.hasNext();) {
-                var entry = it.next();
-                items.addTo(entry.getKey().getItem(), entry.getLongValue());
-            }
-            for (var it = Object2LongMaps.fastIterator(internalSlot.getFluidInventory()); it.hasNext();) {
-                var entry = it.next();
-                fluids.addTo(entry.getKey().getFluid(), entry.getLongValue());
-            }
-        }
-        return new ImmutablePair<>(items, fluids);
-    }
-
-    private static Object2LongMap<Ingredient> ingredientsMapWithOutCircuit(List<Ingredient> ingredients, Consumer<Integer> consumer) {
-        var result = new Object2LongOpenCustomHashMap<>(CacheHashStrategies.IngredientHashStrategy.INSTANCE);
-        consumer.accept(-1);
-        for (Ingredient ingredient : ingredients) {
-            var items = ingredient.getItems();
-            if (items.length == 0 || items[0].isEmpty()) {
-                continue;
-            }
-            if (GTItems.INTEGRATED_CIRCUIT.is(items[0].getItem())) {
-                consumer.accept(IntCircuitBehaviour.getCircuitConfiguration(items[0]));
-                continue;
-            }
-            result.addTo(ingredient, ingredient instanceof LongIngredient longIngredient ? longIngredient.getActualAmount() : items[0].getCount());
-        }
-        return result;
-    }
-
-    private static Object2LongMap<Ingredient> ingredientsMap(List<Ingredient> ingredients) {
-        var result = new Object2LongOpenCustomHashMap<>(CacheHashStrategies.IngredientHashStrategy.INSTANCE);
-        for (Ingredient ingredient : ingredients) {
-            var items = ingredient.getItems();
-            if (items.length == 0 || items[0].isEmpty()) {
-                continue;
-            }
-            result.addTo(ingredient, ingredient instanceof LongIngredient longIngredient ? longIngredient.getActualAmount() : items[0].getCount());
-        }
-        return result;
-    }
-
-    private static Object2LongMap<FluidIngredient> fluidIngredientsMap(List<FluidIngredient> ingredients) {
-        var result = new Object2LongOpenCustomHashMap<>(CacheHashStrategies.FluidIngredientHashStrategy.INSTANCE);
-        for (FluidIngredient ingredient : ingredients) {
-            if (ingredient.isEmpty()) continue;
-            result.addTo(ingredient, ingredient.getAmount());
-        }
-        return result;
     }
 }

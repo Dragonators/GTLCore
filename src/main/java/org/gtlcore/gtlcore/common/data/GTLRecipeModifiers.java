@@ -1,7 +1,7 @@
 package org.gtlcore.gtlcore.common.data;
 
 import org.gtlcore.gtlcore.api.machine.trait.IRecipeCapabilityMachine;
-import org.gtlcore.gtlcore.api.machine.trait.MERecipeHandlePart;
+import org.gtlcore.gtlcore.api.machine.trait.MEPatternRecipeHandlePart;
 import org.gtlcore.gtlcore.api.machine.trait.RecipeHandlePart;
 import org.gtlcore.gtlcore.api.recipe.RecipeResult;
 import org.gtlcore.gtlcore.common.machine.multiblock.electric.StorageMachine;
@@ -201,7 +201,7 @@ public class GTLRecipeModifiers {
                     FluidAmounts amounts = countFluidInRecipeHandlePart(rhp, fluid1, fluid2);
                     a += amounts.first();
                     b += amounts.second();
-                } else if (handlePart instanceof MERecipeHandlePart merhp) {
+                } else if (handlePart instanceof MEPatternRecipeHandlePart merhp) {
                     FluidAmounts amounts = countFluidInMERecipeHandlePart(merhp, recipe, fluid1, fluid2);
                     a += amounts.first();
                     b += amounts.second();
@@ -229,7 +229,7 @@ public class GTLRecipeModifiers {
         return new FluidAmounts(a, b);
     }
 
-    private static FluidAmounts countFluidInMERecipeHandlePart(MERecipeHandlePart merhp, GTRecipe recipe, Fluid fluid1, Fluid fluid2) {
+    private static FluidAmounts countFluidInMERecipeHandlePart(MEPatternRecipeHandlePart merhp, GTRecipe recipe, Fluid fluid1, Fluid fluid2) {
         long a = 0, b = 0;
         int slotIndex = merhp.getSlotMap().get(recipe);
         for (var it = Object2LongMaps.fastIterator(merhp.getMEContent(FluidRecipeCapability.CAP, List.of(slotIndex))); it.hasNext();) {

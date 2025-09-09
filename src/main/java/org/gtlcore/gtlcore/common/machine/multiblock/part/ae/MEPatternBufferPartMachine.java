@@ -175,7 +175,7 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
     // Cache Map
     // ========================================
 
-    protected final Int2ObjectMap<GTRecipe> recipeCacheMap = new Int2ObjectArrayMap<>();
+    protected final Int2ObjectMap<GTRecipe> recipeCacheMap = new Int2ObjectOpenHashMap<>();
     private final BiMap<IPatternDetails, Integer> patternSlotMap;
     protected Consumer<Integer> removeSlotFromMap = i -> {};
 
@@ -327,6 +327,39 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
         }
         for (MEPatternBufferProxyPartMachine proxy : this.getProxies()) {
             proxy.setBuffer(null);
+        }
+    }
+
+    @Override
+    public void saveCustomPersistedData(@NotNull CompoundTag tag, boolean forDrop) {
+        super.saveCustomPersistedData(tag, forDrop);
+        if (!recipeCacheMap.isEmpty()) {
+            CompoundTag recipeCacheTag = new CompoundTag();
+            for (var entry : Int2ObjectMaps.fastIterable(recipeCacheMap)) {
+                GTRecipe recipe = entry.getValue();
+                if (recipe != null) {
+                    recipeCacheTag.put(String.valueOf(entry.getIntKey()), GTLUtil.serializeNBT(recipe));
+                }
+            }
+            tag.put("gtRecipeCache", recipeCacheTag);
+        }
+    }
+
+    @Override
+    public void loadCustomPersistedData(@NotNull CompoundTag tag) {
+        super.loadCustomPersistedData(tag);
+        if (tag.contains("gtRecipeCache")) {
+            recipeCacheMap.clear();
+            CompoundTag recipeCacheTag = tag.getCompound("gtRecipeCache");
+            for (String key : recipeCacheTag.getAllKeys()) {
+                int slotIndex = Integer.parseInt(key);
+                Tag recipeTag = recipeCacheTag.get(key);
+                GTRecipe recipe = GTLUtil.deserializeNBT(recipeTag);
+                if (recipe != null && slotIndex >= 0 && slotIndex < maxPatternCount) {
+                    recipeCacheMap.put(slotIndex, recipe);
+                    cacheRecipe[slotIndex] = true;
+                }
+            }
         }
     }
 
@@ -694,39 +727,6 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
 
     public Reference2ObjectMap<RecipeCapability<?>, IMERecipeHandlerTrait<? extends Predicate<?>, ?>> getMERecipeHandlerMap() {
         return recipeHandler.getMERecipeHandlerMap();
-    }
-
-    @Override
-    public void saveCustomPersistedData(@NotNull CompoundTag tag, boolean forDrop) {
-        super.saveCustomPersistedData(tag, forDrop);
-        if (!recipeCacheMap.isEmpty()) {
-            CompoundTag recipeCacheTag = new CompoundTag();
-            for (var entry : Int2ObjectMaps.fastIterable(recipeCacheMap)) {
-                GTRecipe recipe = entry.getValue();
-                if (recipe != null) {
-                    recipeCacheTag.put(String.valueOf(entry.getIntKey()), GTLUtil.serializeNBT(recipe));
-                }
-            }
-            tag.put("gtRecipeCache", recipeCacheTag);
-        }
-    }
-
-    @Override
-    public void loadCustomPersistedData(@NotNull CompoundTag tag) {
-        super.loadCustomPersistedData(tag);
-        if (tag.contains("gtRecipeCache")) {
-            recipeCacheMap.clear();
-            CompoundTag recipeCacheTag = tag.getCompound("gtRecipeCache");
-            for (String key : recipeCacheTag.getAllKeys()) {
-                int slotIndex = Integer.parseInt(key);
-                Tag recipeTag = recipeCacheTag.get(key);
-                GTRecipe recipe = GTLUtil.deserializeNBT(recipeTag);
-                if (recipe != null && slotIndex >= 0 && slotIndex < maxPatternCount) {
-                    recipeCacheMap.put(slotIndex, recipe);
-                    cacheRecipe[slotIndex] = true;
-                }
-            }
-        }
     }
 
     /**

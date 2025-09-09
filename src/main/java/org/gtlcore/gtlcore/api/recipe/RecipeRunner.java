@@ -1,9 +1,6 @@
 package org.gtlcore.gtlcore.api.recipe;
 
-import org.gtlcore.gtlcore.api.machine.trait.IRecipeCapabilityMachine;
-import org.gtlcore.gtlcore.api.machine.trait.IRecipeHandlePart;
-import org.gtlcore.gtlcore.api.machine.trait.MERecipeHandlePart;
-import org.gtlcore.gtlcore.api.machine.trait.RecipeHandlePart;
+import org.gtlcore.gtlcore.api.machine.trait.*;
 
 import com.gregtechceu.gtceu.api.capability.recipe.*;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
@@ -96,7 +93,7 @@ public class RecipeRunner {
 
         // Cache collections to avoid repeated method calls
         var recipeHandleParts = machine.getRecipeHandleParts();
-        var meRecipeHandleParts = machine.getMERecipeHandleParts();
+        var meRecipeHandleParts = machine.getMEPatternRecipeHandleParts();
 
         if (recipeHandleParts.isEmpty() && meRecipeHandleParts.isEmpty()) {
             return false;
@@ -104,8 +101,8 @@ public class RecipeRunner {
 
         if (capIO == IO.IN) {
             // Handle ME cache recipe first (highest priority)
-            if (recipeHandlePart instanceof MERecipeHandlePart meRecipeHandlePart) {
-                if (meRecipeHandlePart.meHandleCacheRecipe(recipe, recipeContent, simulated)) {
+            if (recipeHandlePart instanceof MEPatternRecipeHandlePart mePatternRecipeHandlePart) {
+                if (mePatternRecipeHandlePart.meHandleCacheRecipe(recipe, recipeContent, simulated)) {
                     return true;
                 }
             }
@@ -147,7 +144,7 @@ public class RecipeRunner {
                 return handleNonDistinctInput(machine, inHandlers);
             }
         } else {
-            if (handleOutput(machine.getMERecipeOutputHandleParts())) return true;
+            if (handleOutput(machine.getMEIORecipeHandleParts())) return true;
             return handleOutput(machine);
         }
 
@@ -224,9 +221,9 @@ public class RecipeRunner {
         return false;
     }
 
-    private boolean handleOutput(List<MERecipeHandlePart> meHandlers) {
+    private boolean handleOutput(List<MEIORecipeHandlePart> meHandlers) {
         if (meHandlers.isEmpty()) return false;
-        for (MERecipeHandlePart meHandler : meHandlers) {
+        for (MEIORecipeHandlePart meHandler : meHandlers) {
             recipeContent = meHandler.meHandleOutput(recipeContent, simulated);
             if (recipeContent.isEmpty()) return true;
         }
