@@ -110,7 +110,7 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
     private List<Integer> getActiveAndUnCachedSlots(MEPatternBufferPartMachine.InternalSlot[] slots, RecipeCapability<?> recipeCapability) {
         var machine = getMachine();
         return IntStream.range(0, slots.length)
-                .filter(i -> slots[i].isActive(recipeCapability) && !machine.gtRecipeCacheMap.containsKey(i))
+                .filter(i -> slots[i].isActive(recipeCapability) && !machine.recipeCacheMap.containsKey(i))
                 .boxed()
                 .collect(Collectors.toList());
     }

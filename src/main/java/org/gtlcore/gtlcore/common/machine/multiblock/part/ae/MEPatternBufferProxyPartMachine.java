@@ -36,12 +36,15 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 
+import com.google.common.collect.BiMap;
 import com.mojang.datafixers.util.Pair;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMaps;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.function.Consumer;
 
 public class MEPatternBufferProxyPartMachine extends MultiblockPartMachine implements IMachineLife, IMEPatternPartMachine, IInteractedMachine {
 
@@ -49,6 +52,8 @@ public class MEPatternBufferProxyPartMachine extends MultiblockPartMachine imple
             MEPatternBufferProxyPartMachine.class, MultiblockPartMachine.MANAGED_FIELD_HOLDER);
 
     protected final ISubscription[] handlerSubscriptions = new ISubscription[2];
+
+    protected Consumer<Integer> removeSlotFromMap = i -> {};
 
     @Getter
     protected MEPatternBufferProxyRecipeHandler<Ingredient, ItemStack> itemProxyHandler;
@@ -208,9 +213,13 @@ public class MEPatternBufferProxyPartMachine extends MultiblockPartMachine imple
     }
 
     @Override
-    public void restoreMachineCache(Map<GTRecipe, IRecipeHandlePart> map, MERecipeHandlePart mePart) {
+    public void restoreSlotMap(BiMap<GTRecipe, Integer> slotMap, Consumer<Integer> removeSlotFromMap) {
         if (this.buffer == null) return;
-        this.buffer.restoreMachineCache(map, mePart);
+        this.removeSlotFromMap = removeSlotFromMap;
+        slotMap.clear();
+        for (var entry : Int2ObjectMaps.fastIterable(this.buffer.recipeCacheMap)) {
+            slotMap.forcePut(entry.getValue(), entry.getIntKey());
+        }
     }
 
     @Override

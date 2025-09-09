@@ -76,7 +76,12 @@ public class MERecipeHandlePart implements IRecipeHandlePart {
     }
 
     public void restoreMachineCache(Map<GTRecipe, IRecipeHandlePart> map) {
-        this.patternMachine.restoreMachineCache(map, this);
+        if (this.patternMachine != null) {
+            this.patternMachine.restoreSlotMap(this.slotMap, slot -> slotMap.inverse().remove(slot));
+            for (var key : slotMap.keySet()) {
+                map.put(key, this);
+            }
+        }
     }
 
     public int meHandleRecipe(GTRecipe recipe,
@@ -155,12 +160,6 @@ public class MERecipeHandlePart implements IRecipeHandlePart {
                 var meHandler = getMECapability(cap);
                 meHandler.initMEHandleContents(recipe, content, simulate);
                 if (!meHandler.meHandleRecipe(recipe, simulate, trySlot)) return false;
-            }
-            // 当取出再原地放回样板时，RecipeHandle侧的slotMap会先从该方法尝试handle原slot
-            // 此时会handle成功，导致对应slot的cache永远无法更新(只在meHandleRecipe这一方法中更新)
-            // 因此在此处特别添加判断，防止此类情形
-            if (!patternMachine.hasCacheInSlot(trySlot)) {
-                patternMachine.setSlotCacheRecipe(trySlot, recipe);
             }
             return true;
         }

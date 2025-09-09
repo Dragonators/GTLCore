@@ -118,29 +118,27 @@ public interface IParallelLogic {
             var handle = machine.getRecipeHandleMap().get(recipe);
             if (handle instanceof MERecipeHandlePart meRecipeHandlePart) {
                 // ME handler
-                for (var it = Object2LongMaps.fastIterator(meRecipeHandlePart.getMEContent(ItemRecipeCapability.CAP,
-                        Optional.ofNullable(meRecipeHandlePart.getSlotMap().get(recipe)).map(List::of).orElse(List.of()))); it.hasNext();) {
-                    var entry = it.next();
-                    ingredientStacks.addTo(entry.getKey(), entry.getLongValue());
+                int slot = meRecipeHandlePart.getSlotMap().getOrDefault(recipe, -1);
+                if (slot != -1) {
+                    for (var entry : Object2LongMaps.fastIterable(meRecipeHandlePart.getMEContent(ItemRecipeCapability.CAP, List.of(slot)))) {
+                        ingredientStacks.addTo(entry.getKey(), entry.getLongValue());
+                    }
                 }
             } else if (handle != null) {
-                for (var it = Object2LongMaps.fastIterator(handle.getContent(ItemRecipeCapability.CAP)); it.hasNext();) {
-                    var entry = it.next();
+                for (var entry : Object2LongMaps.fastIterable(handle.getContent(ItemRecipeCapability.CAP))) {
                     ingredientStacks.addTo(entry.getKey(), entry.getLongValue());
                 }
             } else {
                 Object2LongOpenCustomHashMap<ItemStack> map = new Object2LongOpenCustomHashMap<>(ItemStackHashStrategy.comparingAllButCount());
                 // ME handlers, All Active Slots
                 for (MERecipeHandlePart part : machine.getMERecipeHandleParts()) {
-                    for (var it = Object2LongMaps.fastIterator(part.getMEContent(ItemRecipeCapability.CAP)); it.hasNext();) {
-                        var entry = it.next();
+                    for (var entry : Object2LongMaps.fastIterable(part.getMEContent(ItemRecipeCapability.CAP))) {
                         map.addTo(entry.getKey(), entry.getLongValue());
                     }
                 }
                 // other handlers
                 for (var it : machine.getCapabilities().getOrDefault(IO.IN, Collections.emptyList())) {
-                    for (var obj = Object2LongMaps.fastIterator(it.getContent(ItemRecipeCapability.CAP)); obj.hasNext();) {
-                        var entry = obj.next();
+                    for (var entry : Object2LongMaps.fastIterable(it.getContent(ItemRecipeCapability.CAP))) {
                         map.addTo(entry.getKey(), entry.getLongValue());
                     }
                 }
@@ -169,14 +167,14 @@ public interface IParallelLogic {
             var recipeHandle = machine.getRecipeHandleMap().get(recipe);
             if (recipeHandle instanceof MERecipeHandlePart merecipeHandlePart) {
                 // ME handler
-                for (var it = Object2LongMaps.fastIterator(merecipeHandlePart.getMEContent(FluidRecipeCapability.CAP,
-                        Optional.ofNullable(merecipeHandlePart.getSlotMap().get(recipe)).map(List::of).orElse(List.of()))); it.hasNext();) {
-                    var entry = it.next();
-                    ingredientStacks.addTo(entry.getKey(), entry.getLongValue());
+                int slot = merecipeHandlePart.getSlotMap().getOrDefault(recipe, -1);
+                if (slot != -1) {
+                    for (var entry : Object2LongMaps.fastIterable(merecipeHandlePart.getMEContent(FluidRecipeCapability.CAP, List.of(slot)))) {
+                        ingredientStacks.addTo(entry.getKey(), entry.getLongValue());
+                    }
                 }
             } else if (recipeHandle != null && machine.isDistinct()) {
-                for (var it = Object2LongMaps.fastIterator(recipeHandle.getContent(FluidRecipeCapability.CAP)); it.hasNext();) {
-                    var entry = it.next();
+                for (var entry : Object2LongMaps.fastIterable(recipeHandle.getContent(FluidRecipeCapability.CAP))) {
                     ingredientStacks.addTo(entry.getKey(), entry.getLongValue());
                 }
             } else {
