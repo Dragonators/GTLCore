@@ -2,7 +2,7 @@ package org.gtlcore.gtlcore.mixin.gtm.api.recipe;
 
 import org.gtlcore.gtlcore.api.machine.multiblock.CoilWorkableElectricMultipleRecipesMachine;
 import org.gtlcore.gtlcore.api.machine.trait.IRecipeCapabilityMachine;
-import org.gtlcore.gtlcore.api.machine.trait.MERecipeHandlePart;
+import org.gtlcore.gtlcore.api.machine.trait.MEPatternRecipeHandlePart;
 import org.gtlcore.gtlcore.api.machine.trait.RecipeHandlePart;
 import org.gtlcore.gtlcore.api.recipe.IAdditionalRecipeIterator;
 import org.gtlcore.gtlcore.api.recipe.IRecipeIterator;
@@ -68,8 +68,8 @@ public abstract class GTRecipeLookupMixin {
             if (list.isEmpty()) return null;
             return list;
         } else if (holder instanceof IRecipeCapabilityMachine machine) {
-            if (machine.getRecipeHandleParts().isEmpty() && machine.getMERecipeHandleParts().isEmpty()) return null;
-            List<List<AbstractMapIngredient>> list = new ObjectArrayList<>(machine.getRecipeHandleParts().size() + machine.getMERecipeHandleParts().size());
+            if (machine.getRecipeHandleParts().isEmpty() && machine.getMEPatternRecipeHandleParts().isEmpty()) return null;
+            List<List<AbstractMapIngredient>> list = new ObjectArrayList<>(machine.getRecipeHandleParts().size() + machine.getMEPatternRecipeHandleParts().size());
             list.addAll(this.gtlcore$fromHolder(machine));
             if (list.isEmpty()) {
                 return null;
@@ -82,13 +82,13 @@ public abstract class GTRecipeLookupMixin {
     @Unique
     protected @NotNull List<List<AbstractMapIngredient>> gtlcore$fromHolder(@NotNull IRecipeCapabilityMachine r) {
         List<RecipeHandlePart> recipeHandleParts = r.getCapabilities().getOrDefault(IO.IN, new ObjectArrayList<>());
-        List<MERecipeHandlePart> meRecipeHandleParts = r.getMERecipeHandleParts();
-        if (recipeHandleParts.isEmpty() && meRecipeHandleParts.isEmpty()) return Collections.emptyList();
-        List<List<AbstractMapIngredient>> list = new ObjectArrayList<>(recipeHandleParts.size() + meRecipeHandleParts.size());
+        List<MEPatternRecipeHandlePart> mePatternRecipeHandleParts = r.getMEPatternRecipeHandleParts();
+        if (recipeHandleParts.isEmpty() && mePatternRecipeHandleParts.isEmpty()) return Collections.emptyList();
+        List<List<AbstractMapIngredient>> list = new ObjectArrayList<>(recipeHandleParts.size() + mePatternRecipeHandleParts.size());
 
         // region ME Pattern, search for uncached slots
-        if (!meRecipeHandleParts.isEmpty()) {
-            for (var part : meRecipeHandleParts) {
+        if (!mePatternRecipeHandleParts.isEmpty()) {
+            for (var part : mePatternRecipeHandleParts) {
                 Int2ObjectArrayMap<Reference2ObjectArrayMap<RecipeCapability<?>, List<Object>>> finalMap = new Int2ObjectArrayMap<>();
 
                 // slot -> (RecipeCapability -> Contents)
@@ -267,7 +267,7 @@ public abstract class GTRecipeLookupMixin {
     public GTRecipe find(@NotNull IRecipeCapabilityHolder holder, @NotNull Predicate<GTRecipe> canHandle) {
         // find Cached Recipe in MEHandlers First
         if (holder instanceof IRecipeCapabilityMachine rlm) {
-            var parts = rlm.getMERecipeHandleParts();
+            var parts = rlm.getMEPatternRecipeHandleParts();
             for (var part : parts) {
                 var cachedMERecipes = part.getPatternMachine().getCachedGTRecipe();
                 if (!cachedMERecipes.isEmpty()) {
@@ -292,7 +292,7 @@ public abstract class GTRecipeLookupMixin {
 
         // 检查是否有ME配方缓存需要合并
         if (holder instanceof IRecipeCapabilityMachine rlm) {
-            var parts = rlm.getMERecipeHandleParts();
+            var parts = rlm.getMEPatternRecipeHandleParts();
             if (!parts.isEmpty()) {
                 List<GTRecipe> meRecipes = new ObjectArrayList<>();
                 for (var part : parts) {

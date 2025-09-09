@@ -2,7 +2,6 @@ package org.gtlcore.gtlcore.api.machine.trait;
 
 import org.gtlcore.gtlcore.api.capability.IMERecipeHandler;
 
-import com.gregtechceu.gtceu.api.capability.recipe.IO;
 import com.gregtechceu.gtceu.api.capability.recipe.RecipeCapability;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 
@@ -12,52 +11,27 @@ import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.objects.*;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.Predicate;
 
-public class MERecipeHandlePart implements IRecipeHandlePart {
-
-    public static final Comparator<MERecipeHandlePart> COMPARATOR = Comparator.comparingInt(h -> sumPriority(h.meHandlerMap));
-
-    protected static int sumPriority(Reference2ObjectMap<RecipeCapability<?>, IMERecipeHandler<?, ?>> meHandlerMap) {
-        int sum = 0;
-        for (var it = Reference2ObjectMaps.fastIterator(meHandlerMap); it.hasNext();) {
-            sum += it.next().getValue().getPriority();
-        }
-        return sum;
-    }
+public class MEPatternRecipeHandlePart extends MEIORecipeHandlePart {
 
     @Getter
     private final BiMap<GTRecipe, Integer> slotMap = HashBiMap.create();
-    @Getter
-    private final Reference2ObjectOpenHashMap<RecipeCapability<?>, IMERecipeHandler<? extends Predicate<?>, ?>> meHandlerMap = new Reference2ObjectOpenHashMap<>();
-    @Getter
-    @Nullable
-    private final IMEPatternPartMachine patternMachine;
-    @Getter
-    private final IMEIOPartMachine ioMachine;
 
-    public MERecipeHandlePart(IMEIOPartMachine machine) {
-        this.ioMachine = machine;
-        if (machine instanceof IMEPatternPartMachine patternPartMachine) {
-            this.patternMachine = patternPartMachine;
-        } else {
-            this.patternMachine = null;
-        }
+    @Getter
+    private final IMEPatternPartMachine patternMachine;
+
+    public MEPatternRecipeHandlePart(IMEPatternPartMachine machine) {
+        super(machine);
+        this.patternMachine = machine;
     }
 
-    public static MERecipeHandlePart of(IMEIOPartMachine machine) {
-        MERecipeHandlePart rhl = new MERecipeHandlePart(machine);
+    public static MEPatternRecipeHandlePart of(IMEPatternPartMachine machine) {
+        MEPatternRecipeHandlePart rhl = new MEPatternRecipeHandlePart(machine);
         rhl.addMEHandlers(machine.getMERecipeHandlerTraits());
         return rhl;
-    }
-
-    public void addMEHandlers(Iterable<IMERecipeHandlerTrait<? extends Predicate<?>, ?>> handlers) {
-        for (var handler : handlers) {
-            getMeHandlerMap().putIfAbsent(handler.getCapability(), handler);
-        }
     }
 
     @NotNull
@@ -69,10 +43,6 @@ public class MERecipeHandlePart implements IRecipeHandlePart {
     @SuppressWarnings("unchecked")
     public <T extends Predicate<S>, S> Object2LongMap<S> getMEContent(RecipeCapability<T> cap, List<Integer> slots) {
         return ((IMERecipeHandlerTrait<T, S>) (this.getMECapability(cap))).getCustomSlotsStackMap(slots);
-    }
-
-    public @NotNull IMERecipeHandler<? extends Predicate<?>, ?> getMECapability(RecipeCapability<?> cap) {
-        return getMeHandlerMap().getOrDefault(cap, null);
     }
 
     public void restoreMachineCache(Map<GTRecipe, IRecipeHandlePart> map) {
@@ -164,33 +134,6 @@ public class MERecipeHandlePart implements IRecipeHandlePart {
             return true;
         }
         return false;
-    }
-
-    public Reference2ObjectOpenHashMap<RecipeCapability<?>, List<Object>> meHandleOutput(Reference2ObjectOpenHashMap<RecipeCapability<?>, List<Object>> contents, boolean simulate) {
-        boolean hasOutput = false;
-        for (var it = Reference2ObjectMaps.fastIterator(contents); it.hasNext();) {
-            var entry = it.next();
-            var content = entry.getValue();
-            if (content.isEmpty()) {
-                it.remove();
-                continue;
-            }
-            var cap = entry.getKey();
-            var meHandler = getMECapability(cap);
-            var result = meHandler.meHandleRecipeOutput(content, simulate);
-            if (result.size() != content.size()) {
-                hasOutput = true;
-                if (result.isEmpty()) it.remove();
-                else entry.setValue(new ObjectArrayList<>(result));
-            }
-        }
-        if (!simulate && hasOutput) ioMachine.notifySelfIO();
-        return contents;
-    }
-
-    @Override
-    public IO getHandlerIO() {
-        return ioMachine.getIO();
     }
 
     @Override

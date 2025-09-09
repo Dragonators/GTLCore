@@ -1,6 +1,17 @@
 package org.gtlcore.gtlcore.integration.ae2;
 
+import org.gtlcore.gtlcore.api.recipe.ingredient.CacheHashStrategies;
+import org.gtlcore.gtlcore.api.recipe.ingredient.LongIngredient;
+import org.gtlcore.gtlcore.common.machine.multiblock.part.ae.MEPatternBufferPartMachine;
+
+import com.gregtechceu.gtceu.api.recipe.ingredient.FluidIngredient;
+import com.gregtechceu.gtceu.common.data.GTItems;
+import com.gregtechceu.gtceu.common.item.IntCircuitBehaviour;
+
 import net.minecraft.nbt.*;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.level.material.Fluid;
 
 import appeng.api.config.Actionable;
 import appeng.api.crafting.IPatternDetails;
@@ -14,8 +25,13 @@ import appeng.api.storage.StorageHelper;
 import appeng.crafting.inv.ICraftingInventory;
 import appeng.crafting.pattern.AEProcessingPattern;
 import it.unimi.dsi.fastutil.objects.*;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static appeng.crafting.execution.CraftingCpuHelper.reinjectPatternInputs;
@@ -66,6 +82,10 @@ public class AEUtils {
         return didWork;
     }
 
+    // ========================================
+    // Persist
+    // ========================================
+
     public static <T extends AEKey> ListTag createListTag(Function<T, CompoundTag> keySerializer, Object2LongMap<T> map) {
         ListTag tag = new ListTag();
         for (var it = Object2LongMaps.fastIterator(map); it.hasNext();) {
@@ -105,6 +125,64 @@ public class AEUtils {
                 targetMap.add(key);
             }
         }
+    }
+
+    // ========================================
+    // ME Pattern Buffer Utils
+    // ========================================
+
+    public static Pair<Object2LongOpenHashMap<Item>, Object2LongOpenHashMap<Fluid>> mergeInternalSlot(MEPatternBufferPartMachine.InternalSlot[] internalSlots) {
+        Object2LongOpenHashMap<Item> items = new Object2LongOpenHashMap<>();
+        Object2LongOpenHashMap<Fluid> fluids = new Object2LongOpenHashMap<>();
+        for (var internalSlot : Arrays.stream(internalSlots).filter(MEPatternBufferPartMachine.InternalSlot::isActive).toList()) {
+            for (var it = Object2LongMaps.fastIterator(internalSlot.getItemInventory()); it.hasNext();) {
+                var entry = it.next();
+                items.addTo(entry.getKey().getItem(), entry.getLongValue());
+            }
+            for (var it = Object2LongMaps.fastIterator(internalSlot.getFluidInventory()); it.hasNext();) {
+                var entry = it.next();
+                fluids.addTo(entry.getKey().getFluid(), entry.getLongValue());
+            }
+        }
+        return new ImmutablePair<>(items, fluids);
+    }
+
+    public static Object2LongMap<Ingredient> ingredientsMapWithOutCircuit(List<Ingredient> ingredients, Consumer<Integer> consumer) {
+        var result = new Object2LongOpenCustomHashMap<>(CacheHashStrategies.IngredientHashStrategy.INSTANCE);
+        consumer.accept(-1);
+        for (Ingredient ingredient : ingredients) {
+            var items = ingredient.getItems();
+            if (items.length == 0 || items[0].isEmpty()) {
+                continue;
+            }
+            if (GTItems.INTEGRATED_CIRCUIT.is(items[0].getItem())) {
+                consumer.accept(IntCircuitBehaviour.getCircuitConfiguration(items[0]));
+                continue;
+            }
+            result.addTo(ingredient, ingredient instanceof LongIngredient longIngredient ? longIngredient.getActualAmount() : items[0].getCount());
+        }
+        return result;
+    }
+
+    public static Object2LongMap<Ingredient> ingredientsMap(List<Ingredient> ingredients) {
+        var result = new Object2LongOpenCustomHashMap<>(CacheHashStrategies.IngredientHashStrategy.INSTANCE);
+        for (Ingredient ingredient : ingredients) {
+            var items = ingredient.getItems();
+            if (items.length == 0 || items[0].isEmpty()) {
+                continue;
+            }
+            result.addTo(ingredient, ingredient instanceof LongIngredient longIngredient ? longIngredient.getActualAmount() : items[0].getCount());
+        }
+        return result;
+    }
+
+    public static Object2LongMap<FluidIngredient> fluidIngredientsMap(List<FluidIngredient> ingredients) {
+        var result = new Object2LongOpenCustomHashMap<>(CacheHashStrategies.FluidIngredientHashStrategy.INSTANCE);
+        for (FluidIngredient ingredient : ingredients) {
+            if (ingredient.isEmpty()) continue;
+            result.addTo(ingredient, ingredient.getAmount());
+        }
+        return result;
     }
 
     // ========================================

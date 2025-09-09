@@ -51,11 +51,11 @@ public interface IRecipeCapabilityMachine {
 
     // region ME
 
-    List<MERecipeHandlePart> getMERecipeHandleParts();
+    List<MEPatternRecipeHandlePart> getMEPatternRecipeHandleParts();
 
-    List<MERecipeHandlePart> getMERecipeOutputHandleParts();
+    List<MEIORecipeHandlePart> getMEIORecipeHandleParts();
 
-    void setMERecipeHandleMap(MERecipeHandlePart hatch, GTRecipe recipe, int slot);
+    void setMERecipeHandleMap(MEPatternRecipeHandlePart hatch, GTRecipe recipe, int slot);
 
     void sortMEOutput();
 
