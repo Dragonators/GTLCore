@@ -79,6 +79,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -174,8 +175,9 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
     // Cache Map
     // ========================================
 
-    protected final Int2ObjectMap<GTRecipe> gtRecipeCacheMap = new Int2ObjectArrayMap<>();
+    protected final Int2ObjectMap<GTRecipe> recipeCacheMap = new Int2ObjectArrayMap<>();
     private final BiMap<IPatternDetails, Integer> patternSlotMap;
+    protected Consumer<Integer> removeSlotFromMap = i -> {};
 
     // ========================================
     // Proxy
@@ -298,13 +300,19 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
         }
 
         // remove old pattern cache
-        if (oldPatternDetails != null && !oldPatternDetails.equals(newPatternDetailsWithOutCircuit)) {
-            // 样板更换时清理缓存的电路和原始样板
-            internalInv.cacheManager.clearAllCaches();
-            cacheRecipe[index] = false;
-            gtRecipeCacheMap.remove(index);
-            refundSlot(internalInv);
-            pendingRefundData.reFunds();
+        if (oldPatternDetails != null) {
+            removeSlotFromMap.accept(index);
+            for (MEPatternBufferProxyPartMachine proxy : this.getProxies()) {
+                proxy.removeSlotFromMap.accept(index);
+            }
+
+            if (!oldPatternDetails.equals(newPatternDetailsWithOutCircuit)) {
+                internalInv.cacheManager.clearAllCaches();
+                cacheRecipe[index] = false;
+                recipeCacheMap.remove(index);
+                refundSlot(internalInv);
+                pendingRefundData.reFunds();
+            }
         }
 
         needPatternSync = true;
@@ -647,7 +655,7 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
     @Override
     public @NotNull List<@NotNull GTRecipe> getCachedGTRecipe() {
         List<GTRecipe> recipes = new ObjectArrayList<>();
-        for (var it = Int2ObjectMaps.fastIterator(gtRecipeCacheMap); it.hasNext();) {
+        for (var it = Int2ObjectMaps.fastIterator(recipeCacheMap); it.hasNext();) {
             var entry = it.next();
             GTRecipe recipe = entry.getValue();
             int slot = entry.getIntKey();
@@ -660,19 +668,17 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
     @Override
     public void setSlotCacheRecipe(int index, GTRecipe recipe) {
         if (recipe != null) {
-            gtRecipeCacheMap.put(index, recipe);
+            recipeCacheMap.put(index, recipe);
             cacheRecipe[index] = true;
         }
     }
 
     @Override
-    public void restoreMachineCache(Map<GTRecipe, IRecipeHandlePart> map, MERecipeHandlePart mePart) {
-        if (this.gtRecipeCacheMap.isEmpty()) return;
-        for (var it = Int2ObjectMaps.fastIterator(gtRecipeCacheMap); it.hasNext();) {
-            var entry = it.next();
-            var r = entry.getValue();
-            mePart.getSlotMap().forcePut(r, entry.getIntKey());
-            map.put(r, mePart);
+    public void restoreSlotMap(BiMap<GTRecipe, Integer> slotMap, Consumer<Integer> removeSlotFromMap) {
+        this.removeSlotFromMap = removeSlotFromMap;
+        slotMap.clear();
+        for (var entry : Int2ObjectMaps.fastIterable(recipeCacheMap)) {
+            slotMap.forcePut(entry.getValue(), entry.getIntKey());
         }
     }
 
@@ -693,9 +699,9 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
     @Override
     public void saveCustomPersistedData(@NotNull CompoundTag tag, boolean forDrop) {
         super.saveCustomPersistedData(tag, forDrop);
-        if (!gtRecipeCacheMap.isEmpty()) {
+        if (!recipeCacheMap.isEmpty()) {
             CompoundTag recipeCacheTag = new CompoundTag();
-            for (var entry : Int2ObjectMaps.fastIterable(gtRecipeCacheMap)) {
+            for (var entry : Int2ObjectMaps.fastIterable(recipeCacheMap)) {
                 GTRecipe recipe = entry.getValue();
                 if (recipe != null) {
                     recipeCacheTag.put(String.valueOf(entry.getIntKey()), GTLUtil.serializeNBT(recipe));
@@ -709,14 +715,14 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
     public void loadCustomPersistedData(@NotNull CompoundTag tag) {
         super.loadCustomPersistedData(tag);
         if (tag.contains("gtRecipeCache")) {
-            gtRecipeCacheMap.clear();
+            recipeCacheMap.clear();
             CompoundTag recipeCacheTag = tag.getCompound("gtRecipeCache");
             for (String key : recipeCacheTag.getAllKeys()) {
                 int slotIndex = Integer.parseInt(key);
                 Tag recipeTag = recipeCacheTag.get(key);
                 GTRecipe recipe = GTLUtil.deserializeNBT(recipeTag);
                 if (recipe != null && slotIndex >= 0 && slotIndex < maxPatternCount) {
-                    gtRecipeCacheMap.put(slotIndex, recipe);
+                    recipeCacheMap.put(slotIndex, recipe);
                     cacheRecipe[slotIndex] = true;
                 }
             }
