@@ -1694,10 +1694,20 @@
     "gtceu.recipe.fail.no.input.item": "缺少输入物品(%s)",
     "gtceu.recipe.fail.no.input.fluid": "缺少输入液体(%s)",
     "gtceu.machine.structure_check": "更新结构检查",
+    "gtceu.multiblock.universal.rotor_obstructed": "转子支架被阻挡!",
     "config.gtceu.option.hand.output": "手动输出",
     "gtceu.top.buffer_not_bound": "尚未绑定总成",
     "gtceu.top.pending_refunds": "待返回列表",
     "gtceu.machine.pattern.recipe.cache" : "配方已缓存",
     "gtceu.machine.me_extended_export_buffer.tooltip.0" : "允许配置§6输出过滤§f与§b优先级§f",
-    "gtceu.machine.me_extended_async_export_buffer.tooltip.0" : "使用§6异步输出§f，适合跨配方机器"
+    "gtceu.machine.me_extended_async_export_buffer.tooltip.0" : "允许配置§b优先级§f",
+    "gtceu.machine.me_extended_async_export_buffer.tooltip.1" : "使用§6异步输出§f，适合跨配方机器",
+    "gtceu.machine.me_mini_pattern_buffer.desc.0": "迷你版本§6不提供输出§f。",
+    "gtceu.machine.me_pattern_buffer.desc.0": "§f所有样板槽位都拥有§6完全隔离§f。",
+    "gtceu.machine.me_pattern_buffer.desc.1": "对槽位§b中键§f打开专用§6催化剂槽§f, 左侧§6电路§f与§6催化剂§f栏位与所有样板共享。",
+    "gtceu.machine.me_pattern_buffer.desc.2": "在§6样板§f中填写对应电路作为虚拟电路，下单时§6无消耗§f，会§6覆盖§f共享电路设置。",
+    "gtceu.machine.me_pattern_buffer.desc.3": "自带§6样板倍增§f功能，只需填写基础数量的样板，下单时会一次性发配所需乘数。",
+    "gtceu.machine.me_pattern_buffer.desc.4": "自带§6配方缓存§f功能，单个槽位只支持一种配方。",
+    "gtceu.machine.me_pattern_buffer.desc.5": "自带§6ME输出§f功能，无需放置额外的输出舱室。",
+    "gtceu.machine.me_pattern_buffer_proxy.desc.0": "镜像IO由§6绑定的ME样板总成§f决定。"
 }
