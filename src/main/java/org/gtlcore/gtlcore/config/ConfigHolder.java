@@ -64,6 +64,16 @@ public class ConfigHolder {
     public boolean enableUltimateMEStocking = false;
 
     @Configurable
+    @Configurable.Comment("AE2合成更新间隔(tick), 值越大性能越好但响应越慢, 必须是2的幂次(1,2,4,8,16)")
+    @Configurable.Range(min = 1, max = 16)
+    public int ae2CraftingServiceUpdateInterval = 4;
+
+    @Configurable
+    @Configurable.Comment("AE2库存更新间隔(tick), 值越大性能越好但响应越慢, 必须是2的幂次(1,2,4,8,16)")
+    @Configurable.Range(min = 1, max = 16)
+    public int ae2StorageServiceUpdateInterval = 8;
+
+    @Configurable
     public String[] mobList1 = new String[] { "chicken", "rabbit", "sheep", "cow", "horse", "pig", "donkey", "skeleton_horse", "iron_golem", "wolf", "goat", "parrot", "camel", "cat", "fox", "llama", "panda", "polar_bear" };
     @Configurable
     public String[] mobList2 = new String[] { "ghast", "zombie", "pillager", "zombie_villager", "skeleton", "drowned", "witch", "spider", "creeper", "husk", "wither_skeleton", "blaze", "zombified_piglin", "slime", "vindicator", "enderman" };
