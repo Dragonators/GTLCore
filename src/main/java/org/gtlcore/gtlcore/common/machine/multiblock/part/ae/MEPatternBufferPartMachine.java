@@ -1054,7 +1054,7 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
 
         @Override
         public TickingRequest getTickingRequest(IGridNode node) {
-            return new TickingRequest(ConfigHolder.INSTANCE.MEPatternOutputMin, ConfigHolder.INSTANCE.MEPatternOutputMax, false, true);
+            return new TickingRequest(MEExtendedOutputPartMachineBase.MIN_FREQUENCY, MEExtendedOutputPartMachineBase.MAX_FREQUENCY, false, true);
         }
 
         @Override
@@ -1064,7 +1064,7 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
             }
 
             if (pendingRefundData.buffer.isEmpty()) {
-                if (ticksSinceLastCall >= ConfigHolder.INSTANCE.MEPatternOutputMax) {
+                if (ticksSinceLastCall >= MEExtendedOutputPartMachineBase.MAX_FREQUENCY) {
                     isSleeping = true;
                     return TickRateModulation.SLEEP;
                 } else return TickRateModulation.SLOWER;

@@ -195,7 +195,7 @@ public class MEExtendedOutputPartMachine extends MEExtendedOutputPartMachineBase
             }
 
             if (buffer.isEmpty()) {
-                if (ticksSinceLastCall >= ConfigHolder.INSTANCE.MEPatternOutputMax) {
+                if (ticksSinceLastCall >= MAX_FREQUENCY) {
                     isSleeping = true;
                     return TickRateModulation.SLEEP;
                 } else return TickRateModulation.SLOWER;
