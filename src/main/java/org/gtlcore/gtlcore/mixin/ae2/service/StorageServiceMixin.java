@@ -1,5 +1,8 @@
 package org.gtlcore.gtlcore.mixin.ae2.service;
 
+import org.gtlcore.gtlcore.config.ConfigHolder;
+import org.gtlcore.gtlcore.utils.NumberUtils;
+
 import appeng.api.networking.storage.IStorageWatcherNode;
 import appeng.hooks.ticking.TickHandler;
 import appeng.me.helpers.InterestManager;
@@ -20,6 +23,9 @@ public abstract class StorageServiceMixin {
     @Shadow(remap = false)
     protected abstract void updateCachedStacks();
 
+    @Unique
+    private static final int STORAGE_MASK = NumberUtils.nearestPow2Lookup(ConfigHolder.INSTANCE.ae2StorageServiceUpdateInterval) - 1;
+
     public StorageServiceMixin(InterestManager<StackWatcher<IStorageWatcherNode>> interestManager) {
         this.interestManager = interestManager;
     }
@@ -33,7 +39,7 @@ public abstract class StorageServiceMixin {
         if (this.interestManager.isEmpty()) {
             this.cachedStacksNeedUpdate = true;
         } else {
-            if (TickHandler.instance().getCurrentTick() % 10 == 0) this.updateCachedStacks();
+            if ((TickHandler.instance().getCurrentTick() & STORAGE_MASK) == 0) this.updateCachedStacks();
         }
     }
 }

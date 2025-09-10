@@ -44,9 +44,7 @@ public class CraftingTreeNodeMixin {
     }
 
     @Inject(method = "<init>", at = @At("TAIL"))
-    private void CraftingTreeNode(ICraftingService cc,
-                                  CraftingCalculation job, AEKey what, long amount,
-                                  CraftingTreeProcess par, int slot, CallbackInfo ci) {
+    private void CraftingTreeNode(ICraftingService cc, CraftingCalculation job, AEKey what, long amount, CraftingTreeProcess par, int slot, CallbackInfo ci) {
         this.patternDetails = slot == -1 ? null : ((CraftingTreeProcessAccessor) par).getDetails();
     }
 
