@@ -2,7 +2,6 @@ package org.gtlcore.gtlcore.common.machine.multiblock.part.ae;
 
 import org.gtlcore.gtlcore.api.machine.MEExtendedOutputFancyConfigurator;
 import org.gtlcore.gtlcore.api.recipe.ingredient.LongIngredient;
-import org.gtlcore.gtlcore.config.ConfigHolder;
 
 import com.gregtechceu.gtceu.api.gui.fancy.TabsWidget;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
@@ -178,7 +177,7 @@ public class MEExtendedOutputPartMachine extends MEExtendedOutputPartMachineBase
 
     @Override
     protected void registerDefaultServices() {
-        getMainNode().addService(IGridTickable.class, new Ticker());;
+        getMainNode().addService(IGridTickable.class, new Ticker());
     }
 
     protected class Ticker implements IGridTickable {

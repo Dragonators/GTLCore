@@ -228,6 +228,36 @@ public class AEUtils {
         }
     }
 
+    public static KeyCounter[] extractForProcessingPattern(AEProcessingPattern originDetail,
+                                                           ICraftingInventory sourceInv,
+                                                           KeyCounter expectedOutputs) {
+        IPatternDetails.IInput[] inputs = originDetail.getInputs();
+        KeyCounter[] inputHolder = new KeyCounter[inputs.length];
+        boolean found = true;
+
+        for (int x = 0; x < inputs.length; x++) {
+            var list = inputHolder[x] = new KeyCounter();
+            AEKey key = inputs[x].getPossibleInputs()[0].what();
+            long amount = inputs[x].getMultiplier();
+            long extracted = AEUtils.extractTemplates(sourceInv, key, amount);
+            list.add(key, extracted);
+            if (extracted < amount) {
+                found = false;
+                break;
+            }
+        }
+
+        if (!found) {
+            reinjectPatternInputs(sourceInv, inputHolder);
+            return null;
+        } else {
+            for (GenericStack output : originDetail.getOutputs()) {
+                expectedOutputs.add(output.what(), output.amount());
+            }
+            return inputHolder;
+        }
+    }
+
     private static long extractTemplates(ICraftingInventory inv, AEKey key, long amount) {
         if (amount == 0) return 0;
         long simEx = inv.extract(key, amount, Actionable.SIMULATE);
