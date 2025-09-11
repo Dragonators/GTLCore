@@ -115,6 +115,7 @@ public abstract class CraftingCpuLogicOldMixin {
                     }
 
                     expectedOutputs.reset();
+                    craftingContainer = null;
                     needExtract = true;
                 }
             }

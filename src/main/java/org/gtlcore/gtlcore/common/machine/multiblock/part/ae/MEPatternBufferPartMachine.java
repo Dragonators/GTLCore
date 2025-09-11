@@ -3,7 +3,6 @@ package org.gtlcore.gtlcore.common.machine.multiblock.part.ae;
 import org.gtlcore.gtlcore.api.gui.MEPatternCatalystUIManager;
 import org.gtlcore.gtlcore.api.machine.trait.*;
 import org.gtlcore.gtlcore.common.data.GTLMachines;
-import org.gtlcore.gtlcore.config.ConfigHolder;
 import org.gtlcore.gtlcore.integration.ae2.AEUtils;
 import org.gtlcore.gtlcore.integration.ae2.PatternCircuitHandler;
 import org.gtlcore.gtlcore.integration.ae2.SlotCacheManager;

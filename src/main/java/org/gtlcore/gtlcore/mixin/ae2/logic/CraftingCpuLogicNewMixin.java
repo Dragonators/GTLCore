@@ -120,6 +120,7 @@ public abstract class CraftingCpuLogicNewMixin {
 
                     expectedOutputs.reset();
                     expectedContainerItems.reset();
+                    craftingContainer = null;
                     needExtract = true;
                 }
             }

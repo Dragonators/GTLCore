@@ -8,6 +8,7 @@ import appeng.api.stacks.GenericStack;
 import appeng.api.stacks.KeyCounter;
 import appeng.crafting.execution.InputTemplate;
 import appeng.crafting.inv.ICraftingInventory;
+import appeng.crafting.pattern.AEProcessingPattern;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandleProxies;
@@ -57,6 +58,7 @@ public final class Ae2CompatMH {
                                                          Level level,
                                                          KeyCounter expectedOutputs,
                                                          KeyCounter expectedContainerItems) {
+        if (details instanceof AEProcessingPattern processingPattern) return AEUtils.extractForProcessingPattern(processingPattern, sourceInv, expectedOutputs);
         var inputs = details.getInputs();
         KeyCounter[] inputHolder = new KeyCounter[inputs.length];
         boolean found = true;
@@ -100,6 +102,7 @@ public final class Ae2CompatMH {
                                                          ICraftingInventory sourceInv,
                                                          Level level,
                                                          KeyCounter expectedOutputs) {
+        if (details instanceof AEProcessingPattern processingPattern) return AEUtils.extractForProcessingPattern(processingPattern, sourceInv, expectedOutputs);
         var inputs = details.getInputs();
         KeyCounter[] inputHolder = new KeyCounter[inputs.length];
         boolean found = true;
