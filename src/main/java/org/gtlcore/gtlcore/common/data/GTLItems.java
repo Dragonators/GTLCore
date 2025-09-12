@@ -289,6 +289,13 @@ public class GTLItems {
             .onRegister(GTItems.attach(new UltimateTerminalBehavior()))
             .register();
 
+    public static ItemEntry<ComponentItem> ME_PATTERN_BUFFER_COPY = REGISTRATE
+            .item("me_pattern_buffer_copy", ComponentItem::create)
+            .properties(stack -> stack.stacksTo(1))
+            .onRegister(attach(MEPatternBufferCopyBehavior.INSTANCE))
+            .model(NonNullBiConsumer.noop())
+            .register();
+
     private static ItemEntry<Item> register(String id, boolean defaultModel) {
         return defaultModel ? REGISTRATE.item(id, Item::new).register() : REGISTRATE.item(id, Item::new).model(NonNullBiConsumer.noop()).register();
     }

@@ -104,6 +104,7 @@
     "gtm.fix.GTUtilMixin",
     "gtm.fix.WorkableElectricMultiblockMachineMixin",
     "gtm.ftb.TeleportFromMapPacketMixin",
+    "gtm.gui.MachineModeFancyConfiguratorMixin",
     "gtm.gui.ProspectorScannerBehaviorMixin",
     "gtm.machine.BufferMachineMixin",
     "gtm.machine.DataAccessHatchMachineMixin",

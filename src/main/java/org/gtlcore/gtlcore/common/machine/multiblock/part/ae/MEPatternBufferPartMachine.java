@@ -117,6 +117,7 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
     @DescSynced
     @Persisted
     @Setter
+    @Getter
     protected String customName = "";
     protected final int maxPatternCount;
     private final boolean[] hasPatternArray;
@@ -175,6 +176,7 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
     // ========================================
 
     protected final Int2ObjectMap<GTRecipe> recipeCacheMap = new Int2ObjectOpenHashMap<>();
+    @Getter
     private final BiMap<IPatternDetails, Integer> patternSlotMap;
     protected Consumer<Integer> removeSlotFromMap = i -> {};
 
