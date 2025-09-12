@@ -18,8 +18,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.*;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -34,9 +33,7 @@ import net.minecraftforge.items.IItemHandler;
 
 import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.ints.IntObjectPair;
-import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+import it.unimi.dsi.fastutil.objects.*;
 import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -45,8 +42,7 @@ import oshi.util.tuples.Triplet;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.*;
-import java.util.function.BiPredicate;
-import java.util.function.Consumer;
+import java.util.function.*;
 
 public class AdvancedBlockPattern extends BlockPattern {
 
@@ -215,7 +211,7 @@ public class AdvancedBlockPattern extends BlockPattern {
                             continue;
 
                         // check inventory
-                        Triplet<ItemStack, IItemHandler, Integer> result = foundItem(player, candidates);
+                        var result = foundItem(player, candidates, item -> item instanceof BlockItem);
                         ItemStack found = result.getA();
                         IItemHandler handler = result.getB();
                         int foundSlot = result.getC();
@@ -281,13 +277,15 @@ public class AdvancedBlockPattern extends BlockPattern {
         }));
     }
 
-    private Triplet<ItemStack, IItemHandler, Integer> foundItem(Player player, List<ItemStack> candidates) {
+    public static Triplet<ItemStack, IItemHandler, Integer> foundItem(Player player,
+                                                                      List<ItemStack> candidates,
+                                                                      Predicate<Item> test) {
         ItemStack found = null;
         IItemHandler handler = null;
         int foundSlot = -1;
         if (!player.isCreative()) {
             var foundHandler = getMatchStackWithHandler(candidates,
-                    player.getCapability(ForgeCapabilities.ITEM_HANDLER), player);
+                    player.getCapability(ForgeCapabilities.ITEM_HANDLER), test);
             if (foundHandler != null) {
                 foundSlot = foundHandler.firstInt();
                 handler = foundHandler.second();
@@ -296,7 +294,7 @@ public class AdvancedBlockPattern extends BlockPattern {
         } else {
             for (ItemStack candidate : candidates) {
                 found = candidate.copy();
-                if (!found.isEmpty() && found.getItem() instanceof BlockItem) break;
+                if (!found.isEmpty() && test.test(found.getItem())) break;
                 found = null;
             }
         }
@@ -422,7 +420,7 @@ public class AdvancedBlockPattern extends BlockPattern {
     @Nullable
     private static IntObjectPair<IItemHandler> getMatchStackWithHandler(List<ItemStack> candidates,
                                                                         LazyOptional<IItemHandler> cap,
-                                                                        Player player) {
+                                                                        Predicate<Item> test) {
         IItemHandler handler = cap.resolve().orElse(null);
         if (handler == null) return null;
         for (int i = 0; i < handler.getSlots(); i++) {
@@ -433,10 +431,10 @@ public class AdvancedBlockPattern extends BlockPattern {
             @NotNull
             LazyOptional<IItemHandler> stackCap = stack.getCapability(ForgeCapabilities.ITEM_HANDLER);
             if (stackCap.isPresent()) {
-                var rt = getMatchStackWithHandler(candidates, stackCap, player);
+                var rt = getMatchStackWithHandler(candidates, stackCap, test);
                 if (rt != null) return rt;
             } else if (candidates.stream().anyMatch(candidate -> ItemStack.isSameItemSameTags(candidate, stack)) &&
-                    !stack.isEmpty() && stack.getItem() instanceof BlockItem) {
+                    !stack.isEmpty() && test.test(stack.getItem())) {
                         return IntObjectPair.of(i, handler);
                     }
         }

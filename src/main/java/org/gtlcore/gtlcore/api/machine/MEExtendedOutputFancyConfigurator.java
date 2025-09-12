@@ -2,6 +2,7 @@ package org.gtlcore.gtlcore.api.machine;
 
 import com.gregtechceu.gtceu.api.gui.fancy.FancyMachineUIWidget;
 import com.gregtechceu.gtceu.api.gui.fancy.IFancyUIProvider;
+import com.gregtechceu.gtceu.common.data.GTItems;
 
 import com.lowdragmc.lowdraglib.gui.texture.IGuiTexture;
 import com.lowdragmc.lowdraglib.gui.texture.ItemStackTexture;
@@ -11,8 +12,6 @@ import net.minecraft.network.chat.Component;
 
 import java.util.List;
 import java.util.function.Supplier;
-
-import static org.gtlcore.gtlcore.utils.Registries.getItemStack;
 
 public class MEExtendedOutputFancyConfigurator implements IFancyUIProvider {
 
@@ -29,7 +28,7 @@ public class MEExtendedOutputFancyConfigurator implements IFancyUIProvider {
 
     @Override
     public IGuiTexture getTabIcon() {
-        return new ItemStackTexture(getItemStack("gtceu:echoite_vajra"));
+        return new ItemStackTexture(GTItems.ITEM_FILTER.asStack());
     }
 
     @Override
