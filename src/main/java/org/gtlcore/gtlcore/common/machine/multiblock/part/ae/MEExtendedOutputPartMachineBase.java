@@ -2,8 +2,10 @@ package org.gtlcore.gtlcore.common.machine.multiblock.part.ae;
 
 import org.gtlcore.gtlcore.api.machine.trait.IMERecipeHandlerTrait;
 import org.gtlcore.gtlcore.api.machine.trait.IRecipeCapabilityMachine;
+import org.gtlcore.gtlcore.api.machine.trait.MEPart.IMETraitIOPartMachine;
 import org.gtlcore.gtlcore.client.gui.widget.MEOutListGridWidget;
 import org.gtlcore.gtlcore.config.ConfigHolder;
+import org.gtlcore.gtlcore.integration.ae2.AEUtils;
 
 import com.gregtechceu.gtceu.api.capability.recipe.FluidRecipeCapability;
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
@@ -43,7 +45,9 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-public abstract class MEExtendedOutputPartMachineBase extends MEIOPartMachine implements IDataStickInteractable {
+import static org.gtlcore.gtlcore.integration.ae2.AEUtils.loadInventory;
+
+public abstract class MEExtendedOutputPartMachineBase extends MEIOPartMachine implements IDataStickInteractable, IMETraitIOPartMachine {
 
     @Override
     public @NotNull ManagedFieldHolder getFieldHolder() {
@@ -172,37 +176,16 @@ public abstract class MEExtendedOutputPartMachineBase extends MEIOPartMachine im
     public void saveCustomPersistedData(@NotNull CompoundTag tag, boolean forDrop) {
         super.saveCustomPersistedData(tag, forDrop);
         if (buffer.isEmpty()) return;
-
-        ListTag listTag = new ListTag();
-        for (var entry : buffer.object2LongEntrySet()) {
-            var aeKey = entry.getKey();
-            long amount = entry.getLongValue();
-            if (amount > 0) {
-                var keyTag = aeKey.toTagGeneric();
-                keyTag.putLong("amount", amount);
-                listTag.add(keyTag);
-            }
-        }
-
-        if (!listTag.isEmpty()) {
-            tag.put("buffer", listTag);
-        }
+        ListTag listTag = AEUtils.createListTag(AEKey::toTagGeneric, buffer);
+        if (!listTag.isEmpty()) tag.put("buffer", listTag);
     }
 
     @Override
     public void loadCustomPersistedData(@NotNull CompoundTag tag) {
         super.loadCustomPersistedData(tag);
-
         buffer.clear();
         ListTag listTag = tag.getList("buffer", Tag.TAG_COMPOUND);
-        for (Tag t : listTag) {
-            if (!(t instanceof CompoundTag keyTag)) continue;
-            var aeKey = AEKey.fromTagGeneric(keyTag);
-            long amount = keyTag.getLong("amount");
-            if (aeKey != null && amount > 0) {
-                buffer.put(aeKey, amount);
-            }
-        }
+        loadInventory(listTag, AEKey::fromTagGeneric, buffer);
     }
 
     protected abstract class MEItemOutputHandler extends NotifiableMERecipeHandlerTrait<Ingredient, ItemStack> {

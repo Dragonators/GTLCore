@@ -1,6 +1,6 @@
 package org.gtlcore.gtlcore.mixin.gtm.ae.slot;
 
-import org.gtlcore.gtlcore.api.machine.trait.IMEPartMachine;
+import org.gtlcore.gtlcore.api.machine.trait.MEStock.IMEPartMachine;
 import org.gtlcore.gtlcore.api.recipe.ingredient.LongIngredient;
 
 import com.gregtechceu.gtceu.api.capability.recipe.IO;

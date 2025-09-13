@@ -1,6 +1,7 @@
 package org.gtlcore.gtlcore.api.machine.trait;
 
 import org.gtlcore.gtlcore.api.capability.IMERecipeHandler;
+import org.gtlcore.gtlcore.api.machine.trait.MEPart.IMEPatternPartMachine;
 
 import com.gregtechceu.gtceu.api.capability.recipe.RecipeCapability;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;

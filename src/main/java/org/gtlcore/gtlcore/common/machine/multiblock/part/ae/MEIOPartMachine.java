@@ -1,6 +1,6 @@
 package org.gtlcore.gtlcore.common.machine.multiblock.part.ae;
 
-import org.gtlcore.gtlcore.api.machine.trait.IMEIOPartMachine;
+import org.gtlcore.gtlcore.api.machine.trait.MEPart.IMEIOPartMachine;
 
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
 import com.gregtechceu.gtceu.api.gui.fancy.IFancyUIProvider;

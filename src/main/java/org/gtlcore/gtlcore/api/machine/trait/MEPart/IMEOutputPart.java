@@ -1,4 +1,4 @@
-package org.gtlcore.gtlcore.api.machine.trait;
+package org.gtlcore.gtlcore.api.machine.trait.MEPart;
 
 import com.gregtechceu.gtceu.api.gui.GuiTextures;
 import com.gregtechceu.gtceu.api.gui.fancy.ConfiguratorPanel;

@@ -1,7 +1,7 @@
 package org.gtlcore.gtlcore.mixin.gtm.ae.machine;
 
-import org.gtlcore.gtlcore.api.machine.trait.IMEPartMachine;
-import org.gtlcore.gtlcore.api.machine.trait.IMESlot;
+import org.gtlcore.gtlcore.api.machine.trait.MEStock.IMEPartMachine;
+import org.gtlcore.gtlcore.api.machine.trait.MEStock.IMESlot;
 
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.common.item.IntCircuitBehaviour;
