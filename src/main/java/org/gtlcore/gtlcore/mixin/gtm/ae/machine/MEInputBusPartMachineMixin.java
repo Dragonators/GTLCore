@@ -1,6 +1,6 @@
 package org.gtlcore.gtlcore.mixin.gtm.ae.machine;
 
-import org.gtlcore.gtlcore.api.machine.trait.IMEPartMachine;
+import org.gtlcore.gtlcore.api.machine.trait.MEStock.IMEPartMachine;
 
 import com.gregtechceu.gtceu.integration.ae2.machine.MEInputBusPartMachine;
 import com.gregtechceu.gtceu.integration.ae2.slot.ExportOnlyAEItemList;

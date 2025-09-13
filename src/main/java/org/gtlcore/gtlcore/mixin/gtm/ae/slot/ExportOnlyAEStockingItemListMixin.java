@@ -1,6 +1,6 @@
 package org.gtlcore.gtlcore.mixin.gtm.ae.slot;
 
-import org.gtlcore.gtlcore.api.machine.trait.IMESlot;
+import org.gtlcore.gtlcore.api.machine.trait.MEStock.IMESlot;
 import org.gtlcore.gtlcore.api.recipe.ingredient.LongIngredient;
 import org.gtlcore.gtlcore.config.ConfigHolder;
 

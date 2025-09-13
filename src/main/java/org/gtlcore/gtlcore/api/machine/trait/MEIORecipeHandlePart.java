@@ -1,6 +1,7 @@
 package org.gtlcore.gtlcore.api.machine.trait;
 
 import org.gtlcore.gtlcore.api.capability.IMERecipeHandler;
+import org.gtlcore.gtlcore.api.machine.trait.MEPart.IMETraitIOPartMachine;
 
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
 import com.gregtechceu.gtceu.api.capability.recipe.RecipeCapability;
@@ -26,15 +27,15 @@ public class MEIORecipeHandlePart implements IRecipeHandlePart {
     }
 
     @Getter
-    protected final IMEIOPartMachine ioMachine;
+    protected final IMETraitIOPartMachine ioMachine;
     @Getter
     protected final Reference2ObjectOpenHashMap<RecipeCapability<?>, IMERecipeHandler<? extends Predicate<?>, ?>> meHandlerMap = new Reference2ObjectOpenHashMap<>();
 
-    public MEIORecipeHandlePart(IMEIOPartMachine machine) {
+    public MEIORecipeHandlePart(IMETraitIOPartMachine machine) {
         this.ioMachine = machine;
     }
 
-    public static MEIORecipeHandlePart of(IMEIOPartMachine machine) {
+    public static MEIORecipeHandlePart of(IMETraitIOPartMachine machine) {
         MEIORecipeHandlePart rhl = new MEIORecipeHandlePart(machine);
         rhl.addMEHandlers(machine.getMERecipeHandlerTraits());
         return rhl;

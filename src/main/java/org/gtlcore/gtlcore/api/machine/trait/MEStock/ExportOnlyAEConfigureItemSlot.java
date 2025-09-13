@@ -1,4 +1,4 @@
-package org.gtlcore.gtlcore.api.machine.trait;
+package org.gtlcore.gtlcore.api.machine.trait.MEStock;
 
 import com.gregtechceu.gtceu.integration.ae2.slot.ExportOnlyAEItemSlot;
 

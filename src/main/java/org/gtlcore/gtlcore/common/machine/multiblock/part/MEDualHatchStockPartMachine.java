@@ -1,7 +1,10 @@
 package org.gtlcore.gtlcore.common.machine.multiblock.part;
 
 import org.gtlcore.gtlcore.api.gui.TurnsConfiguratorButton;
-import org.gtlcore.gtlcore.api.machine.trait.*;
+import org.gtlcore.gtlcore.api.machine.trait.MEStock.ExportOnlyAEConfigureFluidSlot;
+import org.gtlcore.gtlcore.api.machine.trait.MEStock.ExportOnlyAEConfigureItemSlot;
+import org.gtlcore.gtlcore.api.machine.trait.MEStock.IMEPartMachine;
+import org.gtlcore.gtlcore.api.machine.trait.MEStock.IMESlot;
 import org.gtlcore.gtlcore.api.recipe.ingredient.LongIngredient;
 import org.gtlcore.gtlcore.client.gui.widget.AEDualConfigWidget;
 import org.gtlcore.gtlcore.config.ConfigHolder;

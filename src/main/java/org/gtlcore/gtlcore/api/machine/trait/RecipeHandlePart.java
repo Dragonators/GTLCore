@@ -1,5 +1,7 @@
 package org.gtlcore.gtlcore.api.machine.trait;
 
+import org.gtlcore.gtlcore.api.machine.trait.MEStock.IMEPartMachine;
+
 import com.gregtechceu.gtceu.api.capability.recipe.*;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 

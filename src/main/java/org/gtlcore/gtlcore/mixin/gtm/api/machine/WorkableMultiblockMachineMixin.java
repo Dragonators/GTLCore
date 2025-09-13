@@ -1,6 +1,8 @@
 package org.gtlcore.gtlcore.mixin.gtm.api.machine;
 
 import org.gtlcore.gtlcore.api.machine.trait.*;
+import org.gtlcore.gtlcore.api.machine.trait.MEPart.IMEPatternPartMachine;
+import org.gtlcore.gtlcore.api.machine.trait.MEPart.IMETraitIOPartMachine;
 import org.gtlcore.gtlcore.api.recipe.RecipeResult;
 
 import com.gregtechceu.gtceu.api.capability.IDataAccessHatch;
@@ -207,7 +209,7 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
         // IMultiPart
         var distinctParts = new ObjectArrayList<IRecipeHandler<?>>();
         for (IMultiPart part : this.getParts()) {
-            if (part instanceof IMEIOPartMachine mePart) {
+            if (part instanceof IMETraitIOPartMachine mePart) {
                 var meHandlers = mePart.getMERecipeHandlerTraits();
                 for (var meHandlerTrait : meHandlers) {
                     traitSubscriptions.add(meHandlerTrait.addBufferChangedListener(recipeLogic::updateTickSubscription));

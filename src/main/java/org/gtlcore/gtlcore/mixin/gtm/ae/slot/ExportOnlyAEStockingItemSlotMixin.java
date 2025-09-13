@@ -1,6 +1,6 @@
 package org.gtlcore.gtlcore.mixin.gtm.ae.slot;
 
-import org.gtlcore.gtlcore.api.machine.trait.IMESlot;
+import org.gtlcore.gtlcore.api.machine.trait.MEStock.IMESlot;
 
 import com.gregtechceu.gtceu.integration.ae2.slot.ExportOnlyAEItemSlot;
 

@@ -1,4 +1,4 @@
-package org.gtlcore.gtlcore.api.machine.trait;
+package org.gtlcore.gtlcore.api.machine.trait.MEStock;
 
 import appeng.api.stacks.GenericStack;
 import org.jetbrains.annotations.Nullable;

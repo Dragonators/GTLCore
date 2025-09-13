@@ -1,6 +1,6 @@
 package org.gtlcore.gtlcore.mixin.gtmt;
 
-import org.gtlcore.gtlcore.api.machine.trait.IMEOutputPart;
+import org.gtlcore.gtlcore.api.machine.trait.MEPart.IMEOutputPart;
 
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
 import com.gregtechceu.gtceu.api.gui.fancy.ConfiguratorPanel;

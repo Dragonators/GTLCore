@@ -1,4 +1,4 @@
-package org.gtlcore.gtlcore.api.machine.trait;
+package org.gtlcore.gtlcore.api.machine.trait.MEPart;
 
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 
@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 import java.util.function.Consumer;
 
-public interface IMEPatternPartMachine extends IMEIOPartMachine {
+public interface IMEPatternPartMachine extends IMETraitIOPartMachine {
 
     // every element should not be Null
     @NotNull
