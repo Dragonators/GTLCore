@@ -26,8 +26,8 @@ import static org.gtlcore.gtlcore.api.pattern.AdvancedBlockPattern.foundItem;
 public class MEPatternBufferCopyBehavior extends TooltipBehavior implements IInteractionItem {
 
     public static final MEPatternBufferCopyBehavior INSTANCE = new MEPatternBufferCopyBehavior((list -> {
-        list.add(Component.literal("右键可复制目标样板总成内的样板和命名名称"));
-        list.add(Component.literal("潜行右键应用复制内容到目标样板总成"));
+        list.add(Component.literal("潜行右键可复制目标样板总成内的样板和命名名称"));
+        list.add(Component.literal("右键应用复制内容到目标样板总成"));
     }));
 
     public MEPatternBufferCopyBehavior(@NotNull Consumer<List<Component>> tooltips) {
