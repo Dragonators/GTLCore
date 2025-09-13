@@ -202,6 +202,8 @@
     "structure_detect.tooltip.0": "右键多方快结构主方块即可",
     "gtlcore.me_any": "ME仓允许任意面连接",
     "gtlcore.me_front": "ME仓只允许正面连接",
+    "gtlcore.multiblock.tick_Duration": "固定耗时%dTick",
+    "gtlcore.multiblock.contains_Patttern": "可容纳%d个合成样板",
     "gtlcore.gui.filter_config.title": "过滤设置",
     "config.jade.plugin_gtlcore.tick_time_provider": "[GTLCore] Tick时间",
     "block.gtceu.performance_monitor": "性能监控器",

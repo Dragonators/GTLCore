@@ -1,6 +1,7 @@
 package org.gtlcore.gtlcore.mixin.ae2.logic;
 
-import org.gtlcore.gtlcore.api.machine.trait.IMEPatternPartMachine;
+import org.gtlcore.gtlcore.api.machine.trait.AECraft.IMECraftIOPart;
+import org.gtlcore.gtlcore.api.machine.trait.MEPart.IMEPatternPartMachine;
 import org.gtlcore.gtlcore.integration.ae2.AEUtils;
 import org.gtlcore.gtlcore.integration.ae2.Ae2CompatMH;
 
@@ -67,9 +68,10 @@ public abstract class CraftingCpuLogicNewMixin {
 
             for (var provider : craftingService.getProviders(details)) {
                 final boolean isMEPatternProvider = isProcessing && provider instanceof IMEPatternPartMachine;
+                final boolean isMECraftProvider = provider instanceof IMECraftIOPart;
 
                 if (needExtract) {
-                    craftingContainer = isMEPatternProvider ? AEUtils.extractForMEPatternBuffer((AEProcessingPattern) details, inventory, taskProgress.getValue(), expectedOutputs) : Ae2CompatMH.extractPatternInputs5Args(details, inventory, level, expectedOutputs, expectedContainerItems);
+                    craftingContainer = isMEPatternProvider ? AEUtils.extractForMEPatternBuffer((AEProcessingPattern) details, inventory, taskProgress.getValue(), expectedOutputs) : isMECraftProvider ? Ae2CompatMH.extractPatternInputs5Args(details, inventory, level, expectedOutputs, expectedContainerItems, taskProgress.getValue()) : Ae2CompatMH.extractPatternInputs5Args(details, inventory, level, expectedOutputs, expectedContainerItems);
                     needExtract = false;
                     if (craftingContainer == null) {
                         break;
@@ -83,7 +85,7 @@ public abstract class CraftingCpuLogicNewMixin {
                     break;
                 }
 
-                if (provider.pushPattern(details, craftingContainer)) {
+                if (isMECraftProvider ? ((IMECraftIOPart) provider).pushPattern(details, taskProgress.getValue()) : provider.pushPattern(details, craftingContainer)) {
                     energyService.extractAEPower(patternPower, Actionable.MODULATE, PowerMultiplier.CONFIG);
                     pushedPatterns++;
 
@@ -100,8 +102,8 @@ public abstract class CraftingCpuLogicNewMixin {
 
                     cluster.markDirty();
 
-                    // 1) MEPatternBuffer
-                    if (isMEPatternProvider) {
+                    // 1) MEPatternBuffer || MECraftProvider
+                    if (isMEPatternProvider || isMECraftProvider) {
                         taskProgress.setValue(0);
                         it.remove();
                         continue taskLoop;

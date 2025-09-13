@@ -2,6 +2,8 @@ package org.gtlcore.gtlcore.common.data.machines;
 
 import org.gtlcore.gtlcore.GTLCore;
 import org.gtlcore.gtlcore.api.machine.multiblock.CoilWorkableElectricMultipleRecipesMachine;
+import org.gtlcore.gtlcore.api.machine.multiblock.GTLPartAbility;
+import org.gtlcore.gtlcore.api.machine.multiblock.MolecularAssemblerMultiblockMachine;
 import org.gtlcore.gtlcore.api.machine.multiblock.NoEnergyMultiblockMachine;
 import org.gtlcore.gtlcore.api.pattern.GTLPredicates;
 import org.gtlcore.gtlcore.common.block.BlockMap;
@@ -419,6 +421,25 @@ public class MultiBlockMachineA {
                 }
             })
             .workableCasingRenderer(GTCEu.id("block/casings/steam/steel/side"), GTCEu.id("block/multiblock/gcym/large_maceration_tower"))
+            .register();
+
+    public final static MultiblockMachineDefinition MOLECULAR_ASSEMBLER_MATRIX = REGISTRATE.multiblock("molecular_assembler_matrix", MolecularAssemblerMultiblockMachine::new)
+            .rotationState(RotationState.ALL)
+            .recipeType(GTLRecipeTypes.MOLECULAR_ASSEMBLER)
+            .tooltipBuilder(GTLMachines.GTL_ADD)
+            .recipeModifiers((machine, recipe, params, result) -> GTRecipeModifiers.accurateParallel(machine, recipe, (int) Math.pow(4, (((WorkableElectricMultiblockMachine) machine).getTier() - 4)), false).getFirst(), GTRecipeModifiers.ELECTRIC_OVERCLOCK.apply(OverclockingLogic.NON_PERFECT_OVERCLOCK_SUBTICK))
+            .appearanceBlock(GTBlocks.STEEL_HULL)
+            .pattern((definition) -> FactoryBlockPattern.start()
+                    .aisle("bbb", "bbb", "bbb")
+                    .aisle("bbb", "bcb", "bbb")
+                    .aisle("bbb", "bab", "bbb")
+                    .where("a", Predicates.controller(Predicates.blocks(definition.get())))
+                    .where("b", Predicates.blocks(GTLBlocks.MOLECULAR_CASING.get())
+                            .or(abilities(GTLPartAbility.MOLECULAR_ASSEMBLER_MATRIX))
+                            .or(blocks(GTLMachines.GTAEMachines.ME_MOLECULAR_ASSEMBLER_IO.get()).setExactLimit(1)))
+                    .where("c", Predicates.blocks(GTBlocks.CASING_BRONZE_GEARBOX.get()))
+                    .build())
+            .workableCasingRenderer(GTLCore.id("block/molecular_casing"), GTCEu.id("block/multiblock/research_station"))
             .register();
 
     public final static MultiblockMachineDefinition MASS_FABRICATOR = REGISTRATE.multiblock("mass_fabricator", WorkableElectricMultiblockMachine::new)

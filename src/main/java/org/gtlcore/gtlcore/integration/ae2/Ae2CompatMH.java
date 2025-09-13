@@ -58,6 +58,15 @@ public final class Ae2CompatMH {
                                                          Level level,
                                                          KeyCounter expectedOutputs,
                                                          KeyCounter expectedContainerItems) {
+        return extractPatternInputs5Args(details, sourceInv, level, expectedOutputs, expectedContainerItems, 1);
+    }
+
+    public static KeyCounter[] extractPatternInputs5Args(IPatternDetails details,
+                                                         ICraftingInventory sourceInv,
+                                                         Level level,
+                                                         KeyCounter expectedOutputs,
+                                                         KeyCounter expectedContainerItems,
+                                                         long multiply) {
         if (details instanceof AEProcessingPattern processingPattern) return AEUtils.extractForProcessingPattern(processingPattern, sourceInv, expectedOutputs);
         var inputs = details.getInputs();
         KeyCounter[] inputHolder = new KeyCounter[inputs.length];
@@ -65,7 +74,7 @@ public final class Ae2CompatMH {
 
         for (int x = 0; x < inputs.length; x++) {
             var list = inputHolder[x] = new KeyCounter();
-            long remainingMultiplier = inputs[x].getMultiplier();
+            long remainingMultiplier = Math.multiplyExact(inputs[x].getMultiplier(), multiply);
             for (var template : getValidItemTemplates(sourceInv, inputs[x], level)) {
                 long extracted = extractTemplates(sourceInv, template, remainingMultiplier);
                 list.add(template.key(), extracted * template.amount());
@@ -92,7 +101,7 @@ public final class Ae2CompatMH {
         }
 
         for (var output : details.getOutputs()) {
-            expectedOutputs.add(output.what(), output.amount());
+            expectedOutputs.add(output.what(), Math.multiplyExact(output.amount(), multiply));
         }
 
         return inputHolder;
@@ -102,6 +111,14 @@ public final class Ae2CompatMH {
                                                          ICraftingInventory sourceInv,
                                                          Level level,
                                                          KeyCounter expectedOutputs) {
+        return extractPatternInputs4Args(details, sourceInv, level, expectedOutputs, 1);
+    }
+
+    public static KeyCounter[] extractPatternInputs4Args(IPatternDetails details,
+                                                         ICraftingInventory sourceInv,
+                                                         Level level,
+                                                         KeyCounter expectedOutputs,
+                                                         long multiply) {
         if (details instanceof AEProcessingPattern processingPattern) return AEUtils.extractForProcessingPattern(processingPattern, sourceInv, expectedOutputs);
         var inputs = details.getInputs();
         KeyCounter[] inputHolder = new KeyCounter[inputs.length];
@@ -109,8 +126,7 @@ public final class Ae2CompatMH {
 
         for (int x = 0; x < inputs.length; ++x) {
             KeyCounter list = inputHolder[x] = new KeyCounter();
-            long remainingMultiplier = inputs[x].getMultiplier();
-
+            long remainingMultiplier = Math.multiplyExact(inputs[x].getMultiplier(), multiply);
             for (InputTemplate template : getValidItemTemplates(sourceInv, inputs[x], level)) {
                 long extracted = extractTemplates(sourceInv, template, remainingMultiplier);
                 list.add(template.key(), extracted * template.amount());
@@ -137,7 +153,7 @@ public final class Ae2CompatMH {
             return null;
         } else {
             for (GenericStack output : details.getOutputs()) {
-                expectedOutputs.add(output.what(), output.amount());
+                expectedOutputs.add(output.what(), Math.multiplyExact(output.amount(), multiply));
             }
 
             return inputHolder;

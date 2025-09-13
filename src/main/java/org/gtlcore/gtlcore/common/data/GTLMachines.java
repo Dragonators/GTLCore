@@ -8,13 +8,11 @@ import org.gtlcore.gtlcore.common.machine.generator.LightningRodMachine;
 import org.gtlcore.gtlcore.common.machine.generator.MagicEnergyMachine;
 import org.gtlcore.gtlcore.common.machine.multiblock.electric.CoilWorkableElectricMultipleRecipesMultiblockMachine;
 import org.gtlcore.gtlcore.common.machine.multiblock.part.*;
-import org.gtlcore.gtlcore.common.machine.multiblock.part.ae.MEExtendedAsyncOutputPartMachine;
-import org.gtlcore.gtlcore.common.machine.multiblock.part.ae.MEExtendedOutputPartMachine;
-import org.gtlcore.gtlcore.common.machine.multiblock.part.ae.MEPatternBufferPartMachine;
-import org.gtlcore.gtlcore.common.machine.multiblock.part.ae.MEPatternBufferProxyPartMachine;
+import org.gtlcore.gtlcore.common.machine.multiblock.part.ae.*;
 import org.gtlcore.gtlcore.common.machine.multiblock.part.maintenance.*;
 
 import com.gregtechceu.gtceu.GTCEu;
+import com.gregtechceu.gtceu.api.GTCEuAPI;
 import com.gregtechceu.gtceu.api.GTValues;
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
 import com.gregtechceu.gtceu.api.data.RotationState;
@@ -709,7 +707,6 @@ public class GTLMachines {
                 .tier(5)
                 .rotationState(RotationState.ALL)
                 .abilities(PartAbility.IMPORT_ITEMS, PartAbility.IMPORT_FLUIDS)
-                .rotationState(RotationState.ALL)
                 .overlayTieredHullRenderer("me_mini_pattern_buffer")
                 .langValue("ME Mini Pattern Buffer")
                 .tooltips(Component.translatable("block.gtceu.pattern_buffer.desc.0"),
@@ -729,7 +726,6 @@ public class GTLMachines {
                 .tier(8)
                 .rotationState(RotationState.ALL)
                 .abilities(PartAbility.IMPORT_ITEMS, PartAbility.IMPORT_FLUIDS, PartAbility.EXPORT_ITEMS, PartAbility.EXPORT_FLUIDS)
-                .rotationState(RotationState.ALL)
                 .overlayTieredHullRenderer("me_pattern_buffer")
                 .langValue("ME Extend Pattern Buffer")
                 .tooltips(Component.translatable("block.gtceu.pattern_buffer.desc.0"),
@@ -749,7 +745,6 @@ public class GTLMachines {
                 .tier(10)
                 .rotationState(RotationState.ALL)
                 .abilities(PartAbility.IMPORT_ITEMS, PartAbility.IMPORT_FLUIDS, PartAbility.EXPORT_ITEMS, PartAbility.EXPORT_FLUIDS)
-                .rotationState(RotationState.ALL)
                 .overlayTieredHullRenderer("me_pattern_buffer")
                 .langValue("ME Final Pattern Buffer")
                 .tooltips(Component.literal("更大, 更强(?)").withStyle(ChatFormatting.GOLD),
@@ -770,7 +765,6 @@ public class GTLMachines {
                 .tier(8)
                 .rotationState(RotationState.ALL)
                 .abilities(PartAbility.IMPORT_ITEMS, PartAbility.IMPORT_FLUIDS, PartAbility.EXPORT_FLUIDS, PartAbility.EXPORT_ITEMS)
-                .rotationState(RotationState.ALL)
                 .overlayTieredHullRenderer("me_pattern_buffer_proxy")
                 .langValue("ME Pattern Buffer Proxy")
                 .tooltips(Component.translatable("block.gtceu.pattern_buffer_proxy.desc.0"),
@@ -786,7 +780,6 @@ public class GTLMachines {
                 .tier(9)
                 .rotationState(RotationState.ALL)
                 .abilities(PartAbility.EXPORT_FLUIDS, PartAbility.EXPORT_ITEMS)
-                .rotationState(RotationState.ALL)
                 .overlayTieredHullRenderer("me_extended_export_buffer")
                 .langValue("ME Extended Export Buffer")
                 .tooltips(Component.translatable("gtmthings.machine.me_export_buffer.tooltip"),
@@ -799,12 +792,50 @@ public class GTLMachines {
                 .tier(9)
                 .rotationState(RotationState.ALL)
                 .abilities(PartAbility.EXPORT_FLUIDS, PartAbility.EXPORT_ITEMS)
-                .rotationState(RotationState.ALL)
                 .overlayTieredHullRenderer("me_extended_export_buffer")
                 .langValue("ME Extended Async Export Buffer")
                 .tooltips(Component.translatable("gtmthings.machine.me_export_buffer.tooltip"),
                         Component.translatable("gtceu.machine.me_extended_async_export_buffer.tooltip.0"),
                         Component.translatable("gtceu.machine.me_extended_async_export_buffer.tooltip.1"))
+                .tooltipBuilder(GTL_ADD)
+                .register();
+
+        public static final MachineDefinition[] ME_CRAFT_SPEED_CORE = GTMachines.registerTieredMachines("me_craft_speed_core", MECraftSpeedCorePartMachine::new,
+                (tier, builder) -> builder
+                        .langValue(GTValues.VNF[tier] + "Speed Core")
+                        .rotationState(RotationState.ALL)
+                        .abilities(GTLPartAbility.MOLECULAR_ASSEMBLER_MATRIX)
+                        .workableCasingRenderer(GTCEu.id("block/casings/speed_core_casing"), GTCEu.id("block/casings/speed_core_casing"))
+                        .tooltipBuilder(GTL_ADD)
+                        .register(),
+                GTValues.tiersBetween(8, GTCEuAPI.isHighTier() ? 14 : 9));
+
+        public static final MachineDefinition[] ME_CRAFT_PARALLEL_CORE = GTMachines.registerTieredMachines("me_craft_parallel_core", MECraftParallelCorePartMachine::new,
+                (tier, builder) -> builder
+                        .langValue(GTValues.VNF[tier] + "Parallel Core")
+                        .rotationState(RotationState.ALL)
+                        .abilities(GTLPartAbility.MOLECULAR_ASSEMBLER_MATRIX)
+                        .workableCasingRenderer(GTCEu.id("block/casings/crafter_core_casing"), GTCEu.id("block/casings/crafter_core_casing"))
+                        .tooltipBuilder(GTL_ADD)
+                        .register(),
+                GTValues.tiersBetween(8, GTCEuAPI.isHighTier() ? 14 : 9));
+
+        public static final MachineDefinition[] ME_CRAFT_PATTERN_CONTAINER = GTMachines.registerTieredMachines("me_craft_pattern_container", MECraftPatternContainerPartMachine::new,
+                (tier, builder) -> builder
+                        .langValue(GTValues.VNF[tier] + "Pattern Container")
+                        .rotationState(RotationState.ALL)
+                        .abilities(GTLPartAbility.MOLECULAR_ASSEMBLER_MATRIX)
+                        .workableCasingRenderer(GTCEu.id("block/casings/pattern_core_casing"), GTCEu.id("block/casings/pattern_core_casing"))
+                        .tooltipBuilder(GTL_ADD)
+                        .register(),
+                GTValues.tiersBetween(8, GTCEuAPI.isHighTier() ? 14 : 9));
+
+        public static final MachineDefinition ME_MOLECULAR_ASSEMBLER_IO = REGISTRATE
+                .machine("me_molecular_assembler_io", MEMolecularAssemblerIOPartMachine::new)
+                .tier(8)
+                .rotationState(RotationState.ALL)
+                .overlayTieredHullRenderer("me_pattern_buffer")
+                .langValue("ME Molecular Assembler IO")
                 .tooltipBuilder(GTL_ADD)
                 .register();
 
