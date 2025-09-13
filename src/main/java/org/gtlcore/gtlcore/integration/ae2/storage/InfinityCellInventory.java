@@ -170,6 +170,7 @@ public class InfinityCellInventory implements StorageCell {
 
     @Override
     public void getAvailableStacks(KeyCounter out) {
+        this.getCellItems();
         out.addAll(lists);
     }
 
