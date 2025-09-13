@@ -688,6 +688,12 @@ public class GTLRecipeTypes {
             .setProgressBar(GuiTextures.PROGRESS_BAR_ARROW, LEFT_TO_RIGHT)
             .setSound(GTSoundEntries.MIXER);
 
+    public static final GTRecipeType MOLECULAR_ASSEMBLER = register("molecular_assembler", MULTIBLOCK)
+            .setMaxIOSize(3, 12, 1, 1)
+            .setMaxTooltips(1)
+            .setProgressBar(GuiTextures.PROGRESS_BAR_MACERATE, LEFT_TO_RIGHT)
+            .setSound(GTSoundEntries.SCIENCE);
+
     public static void init() {
         RecipeModify.init();
     }

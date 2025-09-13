@@ -109,6 +109,11 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
             patternInventory.onContentsChanged(slotIndex);
             onPatternChange(slotIndex);
         }
+
+        @Override
+        public boolean isItemValid(int slot, ItemStack stack) {
+            return slot <= maxPatternCount && stack.getItem() instanceof ProcessingPatternItem;
+        }
     };
 
     // ========================================

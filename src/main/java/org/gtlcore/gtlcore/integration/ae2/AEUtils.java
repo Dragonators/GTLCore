@@ -41,7 +41,7 @@ public class AEUtils {
     private static final int BATCH_SIZE = 64;
     private static final int MAX_FAILED_ATTEMPTS = 5;
 
-    public static boolean reFunds(Object2LongMap<AEKey> buffer, @Nullable IGrid network, IActionSource actionSource) {
+    public static <T extends AEKey> boolean reFunds(Object2LongMap<T> buffer, @Nullable IGrid network, IActionSource actionSource) {
         if (buffer.isEmpty()) return false;
 
         if (network == null) return false;
@@ -86,7 +86,7 @@ public class AEUtils {
     // Persist
     // ========================================
 
-    public static <T extends AEKey> ListTag createListTag(Function<T, CompoundTag> keySerializer, Object2LongMap<T> map) {
+    public static <T> ListTag createListTag(Function<T, CompoundTag> keySerializer, Object2LongMap<T> map) {
         ListTag tag = new ListTag();
         for (var it = Object2LongMaps.fastIterator(map); it.hasNext();) {
             var entry = it.next();
@@ -108,7 +108,7 @@ public class AEUtils {
         }
     }
 
-    public static <T extends AEKey> ListTag createListTag(Function<T, CompoundTag> keySerializer, ObjectSet<T> map) {
+    public static <T> ListTag createListTag(Function<T, CompoundTag> keySerializer, ObjectSet<T> map) {
         ListTag tag = new ListTag();
         for (T t : map) {
             var ct = keySerializer.apply(t);
