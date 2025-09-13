@@ -199,8 +199,15 @@ public class InfinityCellInventory implements StorageCell {
         }
 
         if (corruptedTag) {
-            this.isPersisted = false;
+            this.saveChanges(0);
         }
+    }
+
+    protected void saveChanges(double incur) {
+        this.storedItemCount += incur;
+
+        this.isPersisted = false;
+        this.persist();
     }
 
     private StorageManager getStorageInstance() {
@@ -230,8 +237,7 @@ public class InfinityCellInventory implements StorageCell {
             BigInteger finalAmount = BigInteger.valueOf(amount);
             getCellItems().compute(what, (k, v) -> v == null ? finalAmount : v.add(finalAmount));
             lists.add(what, amount);
-            this.storedItemCount += amount;
-            this.isPersisted = false;
+            this.saveChanges(amount);
         }
 
         return amount;
@@ -248,8 +254,7 @@ public class InfinityCellInventory implements StorageCell {
                 if (mode == Actionable.MODULATE) {
                     this.storedMap.remove(what);
                     lists.remove(what);
-                    this.storedItemCount -= amount;
-                    this.isPersisted = false;
+                    this.saveChanges(-amount);
                 }
                 return currentAmount.longValue();
             } else {
@@ -257,8 +262,7 @@ public class InfinityCellInventory implements StorageCell {
                     var sub = currentAmount.subtract(extractAmount);
                     this.storedMap.put(what, sub);
                     lists.remove(what, amount);
-                    this.storedItemCount -= amount;
-                    this.isPersisted = false;
+                    this.saveChanges(-amount);
                 }
                 return amount;
             }

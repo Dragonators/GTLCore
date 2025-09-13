@@ -1,14 +1,19 @@
 package org.gtlcore.gtlcore.mixin.gtm.api.machine;
 
-import com.gregtechceu.gtceu.api.capability.recipe.IO;
-import com.gregtechceu.gtceu.api.data.worldgen.bedrockfluid.BedrockFluidVeinSavedData;
+import org.gtlcore.gtlcore.api.recipe.RecipeRunnerHelper;
+
+import com.gregtechceu.gtceu.api.GTValues;
+import com.gregtechceu.gtceu.api.data.worldgen.bedrockfluid.*;
 import com.gregtechceu.gtceu.api.machine.feature.IRecipeLogicMachine;
 import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
+import com.gregtechceu.gtceu.common.machine.multiblock.electric.FluidDrillMachine;
 import com.gregtechceu.gtceu.common.machine.trait.FluidDrillLogic;
+import com.gregtechceu.gtceu.data.recipe.builder.GTRecipeBuilder;
+
+import com.lowdragmc.lowdraglib.side.fluid.FluidStack;
 
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.Fluid;
 
 import org.jetbrains.annotations.Nullable;
@@ -29,7 +34,10 @@ public abstract class FluidDrillLogicMixin extends RecipeLogic {
     protected abstract int getChunkZ();
 
     @Shadow(remap = false)
-    protected abstract @Nullable GTRecipe getFluidDrillRecipe();
+    public abstract FluidDrillMachine getMachine();
+
+    @Shadow(remap = false)
+    protected abstract long getFluidToProduce(FluidVeinWorldEntry entry);
 
     @Shadow(remap = false)
     protected abstract void depleteVein();
@@ -44,10 +52,9 @@ public abstract class FluidDrillLogicMixin extends RecipeLogic {
      */
     @Overwrite(remap = false)
     public void findAndHandleRecipe() {
-        Level var2 = this.getMachine().getLevel();
-        if (var2 instanceof ServerLevel serverLevel) {
+        if (this.getMachine().getLevel() instanceof ServerLevel serverLevel) {
             this.lastRecipe = null;
-            BedrockFluidVeinSavedData data = BedrockFluidVeinSavedData.getOrCreate(serverLevel);
+            var data = BedrockFluidVeinSavedData.getOrCreate(serverLevel);
             if (this.veinFluid == null) {
                 this.veinFluid = data.getFluidInChunk(this.getChunkX(), this.getChunkZ());
                 if (this.veinFluid == null) {
@@ -70,11 +77,31 @@ public abstract class FluidDrillLogicMixin extends RecipeLogic {
      * @reason .
      */
     @Overwrite(remap = false)
+    private @Nullable GTRecipe getFluidDrillRecipe() {
+        if (getMachine().getLevel() instanceof ServerLevel serverLevel && veinFluid != null) {
+            var data = BedrockFluidVeinSavedData.getOrCreate(serverLevel);
+            var recipe = GTRecipeBuilder.ofRaw()
+                    .duration(20)
+                    .EUt(GTValues.VA[getMachine().getEnergyTier()])
+                    .outputFluids(FluidStack.create(this.veinFluid,
+                            this.getFluidToProduce(data.getFluidVeinWorldEntry(this.getChunkX(), this.getChunkZ()))))
+                    .buildRawRecipe();
+            if (RecipeRunnerHelper.matchRecipe(getMachine(), recipe) && recipe.matchTickRecipe(this.getMachine()).isSuccess()) {
+                return recipe;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * @author .
+     * @reason .
+     */
+    @Overwrite(remap = false)
     public void onRecipeFinish() {
         this.machine.afterWorking();
         if (this.lastRecipe != null) {
-            this.lastRecipe.postWorking(this.machine);
-            this.lastRecipe.handleRecipeIO(IO.OUT, this.machine, this.chanceCaches);
+            RecipeRunnerHelper.handleRecipeOutput(this.machine, this.lastRecipe);
         }
         this.depleteVein();
         GTRecipe match = this.getFluidDrillRecipe();
