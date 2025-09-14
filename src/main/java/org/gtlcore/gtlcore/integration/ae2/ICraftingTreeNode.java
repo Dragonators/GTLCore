@@ -1,0 +1,15 @@
+package org.gtlcore.gtlcore.integration.ae2;
+
+import appeng.api.stacks.KeyCounter;
+import appeng.crafting.CraftBranchFailure;
+import appeng.crafting.inv.CraftingSimulationState;
+import org.jetbrains.annotations.Nullable;
+
+public interface ICraftingTreeNode {
+
+    void fastRequest(CraftingSimulationState inv, long requestedAmount,
+                     @Nullable KeyCounter containerItems) throws CraftBranchFailure, InterruptedException;
+
+    void legacyRequest(CraftingSimulationState inv, long requestedAmount,
+                       @Nullable KeyCounter containerItems) throws CraftBranchFailure, InterruptedException;
+}

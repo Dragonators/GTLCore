@@ -8,6 +8,7 @@ import com.gregtechceu.gtceu.api.recipe.chance.logic.ChanceLogic;
 import com.gregtechceu.gtceu.api.recipe.content.Content;
 import com.gregtechceu.gtceu.data.recipe.builder.GTRecipeBuilder;
 
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.crafting.Ingredient;
 
 import appeng.api.stacks.AEItemKey;
@@ -45,18 +46,23 @@ public class MECraftHandler extends NotifiableMAHandlerTrait {
         long remain = parallelAmount;
         for (var it = Object2LongMaps.fastIterator(getMachine().getOutputItems()); it.hasNext() && remain > 0;) {
             var entry = it.next();
-            var item = entry.getKey();
-            var count = entry.getLongValue();
+            var key = entry.getKey();
+            if (!(key.what() instanceof AEItemKey aeItemKey)) {
+                it.remove();
+                continue;
+            }
+            Item item = aeItemKey.getItem();
+            long multiply = entry.getLongValue();
 
-            long extract = Math.min(count, remain);
+            long extract = Math.min(multiply, remain);
 
-            var cont = new Content(LongIngredient.create(Ingredient.of(item), extract), ChanceLogic.getMaxChancedValue(), ChanceLogic.getMaxChancedValue(), 0, null, null);
+            var cont = new Content(LongIngredient.create(Ingredient.of(item), extract * key.amount()), ChanceLogic.getMaxChancedValue(), ChanceLogic.getMaxChancedValue(), 0, null, null);
             outputList.add(cont);
 
             remain -= extract;
-            count -= extract;
-            if (count == 0) it.remove();
-            else entry.setValue(count);
+            multiply -= extract;
+            if (multiply == 0) it.remove();
+            else entry.setValue(multiply);
         }
         if (outputList.isEmpty()) return null;
         else {

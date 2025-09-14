@@ -12,7 +12,6 @@ import com.gregtechceu.gtceu.api.machine.MultiblockMachineDefinition;
 import com.gregtechceu.gtceu.api.machine.TickableSubscription;
 import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMultiController;
 import com.gregtechceu.gtceu.integration.ae2.gui.widget.AETextInputButtonWidget;
-import com.gregtechceu.gtceu.utils.ItemStackHashStrategy;
 
 import com.lowdragmc.lowdraglib.gui.widget.LabelWidget;
 import com.lowdragmc.lowdraglib.gui.widget.Widget;
@@ -44,8 +43,8 @@ import appeng.api.networking.ticking.TickingRequest;
 import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.GenericStack;
 import appeng.api.stacks.KeyCounter;
-import appeng.crafting.pattern.AECraftingPattern;
-import appeng.crafting.pattern.CraftingPatternItem;
+import appeng.blockentity.crafting.IMolecularAssemblerSupportedPattern;
+import appeng.crafting.pattern.EncodedPatternItem;
 import appeng.helpers.patternprovider.PatternContainer;
 import it.unimi.dsi.fastutil.ints.Int2ReferenceMap;
 import it.unimi.dsi.fastutil.ints.Int2ReferenceOpenHashMap;
@@ -88,18 +87,7 @@ public class MEMolecularAssemblerIOPartMachine extends MEIOPartMachine implement
 
         @Override
         public boolean isItemValid(int slot, ItemStack stack) {
-            return slot <= mutableItemTransferList.getSlots() && filter(stack);
-        }
-
-        // Only allow CraftingPattern and cant substitute
-        private boolean filter(ItemStack itemStack) {
-            if (itemStack.getItem() instanceof CraftingPatternItem craftingPatternItem) {
-                var pattern = craftingPatternItem.decode(itemStack, getLevel(), false);
-                if (pattern != null) {
-                    return !pattern.canSubstitute();
-                }
-            }
-            return false;
+            return slot <= mutableItemTransferList.getSlots() && AEUtils.molecularFilter(stack, getLevel());
         }
     };
 
@@ -134,7 +122,7 @@ public class MEMolecularAssemblerIOPartMachine extends MEIOPartMachine implement
     private final Int2ReferenceMap<@NotNull IPatternDetails> patternSlotMap;
 
     @Getter
-    private final Object2LongLinkedOpenCustomHashMap<ItemStack> outputItems;  // must 1 count
+    private final Object2LongLinkedOpenHashMap<GenericStack> outputItems;  // must 1 count
 
     @Getter
     private final Object2LongOpenHashMap<AEItemKey> buffer;
@@ -144,7 +132,7 @@ public class MEMolecularAssemblerIOPartMachine extends MEIOPartMachine implement
         getMainNode().addService(IGridTickable.class, new Ticker()).addService(ICraftingProvider.class, this);
 
         patternSlotMap = new Int2ReferenceOpenHashMap<>();
-        outputItems = new Object2LongLinkedOpenCustomHashMap<>(ItemStackHashStrategy.comparingAllButCount());
+        outputItems = new Object2LongLinkedOpenHashMap<>();
         buffer = new Object2LongOpenHashMap<>();
         maHandler = new MECraftHandler(this);
 
@@ -153,14 +141,13 @@ public class MEMolecularAssemblerIOPartMachine extends MEIOPartMachine implement
 
     @Override
     public boolean pushPattern(IPatternDetails details, long multiply) {
-        if (!getMainNode().isActive() || !(details instanceof AECraftingPattern craftingPattern)) {
+        if (!getMainNode().isActive() || !(details instanceof IMolecularAssemblerSupportedPattern molecularAssemblerSupportedPattern)) {
             return false;
         }
 
-        final GenericStack output = craftingPattern.getOutputs()[0];
-        final long count = output.amount() * multiply;
-        if (!(output.what() instanceof AEItemKey key)) return false;
-        outputItems.addTo(key.toStack(1), count);
+        final GenericStack output = molecularAssemblerSupportedPattern.getOutputs()[0];
+        if (!(output.what() instanceof AEItemKey)) return false;
+        outputItems.addTo(output, multiply);
         maHandler.notifyListeners();
 
         return true;
@@ -201,8 +188,8 @@ public class MEMolecularAssemblerIOPartMachine extends MEIOPartMachine implement
 
     private @Nullable IPatternDetails getPatternDetails(ItemStack stack) {
         if (!stack.isEmpty()) {
-            if (stack.getItem() instanceof CraftingPatternItem craftingPatternItem) {
-                return craftingPatternItem.decode(stack, getLevel(), false);
+            if (stack.getItem() instanceof EncodedPatternItem encodedPatternItem) {
+                return encodedPatternItem.decode(stack, getLevel(), false);
             }
         }
         return null;
@@ -316,7 +303,7 @@ public class MEMolecularAssemblerIOPartMachine extends MEIOPartMachine implement
         ListTag bufferTag = AEUtils.createListTag(AEItemKey::toTag, buffer);
         if (!bufferTag.isEmpty()) tag.put("buffer", bufferTag);
 
-        ListTag outputTag = AEUtils.createListTag(itemStack -> itemStack.save(new CompoundTag()), outputItems);
+        ListTag outputTag = AEUtils.createListTag(GenericStack::writeTag, outputItems);
         if (!outputTag.isEmpty()) tag.put("outputItems", outputTag);
     }
 
@@ -328,7 +315,7 @@ public class MEMolecularAssemblerIOPartMachine extends MEIOPartMachine implement
         AEUtils.loadInventory(bufferTag, AEItemKey::fromTag, buffer);
 
         ListTag outputTag = tag.getList("outputItems", Tag.TAG_COMPOUND);
-        AEUtils.loadInventory(outputTag, ItemStack::of, outputItems);
+        AEUtils.loadInventory(outputTag, GenericStack::readTag, outputItems);
     }
 
     // ========================================

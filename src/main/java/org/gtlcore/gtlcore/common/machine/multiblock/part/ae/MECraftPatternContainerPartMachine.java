@@ -1,6 +1,7 @@
 package org.gtlcore.gtlcore.common.machine.multiblock.part.ae;
 
 import org.gtlcore.gtlcore.api.machine.trait.AECraft.IMECraftPatternContainer;
+import org.gtlcore.gtlcore.integration.ae2.AEUtils;
 import org.gtlcore.gtlcore.integration.ae2.widget.AEPatternViewExtendSlotWidget;
 
 import com.gregtechceu.gtceu.api.gui.GuiTextures;
@@ -22,7 +23,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.BlockHitResult;
 
-import appeng.crafting.pattern.CraftingPatternItem;
 import appeng.crafting.pattern.EncodedPatternItem;
 import org.jetbrains.annotations.NotNull;
 
@@ -42,8 +42,8 @@ public class MECraftPatternContainerPartMachine extends TieredPartMachine implem
 
     public MECraftPatternContainerPartMachine(IMachineBlockEntity holder, int tier) {
         super(holder, tier);
-        patternInventory = new ItemStackTransfer(tier * PATTERNS_PER_ROW);
-        patternInventory.setFilter(this::filter);
+        patternInventory = new ItemStackTransfer((tier - 5) * 3 * PATTERNS_PER_ROW);
+        patternInventory.setFilter(itemStack -> AEUtils.molecularFilter(itemStack, getLevel()));
     }
 
     @Override
@@ -70,17 +70,6 @@ public class MECraftPatternContainerPartMachine extends TieredPartMachine implem
     public void addedToController(@NotNull IMultiController controller) {
         super.addedToController(controller);
         shouldOpen = false;
-    }
-
-    // Only allow CraftingPattern and cant substitute
-    private boolean filter(ItemStack itemStack) {
-        if (itemStack.getItem() instanceof CraftingPatternItem craftingPatternItem) {
-            var pattern = craftingPatternItem.decode(itemStack, getLevel(), false);
-            if (pattern != null) {
-                return !pattern.canSubstitute();
-            }
-        }
-        return false;
     }
 
     @Override
@@ -113,5 +102,10 @@ public class MECraftPatternContainerPartMachine extends TieredPartMachine implem
     @Override
     public boolean shouldOpenUI(Player player, InteractionHand hand, BlockHitResult hit) {
         return shouldOpen;
+    }
+
+    @Override
+    public boolean canShared() {
+        return false;
     }
 }

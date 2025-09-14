@@ -30,6 +30,7 @@ import net.minecraft.world.level.block.state.BlockState;
 
 import com.google.common.collect.ImmutableTable;
 import com.google.common.collect.Table;
+import com.google.common.primitives.Ints;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import it.unimi.dsi.fastutil.longs.LongSets;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
@@ -145,7 +146,7 @@ public abstract class MolecularAssemblerMultiblockMachineBase extends Multiblock
         final var patternInventories = new ObjectArrayList<IItemTransfer>();
         int speedTier = 0;
         int totalSlots = 0;
-        int totalParallel = 0;
+        long totalParallel = 0;
         IMECraftIOPart meCraftIOPart = null;
 
         for (IMultiPart part : this.getParts()) {
@@ -154,6 +155,7 @@ public abstract class MolecularAssemblerMultiblockMachineBase extends Multiblock
                 totalSlots += craftPatternContainer.getItemTransfer().getSlots();
             } else if (part instanceof IMECraftParallelCore parallelCore) {
                 totalParallel += parallelCore.getParallel();
+
             } else if (part instanceof IMECraftSpeedCore speedCore) {
                 speedTier += speedCore.getSpeedTier();
             } else if (part instanceof IMECraftIOPart ioPart) {
@@ -170,7 +172,7 @@ public abstract class MolecularAssemblerMultiblockMachineBase extends Multiblock
 
         this.patternSize = totalSlots;
         this.tickDuration = speedTier <= 39 ? 40 - speedTier : 1;
-        this.maxParallel = totalParallel;
+        this.maxParallel = Ints.saturatedCast(totalParallel);
         meCraftIOPart.init(patternInventories);
 
         var handlerTrait = meCraftIOPart.getNotifiableMAHandlerTrait();

@@ -35,7 +35,7 @@
     "ae2.crafting.CraftingCalculationMixin",
     "ae2.crafting.CraftingCpuHelperMixin",
     "ae2.crafting.CraftingTreeNodeMixin",
-    "ae2.crafting.CraftingTreeProcessAccessor",
+    "ae2.crafting.CraftingTreeProcessMixin",
     "ae2.crafting.inv.ListCraftingInventoryMixin",
     "ae2.gui.PatternEncodingTermMenuMixin",
     "ae2.gui.ProcessingEncodingPanelMixin",

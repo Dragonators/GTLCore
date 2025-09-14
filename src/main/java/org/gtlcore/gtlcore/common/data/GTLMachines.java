@@ -12,7 +12,6 @@ import org.gtlcore.gtlcore.common.machine.multiblock.part.ae.*;
 import org.gtlcore.gtlcore.common.machine.multiblock.part.maintenance.*;
 
 import com.gregtechceu.gtceu.GTCEu;
-import com.gregtechceu.gtceu.api.GTCEuAPI;
 import com.gregtechceu.gtceu.api.GTValues;
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
 import com.gregtechceu.gtceu.api.data.RotationState;
@@ -28,10 +27,7 @@ import com.gregtechceu.gtceu.client.renderer.machine.MaintenanceHatchPartRendere
 import com.gregtechceu.gtceu.client.renderer.machine.OverlayTieredMachineRenderer;
 import com.gregtechceu.gtceu.client.renderer.machine.SimpleGeneratorMachineRenderer;
 import com.gregtechceu.gtceu.client.util.TooltipHelper;
-import com.gregtechceu.gtceu.common.data.GTCompassSections;
-import com.gregtechceu.gtceu.common.data.GTCreativeModeTabs;
-import com.gregtechceu.gtceu.common.data.GTMachines;
-import com.gregtechceu.gtceu.common.data.GTRecipeTypes;
+import com.gregtechceu.gtceu.common.data.*;
 import com.gregtechceu.gtceu.common.registry.GTRegistration;
 import com.gregtechceu.gtceu.integration.ae2.machine.MEInputBusPartMachine;
 import com.gregtechceu.gtceu.integration.ae2.machine.MEInputHatchPartMachine;
@@ -799,26 +795,25 @@ public class GTLMachines {
                         Component.translatable("gtceu.machine.me_extended_async_export_buffer.tooltip.1"))
                 .tooltipBuilder(GTL_ADD)
                 .register();
+        public static final MachineDefinition ME_CRAFT_SPEED_CORE = REGISTRATE
+                .machine("me_craft_speed_core", MECraftSpeedCorePartMachine::new)
+                .rotationState(RotationState.ALL)
+                .abilities(GTLPartAbility.MOLECULAR_ASSEMBLER_MATRIX)
+                .workableCasingRenderer(GTCEu.id("block/casings/speed_core_casing"), GTCEu.id("block/casings/speed_core_casing"))
+                .langValue("ME CRAFT Speed Core")
+                .tooltips(Component.translatable("gtceu.machine.me_craft_speed_core.tooltip.0"))
+                .tooltipBuilder(GTL_ADD)
+                .register();
 
-        public static final MachineDefinition[] ME_CRAFT_SPEED_CORE = GTMachines.registerTieredMachines("me_craft_speed_core", MECraftSpeedCorePartMachine::new,
-                (tier, builder) -> builder
-                        .langValue(GTValues.VNF[tier] + "Speed Core")
-                        .rotationState(RotationState.ALL)
-                        .abilities(GTLPartAbility.MOLECULAR_ASSEMBLER_MATRIX)
-                        .workableCasingRenderer(GTCEu.id("block/casings/speed_core_casing"), GTCEu.id("block/casings/speed_core_casing"))
-                        .tooltipBuilder(GTL_ADD)
-                        .register(),
-                GTValues.tiersBetween(8, GTCEuAPI.isHighTier() ? 14 : 9));
-
-        public static final MachineDefinition[] ME_CRAFT_PARALLEL_CORE = GTMachines.registerTieredMachines("me_craft_parallel_core", MECraftParallelCorePartMachine::new,
-                (tier, builder) -> builder
-                        .langValue(GTValues.VNF[tier] + "Parallel Core")
-                        .rotationState(RotationState.ALL)
-                        .abilities(GTLPartAbility.MOLECULAR_ASSEMBLER_MATRIX)
-                        .workableCasingRenderer(GTCEu.id("block/casings/crafter_core_casing"), GTCEu.id("block/casings/crafter_core_casing"))
-                        .tooltipBuilder(GTL_ADD)
-                        .register(),
-                GTValues.tiersBetween(8, GTCEuAPI.isHighTier() ? 14 : 9));
+        public static final MachineDefinition ME_CRAFT_PARALLEL_CORE = REGISTRATE
+                .machine("me_craft_parallel_core", MECraftParallelCorePartMachine::new)
+                .rotationState(RotationState.ALL)
+                .abilities(GTLPartAbility.MOLECULAR_ASSEMBLER_MATRIX)
+                .workableCasingRenderer(GTCEu.id("block/casings/crafter_core_casing"), GTCEu.id("block/casings/crafter_core_casing"))
+                .langValue("ME CRAFT Parallel Core")
+                .tooltips(Component.translatable("gtceu.machine.me_craft_parallel_core.tooltip.0"))
+                .tooltipBuilder(GTL_ADD)
+                .register();
 
         public static final MachineDefinition[] ME_CRAFT_PATTERN_CONTAINER = GTMachines.registerTieredMachines("me_craft_pattern_container", MECraftPatternContainerPartMachine::new,
                 (tier, builder) -> builder
@@ -826,9 +821,10 @@ public class GTLMachines {
                         .rotationState(RotationState.ALL)
                         .abilities(GTLPartAbility.MOLECULAR_ASSEMBLER_MATRIX)
                         .workableCasingRenderer(GTCEu.id("block/casings/pattern_core_casing"), GTCEu.id("block/casings/pattern_core_casing"))
+                        .tooltips(Component.translatable("gtceu.machine.me_craft_pattern_core.tooltip", Component.literal(FormattingUtil.formatNumbers((tier - 5) * 3 * 9)).withStyle(ChatFormatting.GOLD)))
                         .tooltipBuilder(GTL_ADD)
                         .register(),
-                GTValues.tiersBetween(8, GTCEuAPI.isHighTier() ? 14 : 9));
+                GTValues.tiersBetween(8, 12));
 
         public static final MachineDefinition ME_MOLECULAR_ASSEMBLER_IO = REGISTRATE
                 .machine("me_molecular_assembler_io", MEMolecularAssemblerIOPartMachine::new)
@@ -836,6 +832,7 @@ public class GTLMachines {
                 .rotationState(RotationState.ALL)
                 .overlayTieredHullRenderer("me_pattern_buffer")
                 .langValue("ME Molecular Assembler IO")
+                .tooltips(Component.translatable("gtceu.machine.me_molecular_assembler_io.tooltip"))
                 .tooltipBuilder(GTL_ADD)
                 .register();
 
