@@ -112,7 +112,7 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
 
         @Override
         public boolean isItemValid(int slot, ItemStack stack) {
-            return slot <= maxPatternCount && stack.getItem() instanceof ProcessingPatternItem;
+            return slot <= maxPatternCount && AEUtils.PROCESS_FILTER.apply(stack);
         }
     };
 
@@ -210,7 +210,7 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
 
         // Initialize inventories
         this.patternInventory = new ItemStackTransfer(maxPatternCount);
-        this.patternInventory.setFilter(stack -> stack.getItem() instanceof ProcessingPatternItem);
+        this.patternInventory.setFilter(AEUtils.PROCESS_FILTER);
         Arrays.setAll(internalInventory, InternalSlot::new);
         Arrays.setAll(catalystItems, i -> {
             var transfer = new ItemStackTransfer(9);

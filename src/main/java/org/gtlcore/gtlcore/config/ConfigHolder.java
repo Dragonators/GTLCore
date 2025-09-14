@@ -72,6 +72,10 @@ public class ConfigHolder {
     public int ae2StorageServiceUpdateInterval = 8;
 
     @Configurable
+    @Configurable.Comment("可能会导致极端情况下合成计算失败")
+    public boolean enableAE2FastCalculation = true;
+
+    @Configurable
     public String[] mobList1 = new String[] { "chicken", "rabbit", "sheep", "cow", "horse", "pig", "donkey", "skeleton_horse", "iron_golem", "wolf", "goat", "parrot", "camel", "cat", "fox", "llama", "panda", "polar_bear" };
     @Configurable
     public String[] mobList2 = new String[] { "ghast", "zombie", "pillager", "zombie_villager", "skeleton", "drowned", "witch", "spider", "creeper", "husk", "wither_skeleton", "blaze", "zombified_piglin", "slime", "vindicator", "enderman" };

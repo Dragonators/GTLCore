@@ -1,14 +1,24 @@
 package org.gtlcore.gtlcore.mixin.ae2.crafting;
 
+import org.gtlcore.gtlcore.integration.ae2.AEUtils;
+import org.gtlcore.gtlcore.integration.ae2.ICraftingCalculation;
+import org.gtlcore.gtlcore.integration.ae2.ICraftingTreeNode;
+
 import appeng.api.networking.crafting.ICraftingPlan;
+import appeng.api.stacks.KeyCounter;
 import appeng.core.AELog;
+import appeng.crafting.CraftBranchFailure;
 import appeng.crafting.CraftingCalculation;
+import appeng.crafting.CraftingTreeNode;
+import appeng.crafting.inv.CraftingSimulationState;
 import org.spongepowered.asm.mixin.*;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Redirect;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Mixin(CraftingCalculation.class)
-public abstract class CraftingCalculationMixin {
+public abstract class CraftingCalculationMixin implements ICraftingCalculation {
 
     @Unique
     private final AtomicBoolean gTLCore$done = new AtomicBoolean(false);
@@ -67,6 +77,24 @@ public abstract class CraftingCalculationMixin {
     public void handlePausing() throws InterruptedException {
         if (Thread.interrupted()) {
             throw new InterruptedException();
+        }
+    }
+
+    @Redirect(
+              method = "runCraftAttempt",
+              at = @At(
+                       value = "INVOKE",
+                       target = "Lappeng/crafting/CraftingTreeNode;request(Lappeng/crafting/inv/CraftingSimulationState;JLappeng/api/stacks/KeyCounter;)V"),
+              remap = false)
+    private void redirectTreeRequest(
+                                     CraftingTreeNode tree,
+                                     CraftingSimulationState craftingInventory,
+                                     long amount,
+                                     KeyCounter containerItems) throws CraftBranchFailure, InterruptedException {
+        if (AEUtils.USE_FAST_CALCULATION) {
+            ((ICraftingTreeNode) tree).fastRequest(craftingInventory, amount, containerItems);
+        } else {
+            ((ICraftingTreeNode) tree).legacyRequest(craftingInventory, amount, containerItems);
         }
     }
 }

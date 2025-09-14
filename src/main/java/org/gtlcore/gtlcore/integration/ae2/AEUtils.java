@@ -3,6 +3,7 @@ package org.gtlcore.gtlcore.integration.ae2;
 import org.gtlcore.gtlcore.api.recipe.ingredient.CacheHashStrategies;
 import org.gtlcore.gtlcore.api.recipe.ingredient.LongIngredient;
 import org.gtlcore.gtlcore.common.machine.multiblock.part.ae.MEPatternBufferPartMachine;
+import org.gtlcore.gtlcore.config.ConfigHolder;
 
 import com.gregtechceu.gtceu.api.recipe.ingredient.FluidIngredient;
 import com.gregtechceu.gtceu.common.data.GTItems;
@@ -10,7 +11,9 @@ import com.gregtechceu.gtceu.common.item.IntCircuitBehaviour;
 
 import net.minecraft.nbt.*;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.Fluid;
 
 import appeng.api.config.Actionable;
@@ -23,14 +26,13 @@ import appeng.api.stacks.KeyCounter;
 import appeng.api.storage.MEStorage;
 import appeng.api.storage.StorageHelper;
 import appeng.crafting.inv.ICraftingInventory;
-import appeng.crafting.pattern.AEProcessingPattern;
+import appeng.crafting.pattern.*;
 import it.unimi.dsi.fastutil.objects.*;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -128,7 +130,7 @@ public class AEUtils {
     }
 
     // ========================================
-    // ME Pattern Buffer Utils
+    // ME IO Machine Utils
     // ========================================
 
     public static Pair<Object2LongOpenHashMap<Item>, Object2LongOpenHashMap<Fluid>> mergeInternalSlot(MEPatternBufferPartMachine.InternalSlot[] internalSlots) {
@@ -185,9 +187,45 @@ public class AEUtils {
         return result;
     }
 
+    public static Function<ItemStack, Boolean> PROCESS_FILTER = stack -> stack.getItem() instanceof ProcessingPatternItem;
+
+    public static boolean molecularFilter(ItemStack stack, Level level) {
+        final var item = stack.getItem();
+        if (item instanceof CraftingPatternItem craftingPatternItem) {
+            var pattern = craftingPatternItem.decode(stack, level, false);
+            if (pattern != null) {
+                return !hasContainerItems(pattern) && !pattern.canSubstitute();
+            }
+        } else {
+            return item instanceof SmithingTablePatternItem || item instanceof StonecuttingPatternItem;
+        }
+        return false;
+    }
+
+    private static boolean hasContainerItems(AECraftingPattern pattern) {
+        IPatternDetails.IInput[] inputs = pattern.getInputs();
+
+        for (IPatternDetails.IInput input : inputs) {
+            GenericStack[] possibleInputs = input.getPossibleInputs();
+
+            for (GenericStack possibleInput : possibleInputs) {
+                AEKey key = possibleInput.what();
+
+                AEKey remainingKey = input.getRemainingKey(key);
+                if (remainingKey != null) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     // ========================================
     // ME Processing Pattern Multiply
     // ========================================
+
+    public static final boolean USE_FAST_CALCULATION = ConfigHolder.INSTANCE.enableAE2FastCalculation;
 
     public static void pushInputsToMEPatternBufferInventory(KeyCounter[] inputHolder, IPatternDetails.PatternInputSink inputSink) {
         for (var inputList : inputHolder) {
