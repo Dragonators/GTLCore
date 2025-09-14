@@ -23,6 +23,7 @@ import java.util.UUID;
 
 public class InfinityCellInventory implements StorageCell {
 
+    private final ISaveProvider container;
     private final AEKeyType keyType;
     private double storedItemCount;
     private Object2ObjectOpenHashMap<AEKey, BigInteger> storedMap;
@@ -30,8 +31,9 @@ public class InfinityCellInventory implements StorageCell {
     private boolean isPersisted = true;
     private final KeyCounter lists = new KeyCounter();
 
-    public InfinityCellInventory(AEKeyType keyType, ItemStack stack) {
+    public InfinityCellInventory(AEKeyType keyType, ItemStack stack, ISaveProvider saveProvider) {
         this.stack = stack;
+        this.container = saveProvider;
         this.keyType = keyType;
         this.storedMap = null;
         initData();
@@ -112,14 +114,14 @@ public class InfinityCellInventory implements StorageCell {
         return null;
     }
 
-    public static InfinityCellInventory createInventory(ItemStack stack) {
+    public static InfinityCellInventory createInventory(ItemStack stack, ISaveProvider saveProvider) {
         Objects.requireNonNull(stack, "Cannot create cell inventory for null itemstack");
 
         if (!(stack.getItem() instanceof InfinityCell cellType)) {
             return null;
         }
 
-        return new InfinityCellInventory(cellType.getKeyType(), stack);
+        return new InfinityCellInventory(cellType.getKeyType(), stack, saveProvider);
     }
 
     public boolean hasDiskUUID() {
@@ -208,7 +210,8 @@ public class InfinityCellInventory implements StorageCell {
         this.storedItemCount += incur;
 
         this.isPersisted = false;
-        this.persist();
+        if (this.container != null) this.container.saveChanges();
+        else this.persist();
     }
 
     private StorageManager getStorageInstance() {
@@ -222,7 +225,7 @@ public class InfinityCellInventory implements StorageCell {
         }
 
         if (what instanceof AEItemKey itemKey && this.isStorageCell(itemKey)) {
-            var meInventory = createInventory(itemKey.toStack());
+            var meInventory = createInventory(itemKey.toStack(), null);
             if (!isCellEmpty(meInventory)) {
                 return 0;
             }
