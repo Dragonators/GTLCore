@@ -94,8 +94,9 @@ public class RecipeRunner {
         // Cache collections to avoid repeated method calls
         var recipeHandleParts = machine.getRecipeHandleParts();
         var meRecipeHandleParts = machine.getMEPatternRecipeHandleParts();
+        var meIORecipeHandleParts = machine.getMEIORecipeHandleParts();
 
-        if (recipeHandleParts.isEmpty() && meRecipeHandleParts.isEmpty()) {
+        if (recipeHandleParts.isEmpty() && meRecipeHandleParts.isEmpty() && meIORecipeHandleParts.isEmpty()) {
             return false;
         }
 
@@ -144,7 +145,7 @@ public class RecipeRunner {
                 return handleNonDistinctInput(machine, inHandlers);
             }
         } else {
-            if (handleOutput(machine.getMEIORecipeHandleParts())) return true;
+            if (handleOutput(meIORecipeHandleParts)) return true;
             return handleOutput(machine);
         }
 
@@ -222,7 +223,6 @@ public class RecipeRunner {
     }
 
     private boolean handleOutput(List<MEIORecipeHandlePart> meHandlers) {
-        if (meHandlers.isEmpty()) return false;
         for (MEIORecipeHandlePart meHandler : meHandlers) {
             recipeContent = meHandler.meHandleOutput(recipeContent, simulated);
             if (recipeContent.isEmpty()) return true;
