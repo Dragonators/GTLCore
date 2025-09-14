@@ -23,7 +23,7 @@ public class InfinityCellHandler implements ICellHandler {
 
     @Override
     public InfinityCellInventory getCellInventory(ItemStack is, ISaveProvider container) {
-        return InfinityCellInventory.createInventory(is);
+        return InfinityCellInventory.createInventory(is, container);
     }
 
     public void addCellInformationToTooltip(ItemStack stack, List<Component> lines) {
