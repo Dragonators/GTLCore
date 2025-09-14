@@ -816,7 +816,8 @@ public class GTLMachines {
                 .rotationState(RotationState.ALL)
                 .overlayTieredHullRenderer("me_pattern_buffer")
                 .langValue("ME Molecular Assembler IO")
-                .tooltips(Component.translatable("gtceu.machine.me_molecular_assembler_io.tooltip"))
+                .tooltips(Component.translatable("gtceu.machine.me_molecular_assembler_io.tooltip.0"),
+                        Component.translatable("gtceu.machine.me_molecular_assembler_io.tooltip.1"))
                 .tooltipBuilder(GTL_ADD)
                 .register();
 
