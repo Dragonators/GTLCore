@@ -34,11 +34,13 @@ import com.google.common.primitives.Ints;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import it.unimi.dsi.fastutil.longs.LongSets;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectList;
 import lombok.Getter;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
@@ -143,7 +145,7 @@ public abstract class MolecularAssemblerMultiblockMachineBase extends Multiblock
     }
 
     private void update() {
-        final var patternInventories = new ObjectArrayList<IItemTransfer>();
+        final ObjectList<IItemTransfer> patternInventories = new ObjectArrayList<IItemTransfer>();
         int speedTier = 0;
         int totalSlots = 0;
         long totalParallel = 0;
@@ -173,6 +175,8 @@ public abstract class MolecularAssemblerMultiblockMachineBase extends Multiblock
         this.patternSize = totalSlots;
         this.tickDuration = speedTier <= 39 ? 40 - speedTier : 1;
         this.maxParallel = Ints.saturatedCast(totalParallel);
+        patternInventories.sort(Comparator.comparingInt(IMECraftPatternContainer::sumNonEmpty).reversed()
+                .thenComparingInt(IItemTransfer::getSlots));
         meCraftIOPart.init(patternInventories);
 
         var handlerTrait = meCraftIOPart.getNotifiableMAHandlerTrait();
@@ -187,6 +191,10 @@ public abstract class MolecularAssemblerMultiblockMachineBase extends Multiblock
         this.activeBlocks = null;
         this.traitSubscriptions.forEach(ISubscription::unsubscribe);
         this.traitSubscriptions.clear();
+        this.patternSize = 0;
+        this.tickDuration = 40;
+        this.maxParallel = 0;
+        this.molecularAssemblerHandler = null;
         this.recipeLogic.resetRecipeLogic();
     }
 
