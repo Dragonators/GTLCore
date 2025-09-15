@@ -1,5 +1,6 @@
 package org.gtlcore.gtlcore.mixin.gtm;
 
+import org.gtlcore.gtlcore.api.recipe.IAdvancedOCResult;
 import org.gtlcore.gtlcore.utils.NumberUtils;
 
 import com.gregtechceu.gtceu.api.recipe.OverclockingLogic;
@@ -60,5 +61,62 @@ public class OverclockingLogicMixin {
     @Inject(method = "getOverclockForTier", at = @At("HEAD"), remap = false, cancellable = true)
     protected void getOverclockForTier(long voltage, CallbackInfoReturnable<Integer> cir) {
         cir.setReturnValue(NumberUtils.getFakeVoltageTier(voltage));
+    }
+
+    /**
+     * @author Dragons
+     * @reason 为OCResult提供更多信息
+     */
+    @SuppressWarnings("DataFlowIssue")
+    @Overwrite(remap = false)
+    public static void subTickParallelOC(@NotNull OCParams params, @NotNull OCResult result, long maxVoltage, double durationFactor, double voltageFactor) {
+        double duration = params.getDuration();
+        double eut = (double) params.getEut();
+        int ocAmount = params.getOcAmount();
+        double parallel = 1.0F;
+        boolean shouldParallel = false;
+
+        int ocLevel;
+        int baseOCLevel = 0;
+        double vfPowParallel = 1.0;
+
+        for (ocLevel = 0; ocAmount-- > 0; ++ocLevel) {
+            double potentialVoltage = eut * voltageFactor;
+            if (potentialVoltage > (double) maxVoltage) {
+                break;
+            }
+
+            if (shouldParallel) {
+                double potentialParallel = parallel / durationFactor;
+
+                if (potentialVoltage * potentialParallel > (double) maxVoltage) {
+                    break;
+                }
+
+                eut = potentialVoltage;
+                parallel = potentialParallel;
+                vfPowParallel *= voltageFactor;
+            } else {
+                double potentialDuration = duration * durationFactor;
+                if (potentialDuration < (double) 1.0F) {
+                    double potentialParallel = parallel / durationFactor;
+
+                    if (potentialVoltage * potentialParallel > (double) maxVoltage) {
+                        break;
+                    }
+
+                    eut = potentialVoltage;
+                    parallel = potentialParallel;
+                    vfPowParallel *= voltageFactor;
+                    shouldParallel = true;
+                } else {
+                    eut = potentialVoltage;
+                    duration = potentialDuration;
+                    ++baseOCLevel;
+                }
+            }
+        }
+
+        ((IAdvancedOCResult) (Object) result).init((long) (eut / vfPowParallel), (int) duration, (int) parallel, (long) eut, baseOCLevel, ocLevel, durationFactor, voltageFactor);
     }
 }
