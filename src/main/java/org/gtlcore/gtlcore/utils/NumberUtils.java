@@ -69,4 +69,22 @@ public class NumberUtils {
         if (x > 16) return 16;
         return NEAREST[x - 1];
     }
+
+    // actualConsumeParallel > 1
+    public static int getAdditionalTier(double durationFactor, double actualConsumeParallel) {
+        if (!(durationFactor > 0.0 && durationFactor < 1.0)) {
+            throw new IllegalArgumentException("require 0 < durationFactor < 1");
+        }
+
+        final double negLogF = -Math.log(durationFactor);
+        final double kRaw = Math.log(actualConsumeParallel) / negLogF;
+
+        int k = (int) Math.ceil(kRaw - 1e-12);
+
+        if (k * negLogF < Math.log(actualConsumeParallel)) {
+            k++;
+        }
+
+        return k;
+    }
 }
