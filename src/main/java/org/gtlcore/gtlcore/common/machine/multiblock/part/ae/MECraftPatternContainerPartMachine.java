@@ -24,6 +24,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.BlockHitResult;
 
 import appeng.crafting.pattern.EncodedPatternItem;
+import com.google.common.math.IntMath;
 import org.jetbrains.annotations.NotNull;
 
 public class MECraftPatternContainerPartMachine extends TieredPartMachine implements IMECraftPatternContainer, IMachineLife {
@@ -42,7 +43,7 @@ public class MECraftPatternContainerPartMachine extends TieredPartMachine implem
 
     public MECraftPatternContainerPartMachine(IMachineBlockEntity holder, int tier) {
         super(holder, tier);
-        patternInventory = new ItemStackTransfer((tier - 5) * 3 * PATTERNS_PER_ROW);
+        patternInventory = new ItemStackTransfer(IntMath.pow(2, tier - 5) * PATTERNS_PER_ROW);
         patternInventory.setFilter(itemStack -> AEUtils.molecularFilter(itemStack, getLevel()));
     }
 
@@ -76,7 +77,7 @@ public class MECraftPatternContainerPartMachine extends TieredPartMachine implem
     public @NotNull Widget createUIWidget() {
         final int cowSize = 14;
         final int totalCount = patternInventory.getSlots();
-        final int rowSize = (int) Math.ceil((double) totalCount / cowSize);;
+        final int rowSize = (int) Math.ceil((double) totalCount / cowSize);
         var group = new WidgetGroup(0, 0, 18 * cowSize + 16, 18 * rowSize + 16);
 
         int index = 0;
