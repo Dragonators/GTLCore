@@ -350,7 +350,7 @@ public class AdvancedMultiBlockMachine {
                     int temp = machine.getCoilType().getCoilTemperature();
                     components.add(Component.translatable("gtceu.multiblock.blast_furnace.max_temperature", Component.literal(FormattingUtil.formatNumbers((temp == 273 ? 32000 : temp)) + "K").withStyle(ChatFormatting.BLUE)));
                     if (machine.getRecipeType() == GTLRecipeTypes.STELLAR_FORGE_RECIPES && temp != 273) {
-                        components.add(Component.literal("当前配方模式无法使用该线圈").withStyle(ChatFormatting.RED));
+                        components.add(Component.translatable("message.gtlcore.coil_incompatible_recipe_mode").withStyle(ChatFormatting.RED));
                     }
                 }
             })
@@ -796,7 +796,7 @@ public class AdvancedMultiBlockMachine {
                                 if (Objects.equals(player.getArmorSlots().toString(), "[1 magnetohydrodynamicallyconstrainedstarmatter_boots, 1 magnetohydrodynamicallyconstrainedstarmatter_leggings, 1 magnetohydrodynamicallyconstrainedstarmatter_chestplate, 1 magnetohydrodynamicallyconstrainedstarmatter_helmet]")) {
                                     player.getServer().kjs$runCommandSilent("execute in kubejs:create as " + entity.getName().getString() + " run tp 0 1 0");
                                 } else {
-                                    player.kjs$setStatusMessage(Component.literal("你的装备无法适应目标维度的环境"));
+                                    player.kjs$setStatusMessage(Component.translatable("message.gtlcore.equipment_incompatible_dimension"));
                                 }
                             }
                             if (entity instanceof ItemEntity item && Objects.equals(item.getItem().kjs$getId(), "gtceu:magnetohydrodynamicallyconstrainedstarmatter_block")) {
@@ -1416,7 +1416,7 @@ public class AdvancedMultiBlockMachine {
                     if (Objects.equals(machine.getMachineStorageItem().kjs$getId(), "gtceu:carbon_nanoswarm")) {
                         components.add(Component.translatable("gtceu.multiblock.parallel", Component.literal(String.valueOf(machine.getMachineStorageItem().getCount())).withStyle(ChatFormatting.DARK_PURPLE)).withStyle(ChatFormatting.GRAY));
                     } else {
-                        components.add(Component.literal("需要放入碳纳米蜂群").withStyle(ChatFormatting.RED));
+                        components.add(Component.translatable("message.gtlcore.need_carbon_nano_swarm_red").withStyle(ChatFormatting.RED));
                     }
                 }
             })
@@ -1465,7 +1465,7 @@ public class AdvancedMultiBlockMachine {
                     if (Objects.equals(machine.getMachineStorageItem().kjs$getId(), "gtceu:neutronium_nanoswarm")) {
                         components.add(Component.translatable("gtceu.multiblock.parallel", Component.literal(String.valueOf(machine.getMachineStorageItem().getCount())).withStyle(ChatFormatting.DARK_PURPLE)).withStyle(ChatFormatting.GRAY));
                     } else {
-                        components.add(Component.literal("需要放入中子素纳米蜂群").withStyle(ChatFormatting.RED));
+                        components.add(Component.translatable("message.gtlcore.need_neutronium_nano_swarm_red").withStyle(ChatFormatting.RED));
                     }
                 }
             })
@@ -1516,7 +1516,7 @@ public class AdvancedMultiBlockMachine {
                     if (Objects.equals(machine.getMachineStorageItem().kjs$getId(), "gtceu:draconium_nanoswarm")) {
                         components.add(Component.translatable("gtceu.multiblock.parallel", Component.literal(String.valueOf(machine.getMachineStorageItem().getCount())).withStyle(ChatFormatting.DARK_PURPLE)).withStyle(ChatFormatting.GRAY));
                     } else {
-                        components.add(Component.literal("需要放入龙纳米蜂群").withStyle(ChatFormatting.RED));
+                        components.add(Component.translatable("message.gtlcore.need_dragon_nano_swarm_red").withStyle(ChatFormatting.RED));
                     }
                 }
             })

@@ -71,55 +71,55 @@ public class PatternTestBehavior implements IItemUIFactory {
                 .addWidget(new AETextInputButtonWidget(82, 6, 72, 12)
                         .setText(ConflictAnalysisType)
                         .setOnConfirm(this::setConflictAnalysisType)
-                        .setButtonTooltips(Component.literal("设置配方类型")))
+                        .setButtonTooltips(Component.translatable("tooltip.gtlcore.set_recipe_type")))
                 .addWidget(new AETextInputButtonWidget(82, 20, 72, 12)
                         .setText(String.valueOf(ConflictAnalysisCircuit))
                         .setOnConfirm(s -> setConflictAnalysisCircuit(Integer.parseInt(s)))
-                        .setButtonTooltips(Component.literal("设置编程电路")))
+                        .setButtonTooltips(Component.translatable("tooltip.gtlcore.set_programmed_circuit")))
                 .addWidget(new ButtonWidget(6, 24, 64, 20,
-                        new GuiTextureGroup(GuiTextures.BUTTON, new TextTexture("开始分析")),
+                        new GuiTextureGroup(GuiTextures.BUTTON, new TextTexture(Component.translatable("gtlcore.gui.start_analysis").getString())),
                         clickData -> useAnalysisRecipesBaby(heldItemHolder))
-                        .setHoverTooltips(Component.literal("当前配方类型：")
-                                .append(Component.translatable("gtceu." + ConflictAnalysisType)).append(" 电路：" + ConflictAnalysisCircuit)));
+                        .setHoverTooltips(Component.translatable("tooltip.gtlcore.current_recipe_type")
+                                .append(Component.translatable("gtceu." + ConflictAnalysisType)).append(Component.translatable("gtlcore.tooltip.current_recipe_type_circuit", ConflictAnalysisCircuit))));
 
         var containerPatternGenerator = new WidgetGroup(8, 58, 160, 50)
                 .addWidget(new ImageWidget(4, 4, 152, 42, GuiTextures.DISPLAY))
-                .addWidget(new LabelWidget(6, 6, "样板调试"))
+                .addWidget(new LabelWidget(6, 6, Component.translatable("gtlcore.gui.pattern_debug").getString()))
                 .addWidget(new ButtonWidget(6, 24, 64, 20,
-                        new GuiTextureGroup(GuiTextures.BUTTON, new TextTexture("获取样板")),
+                        new GuiTextureGroup(GuiTextures.BUTTON, new TextTexture(Component.translatable("gtlcore.gui.get_pattern").getString())),
                         clickData -> useAe2PatternGenerator(heldItemHolder))
-                        .setHoverTooltips(Component.literal("当前配方类型：")
+                        .setHoverTooltips(Component.translatable("tooltip.gtlcore.current_recipe_type")
                                 .append(Component.translatable("gtceu." + Ae2PatternGeneratorType))
                                 .append(" 电路：" + Ae2PatternGeneratorCircuit)
                                 .append(" 尺寸：" + Ae2PatternGeneratorScale)))
                 .addWidget(new AETextInputButtonWidget(82, 6, 72, 12)
                         .setText(Ae2PatternGeneratorType)
                         .setOnConfirm(this::setAe2PatternGeneratorType)
-                        .setButtonTooltips(Component.literal("设置配方类型")))
+                        .setButtonTooltips(Component.translatable("tooltip.gtlcore.set_recipe_type")))
                 .addWidget(new AETextInputButtonWidget(82, 20, 72, 12)
                         .setText(String.valueOf(Ae2PatternGeneratorCircuit))
                         .setOnConfirm(s -> setAe2PatternGeneratorCircuit(Integer.parseInt(s)))
-                        .setButtonTooltips(Component.literal("设置编程电路")))
+                        .setButtonTooltips(Component.translatable("tooltip.gtlcore.set_programmed_circuit")))
                 .addWidget(new AETextInputButtonWidget(82, 34, 72, 12)
                         .setText(String.valueOf(Ae2PatternGeneratorScale))
                         .setOnConfirm(this::setAe2PatternGeneratorScale)
-                        .setButtonTooltips(Component.literal("设置模板倍数")))
+                        .setButtonTooltips(Component.translatable("tooltip.gtlcore.set_pattern_multiplier")))
                 .addWidget(new AETextInputButtonWidget(82, 48, 72, 12)
                         .setText(String.valueOf(Ae2PatternGeneratorInputsWhiteKey))
                         .setOnConfirm(this::setAe2PatternGeneratorInputsWhiteKey)
-                        .setButtonTooltips(Component.literal("输入白名单ID关键词，以空格分割 匹配1个即通过")))
+                        .setButtonTooltips(Component.translatable("tooltip.gtlcore.input_whitelist_keywords")))
                 .addWidget(new AETextInputButtonWidget(82, 62, 72, 12)
                         .setText(String.valueOf(Ae2PatternGeneratorInputsBlackKey))
                         .setOnConfirm(this::setAe2PatternGeneratorInputsBlackKey)
-                        .setButtonTooltips(Component.literal("输入黑名单ID关键词，以空格分割 匹配1个即否决")))
+                        .setButtonTooltips(Component.translatable("tooltip.gtlcore.input_blacklist_keywords")))
                 .addWidget(new AETextInputButtonWidget(82, 76, 72, 12)
                         .setText(String.valueOf(Ae2PatternGeneratorOutputsWhiteKey))
                         .setOnConfirm(this::setAe2PatternGeneratorOutputsWhiteKey)
-                        .setButtonTooltips(Component.literal("输出白名单ID关键词，以空格分割 匹配1个即通过")))
+                        .setButtonTooltips(Component.translatable("tooltip.gtlcore.output_whitelist_keywords")))
                 .addWidget(new AETextInputButtonWidget(82, 90, 72, 12)
                         .setText(String.valueOf(Ae2PatternGeneratorOutputsBlackKey))
                         .setOnConfirm(this::setAe2PatternGeneratorOutputsBlackKey)
-                        .setButtonTooltips(Component.literal("输出黑名单ID关键词，以空格分割 匹配1个即否决")));
+                        .setButtonTooltips(Component.translatable("tooltip.gtlcore.output_blacklist_keywords")));
 
         return new ModularUI(176, 124, heldItemHolder, player)
                 .widget(containerPatternAnalysis)
@@ -153,8 +153,8 @@ public class PatternTestBehavior implements IItemUIFactory {
                 Ae2GtmProcessingPattern ae2GtmProcessingPattern = Ae2GtmProcessingPattern.of(recipe, serverPlayer);
                 ae2GtmProcessingPattern.setScale(Ae2PatternGeneratorScale, false);
                 ae2GtmProcessingPattern.setDefaultFilter();
-                ae2GtmProcessingPattern.setLore(Component.literal("机器:").append(Component.translatable("gtceu." + Ae2PatternGeneratorType).append(Component.literal(" 电路%s".formatted(Ae2PatternGeneratorCircuit)))));
-                ae2GtmProcessingPattern.setLore(Component.literal("电压:%s(%s)".formatted(recipeTier, inputEUt)));
+                ae2GtmProcessingPattern.setLore(Component.translatable("gui.gtlcore.machine_colon").append(Component.translatable("gtceu." + Ae2PatternGeneratorType).append(Component.translatable("gui.gtlcore.circuit_format", Ae2PatternGeneratorCircuit))));
+                ae2GtmProcessingPattern.setLore(Component.translatable("gui.gtlcore.voltage_colon", recipeTier, inputEUt));
                 ItemStack patternItemStack = ae2GtmProcessingPattern.getPatternItemStack();
                 serverPlayer.kjs$give(patternItemStack);
             }
@@ -201,7 +201,7 @@ public class PatternTestBehavior implements IItemUIFactory {
     @Override
     public InteractionResult useOn(UseOnContext context) {
         if (context.getPlayer() instanceof ServerPlayer serverPlayer) {
-            serverPlayer.displayClientMessage(Component.literal("右键空气打开GUI"), true);
+            serverPlayer.displayClientMessage(Component.translatable("message.gtlcore.right_click_air_gui"), true);
         }
         return InteractionResult.SUCCESS;
     }

@@ -218,8 +218,8 @@ public class MultiBlockMachineB {
     public final static MultiblockMachineDefinition PRIMITIVE_VOID_ORE = ConfigHolder.INSTANCE.enablePrimitiveVoidOre ?
             REGISTRATE.multiblock("primitive_void_ore", PrimitiveOreMachine::new)
                     .langValue("Primitive Void Ore")
-                    .tooltips(Component.literal("运行时根据维度每tick随机产出一组任意粗矿"))
-                    .tooltips(Component.literal("支持主世界,下界,末地"))
+                    .tooltips(Component.translatable("tooltip.gtlcore.primitive_void_ore_random_output"))
+                    .tooltips(Component.translatable("tooltip.gtlcore.supports_dimensions"))
                     .tooltipBuilder(GTLMachines.GTL_ADD)
                     .rotationState(RotationState.ALL)
                     .recipeType(GTLRecipeTypes.PRIMITIVE_VOID_ORE_RECIPES)
@@ -243,10 +243,10 @@ public class MultiBlockMachineB {
     public final static MultiblockMachineDefinition LARGE_FRAGMENT_WORLD_COLLECTION_MACHINE = ConfigHolder.INSTANCE.enableSkyBlokeMode ?
             REGISTRATE.multiblock("large_fragment_world_collection_machine", WorkableElectricMultiblockMachine::new)
                     .langValue("Large fragment world collection machine")
-                    .tooltips(Component.literal("空岛模式特供"))
-                    .tooltips(Component.literal("耗能倍数：256"))
-                    .tooltips(Component.literal("耗时倍数：0.25"))
-                    .tooltips(Component.literal("最大并行数64"))
+                    .tooltips(Component.translatable("gtlcore.machine.large_fragment_world_collection.sky_block_mode"))
+                    .tooltips(Component.translatable("gtlcore.machine.large_fragment_world_collection.energy_multiplier"))
+                    .tooltips(Component.translatable("gtlcore.machine.large_fragment_world_collection.duration_multiplier"))
+                    .tooltips(Component.translatable("gtlcore.machine.large_fragment_world_collection.max_parallel"))
                     .tooltipBuilder(GTLMachines.GTL_ADD)
                     .recipeModifiers(
                             (machine, recipe, params, result) -> GTLRecipeModifiers.reduction(machine, recipe, 256, 0.25),

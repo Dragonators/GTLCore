@@ -95,15 +95,15 @@ public class UltimateTerminalBehavior implements IItemUIFactory {
         DraggableScrollableWidgetGroup contain = new DraggableScrollableWidgetGroup(4, 4, 182, 128)
                 .setBackground(GuiTextures.DISPLAY).setYScrollBarWidth(2)
                 .setYBarStyle(null, ColorPattern.T_WHITE.rectTexture().setRadius(1.0F));
-        contain.addWidget(new LabelWidget(65, 8, () -> "终极终端设置界面"));
-        contain.addWidget(new LabelWidget(14, 26, () -> "等级方块"));
-        contain.addWidget(new LabelWidget(14, 46, () -> "重复次数"));
-        contain.addWidget(new LabelWidget(14, 66, () -> "无仓室模式" + (getIsBuildHatches(handItem) ? "(是)" : "(否)"))
-                .setHoverTooltips(Component.literal("启用后不会在非唯一时放置各种仓室")));
-        contain.addWidget(new LabelWidget(14, 86, () -> "替换模式" + (getReplaceMode(handItem) ? "(是)" : "(否)"))
-                .setHoverTooltips(Component.literal("启用后替换等级方块为设置的等级方块")));
-        contain.addWidget(new LabelWidget(14, 106, () -> "镜像模式" + (getIsFlip(handItem) ? "(是)" : "(否)"))
-                .setHoverTooltips(Component.literal("启用后可以镜像摆放机器方块")));
+        contain.addWidget(new LabelWidget(65, 8, () -> Component.translatable("gui.gtlcore.ultimate_terminal_settings").getString()));
+        contain.addWidget(new LabelWidget(14, 26, () -> Component.translatable("gui.gtlcore.tier_blocks").getString()));
+        contain.addWidget(new LabelWidget(14, 46, () -> Component.translatable("gui.gtlcore.repeat_count").getString()));
+        contain.addWidget(new LabelWidget(14, 66, () -> Component.translatable("gui.gtlcore.no_hatch_mode").getString() + (getIsBuildHatches(handItem) ? Component.translatable("gui.gtlcore.yes").getString() : Component.translatable("gui.gtlcore.no").getString()))
+                .setHoverTooltips(Component.translatable("tooltip.gtlcore.no_hatch_mode")));
+        contain.addWidget(new LabelWidget(14, 86, () -> Component.translatable("gui.gtlcore.replace_mode").getString() + (getReplaceMode(handItem) ? Component.translatable("gui.gtlcore.yes").getString() : Component.translatable("gui.gtlcore.no").getString()))
+                .setHoverTooltips(Component.translatable("tooltip.gtlcore.replace_mode")));
+        contain.addWidget(new LabelWidget(14, 106, () -> Component.translatable("gui.gtlcore.mirror_mode").getString() + (getIsFlip(handItem) ? Component.translatable("gui.gtlcore.yes").getString() : Component.translatable("gui.gtlcore.no").getString()))
+                .setHoverTooltips(Component.translatable("tooltip.gtlcore.mirror_mode")));
         contain.addWidget(new TerminalInputWidget(140, 45, 36, 12,
                 () -> getRepeatCount(handItem), (v) -> setRepeatCount(v, handItem)).setMax(100).setMin(0));
         contain.addWidget(new SwitchWidget(140, 63, 36, 14,

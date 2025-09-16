@@ -61,7 +61,7 @@ public abstract class RotorHolderPartMachineMixin implements IRotorHolderMachine
         WidgetGroup container = new WidgetGroup(4, 4, 26, 26);
         container.addWidget((new SlotWidget(this.inventory.storage, 0, 4, 4, true, true))
                 .setBackground(GuiTextures.SLOT, GuiTextures.TURBINE_OVERLAY)
-                .setHoverTooltips(Component.literal("只能放入涡轮转子")));
+                .setHoverTooltips(Component.translatable("tooltip.gtlcore.turbine_rotor_only")));
         container.setBackground(GuiTextures.BACKGROUND_INVERSE);
         group.addWidget(container);
         return group;

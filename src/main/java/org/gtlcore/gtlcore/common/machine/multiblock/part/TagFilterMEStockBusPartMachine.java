@@ -97,7 +97,7 @@ public class TagFilterMEStockBusPartMachine extends MEInputBusPartMachine {
                 new TextTexture("数量▼"),
                 this::isCountSort,
                 (clickData, pressed) -> setCountSort(pressed))
-                .setTooltipsSupplier(pressed -> List.of(Component.literal("自动拉取排序方式"))));
+                .setTooltipsSupplier(pressed -> List.of(Component.translatable("tooltip.gtlcore.auto_pull_sort_mode"))));
         configuratorPanel.attachConfigurators(new FilterIFancyConfigurator());
     }
 
@@ -230,7 +230,7 @@ public class TagFilterMEStockBusPartMachine extends MEInputBusPartMachine {
 
         @Override
         public Component getTitle() {
-            return Component.literal("标签过滤配置");
+            return Component.translatable("gui.gtlcore.tag_filter_config");
         }
 
         @Override
@@ -242,19 +242,19 @@ public class TagFilterMEStockBusPartMachine extends MEInputBusPartMachine {
         public Widget createConfigurator() {
             return new WidgetGroup(0, 0, 132, 100)
                     .addWidget(new LabelWidget(9, 4,
-                            () -> "标签白名单"))
+                            () -> Component.translatable("gui.gtlcore.tag_whitelist").getString()))
                     .addWidget(new TextFieldWidget(9, 16, 114, 16,
                             () -> tagWhite,
                             v -> tagWhite = v))
                     .addWidget(new LabelWidget(9, 36,
-                            () -> "标签黑名单"))
+                            () -> Component.translatable("gui.gtlcore.tag_blacklist").getString()))
                     .addWidget(new TextFieldWidget(9, 48, 114, 16,
                             () -> tagBlack,
                             v -> tagBlack = v))
                     .addWidget(new LabelWidget(0, 68,
-                            () -> "* 表示通配符 ()表示优先"))
+                            () -> Component.translatable("gui.gtlcore.wildcard_info").getString()))
                     .addWidget(new LabelWidget(0, 84,
-                            () -> "& = 逻辑与 | = 逻辑或 ^ = 逻辑异或"));
+                            () -> Component.translatable("gui.gtlcore.logic_operators").getString()));
         }
     }
 

@@ -121,12 +121,12 @@ public class SuprachronalAssemblyLineMachine extends WorkableElectricMultiblockM
                 getSuprachronalAssemblyLine();
             }
             textList.add(Component.translatable("gtceu.multiblock.parallel", Component.literal(FormattingUtil.formatNumbers(getParallel())).withStyle(ChatFormatting.DARK_PURPLE)).withStyle(ChatFormatting.GRAY));
-            textList.add(Component.literal("该模块" + (machine != null ? "已" : "未") + "成功安装"));
+            textList.add(Component.translatable(machine != null ? "tooltip.gtlcore.module_installed" : "tooltip.gtlcore.module_not_installed"));
         } else {
             if (getOffsetTimer() % 10 == 0) {
                 getSuprachronalAssemblyLineModule();
             }
-            textList.add(Component.literal("已安装的模块数：" + module));
+            textList.add(Component.translatable("tooltip.gtlcore.installed_module_count", module));
         }
     }
 }

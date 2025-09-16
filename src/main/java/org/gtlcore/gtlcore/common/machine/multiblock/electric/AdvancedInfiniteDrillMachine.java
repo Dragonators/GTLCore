@@ -241,7 +241,7 @@ public class AdvancedInfiniteDrillMachine extends StorageMachine {
                     tooltips.add(Component.translatable("gtceu.machine.advanced_infinite_driller.heat", maxHeat, RUNNING_HEAT));
                     tooltips.add(Component.translatable("gtceu.machine.advanced_infinite_driller.current_heat", currentHeat));
                     tooltips.add(Component.translatable("gtceu.machine.advanced_infinite_driller.fast",
-                            ComponentPanelWidget.withButton(Component.literal(fast ? "[开启]" : "[关闭]"),
+                            ComponentPanelWidget.withButton(Component.translatable(fast ? "gui.gtlcore.status_on" : "gui.gtlcore.status_off"),
                                     "fast_mode")));
                     tooltips.add(Component.translatable("gtceu.machine.advanced_infinite_driller.process",
                             FormattingUtil.formatNumber2Places(process / 300F * 100))

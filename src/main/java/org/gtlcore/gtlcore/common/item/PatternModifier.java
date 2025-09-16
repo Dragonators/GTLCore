@@ -57,23 +57,23 @@ public class PatternModifier implements IItemUIFactory {
                         .addWidget(new AETextInputButtonWidget(120, 46 + 4, 72, 12)
                                 .setText(String.valueOf(Ae2PatternGeneratorScale))
                                 .setOnConfirm(this::setAe2PatternGeneratorScale)
-                                .setButtonTooltips(Component.literal("设置模板乘数")))
+                                .setButtonTooltips(Component.translatable("tooltip.gtlcore.pattern_multiplier_scale")))
                         .addWidget(new AETextInputButtonWidget(120, 60 + 4, 72, 12)
                                 .setText(String.valueOf(Ae2PatternGeneratorDivScale))
                                 .setOnConfirm(this::setAe2PatternGeneratorDivScale)
-                                .setButtonTooltips(Component.literal("设置模板除数")))
+                                .setButtonTooltips(Component.translatable("tooltip.gtlcore.pattern_divider_scale")))
                         .addWidget(new AETextInputButtonWidget(120, 74 + 4, 72, 12)
                                 .setText(String.valueOf(Ae2PatternGeneratorMaxItemStack))
                                 .setOnConfirm(this::setAe2PatternGeneratorMaxItemStack)
-                                .setButtonTooltips(Component.literal("设置乘法后最大物品/个")))
+                                .setButtonTooltips(Component.translatable("tooltip.gtlcore.pattern_max_item_stack")))
                         .addWidget(new AETextInputButtonWidget(120, 88 + 4, 72, 12)
                                 .setText(String.valueOf(Ae2PatternGeneratorMaxFluidStack))
                                 .setOnConfirm(this::setAe2PatternGeneratorMaxFluidStack)
-                                .setButtonTooltips(Component.literal("设置乘法后最大流体/桶")))
+                                .setButtonTooltips(Component.translatable("tooltip.gtlcore.pattern_max_fluid_stack")))
                         .addWidget(new AETextInputButtonWidget(120, 102 + 4, 72, 12)
                                 .setText(String.valueOf(Ae2PatternGeneratorAppliedNumber))
                                 .setOnConfirm(this::setAe2PatternGeneratorAppliedNumber)
-                                .setButtonTooltips(Component.literal("一次使用的应用次数(<=16)"))))
+                                .setButtonTooltips(Component.translatable("tooltip.gtlcore.pattern_applied_number"))))
                 .background(GuiTextures.BACKGROUND);
     }
 
@@ -135,7 +135,7 @@ public class PatternModifier implements IItemUIFactory {
                 }
 
                 if (internalInventory == null) {
-                    serverPlayer.displayClientMessage(Component.literal("只能对着样板供应器使用")
+                    serverPlayer.displayClientMessage(Component.translatable("message.gtlcore.pattern_provider_only")
                             .withStyle(), true);
                     return InteractionResult.FAIL;
                 }
@@ -156,10 +156,10 @@ public class PatternModifier implements IItemUIFactory {
                         internalInventory.insertItem(slot, itemStack, false);
                     });
                 }
-                serverPlayer.displayClientMessage(Component.literal("已更新内部的样板，应用了%s次".formatted(Ae2PatternGeneratorAppliedNumber)), true);
+                serverPlayer.displayClientMessage(Component.translatable("message.gtlcore.pattern_updated", Ae2PatternGeneratorAppliedNumber), true);
             }
             if (!serverPlayer.isShiftKeyDown()) {
-                serverPlayer.displayClientMessage(Component.literal("右键空气打开GUI"), true);
+                serverPlayer.displayClientMessage(Component.translatable("message.gtlcore.right_click_air_gui"), true);
             }
         }
         return InteractionResult.SUCCESS;

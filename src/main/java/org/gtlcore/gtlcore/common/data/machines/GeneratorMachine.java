@@ -103,7 +103,7 @@ public class GeneratorMachine {
                 .rotationState(RotationState.ALL)
                 .recipeType(recipeType)
                 .generator(true)
-                .tooltips(Component.literal("可使用变电动力仓"))
+                .tooltips(Component.translatable("tooltip.gtlcore.can_use_transformer_hatch"))
                 .tooltips(Component.translatable("gtceu.universal.tooltip.base_production_eut", FormattingUtil.formatNumbers(GTValues.V[tier] * value)))
                 .tooltips(Component.translatable("gtceu.multiblock.turbine.efficiency_tooltip", GTValues.VNF[tier]))
                 .tooltipBuilder(GTLMachines.GTL_ADD)

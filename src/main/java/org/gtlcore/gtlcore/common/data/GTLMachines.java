@@ -190,7 +190,7 @@ public class GTLMachines {
                     .rotationState(RotationState.NON_Y_AXIS)
                     .recipeType(GTLRecipeTypes.FRAGMENT_WORLD_COLLECTION)
                     .workableTieredHullRenderer(GTCEu.id("block/machines/fragment_world_collection_machine"))
-                    .tooltips(Component.translatable("从世界碎片中汲取资源"))
+                    .tooltips(Component.translatable("gtlcore.machine.fragment_world_collection.tooltip"))
                     .compassNode("fragment_world_collection")
                     .register(),
             ULV);
@@ -743,7 +743,7 @@ public class GTLMachines {
                 .abilities(PartAbility.IMPORT_ITEMS, PartAbility.IMPORT_FLUIDS, PartAbility.EXPORT_ITEMS, PartAbility.EXPORT_FLUIDS)
                 .overlayTieredHullRenderer("me_pattern_buffer")
                 .langValue("ME Final Pattern Buffer")
-                .tooltips(Component.literal("更大, 更强(?)").withStyle(ChatFormatting.GOLD),
+                .tooltips(Component.translatable("tooltip.gtlcore.bigger_stronger").withStyle(ChatFormatting.GOLD),
                         Component.translatable("block.gtceu.pattern_buffer.desc.0"),
                         Component.translatable("gtceu.machine.me_pattern_buffer.desc.0"),
                         Component.translatable("gtceu.machine.me_pattern_buffer.desc.1"),

@@ -64,7 +64,7 @@ public class StructureDetectBehavior extends TooltipBehavior implements IToolBeh
             BlockPos blockPos = context.getClickedPos();
             if (MetaMachine.getMachine(level, blockPos) instanceof IMultiController controller) {
                 if (controller.isFormed()) {
-                    player.sendSystemMessage(Component.literal("已成型").withStyle(ChatFormatting.GREEN));
+                    player.sendSystemMessage(Component.translatable("message.gtlcore.structure_formed").withStyle(ChatFormatting.GREEN));
                 } else {
                     boolean isFlipped = !tag.isEmpty() && tag.getBoolean("isFlipped");
                     ((ServerLevel) level).getServer().execute(() -> {
@@ -80,8 +80,7 @@ public class StructureDetectBehavior extends TooltipBehavior implements IToolBeh
                 }
             } else if (player instanceof ServerPlayer serverPlayer) {
                 tag.putBoolean("isFlipped", !tag.getBoolean("isFlipped"));
-                serverPlayer.displayClientMessage(Component.literal("当前检测模式:" +
-                        (!tag.getBoolean("isFlipped") ? "(正常模式)" : "(镜像模式)")), true);
+                serverPlayer.displayClientMessage(Component.translatable(!tag.getBoolean("isFlipped") ? "message.gtlcore.detection_mode_normal" : "message.gtlcore.detection_mode_mirrored"), true);
             }
         }
         return InteractionResult.PASS;

@@ -38,6 +38,6 @@ public class MEExtendedOutputFancyConfigurator implements IFancyUIProvider {
 
     @Override
     public List<Component> getTabTooltips() {
-        return List.of(Component.literal("更改物品/流体过滤设置与优先级"));
+        return List.of(Component.translatable("tooltip.gtlcore.change_item_fluid_filter_priority"));
     }
 }

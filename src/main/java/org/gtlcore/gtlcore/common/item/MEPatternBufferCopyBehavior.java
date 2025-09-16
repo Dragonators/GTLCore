@@ -26,8 +26,8 @@ import static org.gtlcore.gtlcore.api.pattern.AdvancedBlockPattern.foundItem;
 public class MEPatternBufferCopyBehavior extends TooltipBehavior implements IInteractionItem {
 
     public static final MEPatternBufferCopyBehavior INSTANCE = new MEPatternBufferCopyBehavior((list -> {
-        list.add(Component.literal("潜行右键可复制目标样板总成内的样板和命名名称"));
-        list.add(Component.literal("右键应用复制内容到目标样板总成"));
+        list.add(Component.translatable("tooltip.gtlcore.copy_pattern_buffer_sneak_right_click"));
+        list.add(Component.translatable("tooltip.gtlcore.apply_pattern_buffer_right_click"));
     }));
 
     public MEPatternBufferCopyBehavior(@NotNull Consumer<List<Component>> tooltips) {
@@ -41,7 +41,7 @@ public class MEPatternBufferCopyBehavior extends TooltipBehavior implements IInt
                 if (context.getPlayer() instanceof ServerPlayer serverPlayer) {
                     var tags = getBehaviorsTag(itemStack);
                     if (!serverPlayer.isShiftKeyDown()) {
-                        if (tags.isEmpty()) serverPlayer.displayClientMessage(Component.literal("未复制样板总成"), true);
+                        if (tags.isEmpty()) serverPlayer.displayClientMessage(Component.translatable("message.gtlcore.pattern_buffer_not_copied"), true);
                         else {
                             var tag = (CompoundTag) tags.get("tag");
                             partMachine.setCustomName(tag.getString("name"));
@@ -72,8 +72,8 @@ public class MEPatternBufferCopyBehavior extends TooltipBehavior implements IInt
                         }));
                         tag.put("patterns", listPattern);
                         tags.put("tag", tag);
-                        if (tags.isEmpty()) serverPlayer.displayClientMessage(Component.literal("复制样板总成失败"), true);
-                        else serverPlayer.displayClientMessage(Component.literal("已复制样板总成内部样板"), true);
+                        if (tags.isEmpty()) serverPlayer.displayClientMessage(Component.translatable("message.gtlcore.pattern_buffer_copy_failed"), true);
+                        else serverPlayer.displayClientMessage(Component.translatable("message.gtlcore.pattern_buffer_copied"), true);
                     }
                 }
             }
