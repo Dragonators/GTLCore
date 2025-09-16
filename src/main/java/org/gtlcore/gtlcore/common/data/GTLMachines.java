@@ -44,6 +44,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.world.item.ItemStack;
 
+import com.google.common.math.IntMath;
 import com.hepdd.gtmthings.GTMThings;
 import com.hepdd.gtmthings.common.registry.GTMTRegistration;
 import com.hepdd.gtmthings.data.CreativeModeTabs;
@@ -801,7 +802,8 @@ public class GTLMachines {
                 .abilities(GTLPartAbility.MOLECULAR_ASSEMBLER_MATRIX)
                 .workableCasingRenderer(GTCEu.id("block/casings/speed_core_casing"), GTCEu.id("block/casings/speed_core_casing"))
                 .langValue("ME CRAFT Speed Core")
-                .tooltips(Component.translatable("gtceu.machine.me_craft_speed_core.tooltip.0"))
+                .tooltips(Component.translatable("gtceu.universal.disabled"),
+                        Component.translatable("gtceu.machine.me_craft_speed_core.tooltip.0"))
                 .tooltipBuilder(GTL_ADD)
                 .register();
 
@@ -811,7 +813,8 @@ public class GTLMachines {
                 .abilities(GTLPartAbility.MOLECULAR_ASSEMBLER_MATRIX)
                 .workableCasingRenderer(GTCEu.id("block/casings/crafter_core_casing"), GTCEu.id("block/casings/crafter_core_casing"))
                 .langValue("ME CRAFT Parallel Core")
-                .tooltips(Component.translatable("gtceu.machine.me_craft_parallel_core.tooltip.0"))
+                .tooltips(Component.translatable("gtceu.universal.disabled"),
+                        Component.translatable("gtceu.machine.me_craft_parallel_core.tooltip.0"))
                 .tooltipBuilder(GTL_ADD)
                 .register();
 
@@ -821,7 +824,8 @@ public class GTLMachines {
                         .rotationState(RotationState.ALL)
                         .abilities(GTLPartAbility.MOLECULAR_ASSEMBLER_MATRIX)
                         .workableCasingRenderer(GTCEu.id("block/casings/pattern_core_casing"), GTCEu.id("block/casings/pattern_core_casing"))
-                        .tooltips(Component.translatable("gtceu.machine.me_craft_pattern_core.tooltip", Component.literal(FormattingUtil.formatNumbers((tier - 5) * 3 * 9)).withStyle(ChatFormatting.GOLD)))
+                        .tooltips(Component.translatable("gtceu.universal.disabled"), Component.translatable("gtceu.machine.me_craft_pattern_core.tooltip",
+                                Component.literal(FormattingUtil.formatNumbers(IntMath.pow(2, tier - 5) * 9)).withStyle(ChatFormatting.GOLD)))
                         .tooltipBuilder(GTL_ADD)
                         .register(),
                 GTValues.tiersBetween(8, 12));
@@ -832,7 +836,8 @@ public class GTLMachines {
                 .rotationState(RotationState.ALL)
                 .overlayTieredHullRenderer("me_pattern_buffer")
                 .langValue("ME Molecular Assembler IO")
-                .tooltips(Component.translatable("gtceu.machine.me_molecular_assembler_io.tooltip.0"),
+                .tooltips(Component.translatable("gtceu.universal.disabled"),
+                        Component.translatable("gtceu.machine.me_molecular_assembler_io.tooltip.0"),
                         Component.translatable("gtceu.machine.me_molecular_assembler_io.tooltip.1"))
                 .tooltipBuilder(GTL_ADD)
                 .register();
