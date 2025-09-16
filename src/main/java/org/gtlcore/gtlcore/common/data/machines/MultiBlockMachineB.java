@@ -218,8 +218,8 @@ public class MultiBlockMachineB {
     public final static MultiblockMachineDefinition PRIMITIVE_VOID_ORE = ConfigHolder.INSTANCE.enablePrimitiveVoidOre ?
             REGISTRATE.multiblock("primitive_void_ore", PrimitiveOreMachine::new)
                     .langValue("Primitive Void Ore")
-                    .tooltips(Component.literal("运行时根据维度每tick随机产出一组任意粗矿"))
-                    .tooltips(Component.literal("支持主世界,下界,末地"))
+                    .tooltips(Component.translatable("tooltip.gtlcore.primitive_void_ore_random_output"))
+                    .tooltips(Component.translatable("tooltip.gtlcore.supports_dimensions"))
                     .tooltipBuilder(GTLMachines.GTL_ADD)
                     .rotationState(RotationState.ALL)
                     .recipeType(GTLRecipeTypes.PRIMITIVE_VOID_ORE_RECIPES)

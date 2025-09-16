@@ -37,25 +37,25 @@ public class ConfigurationCopyBehavior implements IToolBehavior, IInteractionIte
             if (metaMachine instanceof SimpleTieredMachine simpleTieredMachine) {
                 if (Objects.requireNonNull(context.getPlayer()).isShiftKeyDown()) {
                     getSTMCfg(tags, simpleTieredMachine);
-                    context.getPlayer().displayClientMessage(Component.literal("已复制机器数据"), true);
+                    context.getPlayer().displayClientMessage(Component.translatable("message.gtlcore.machine_data_copied"), true);
                 } else {
                     if (tags.getBoolean("Configuration")) {
                         setSTMCfg(tags, simpleTieredMachine);
-                        context.getPlayer().displayClientMessage(Component.literal("已粘贴机器数据"), true);
+                        context.getPlayer().displayClientMessage(Component.translatable("message.gtlcore.machine_data_pasted"), true);
                     } else {
-                        context.getPlayer().displayClientMessage(Component.literal("未找到机器数据"), true);
+                        context.getPlayer().displayClientMessage(Component.translatable("message.gtlcore.machine_data_not_found"), true);
                     }
                 }
             } else if (metaMachine instanceof ItemBusPartMachine itemBusPartMachine) {
                 if (Objects.requireNonNull(context.getPlayer()).isShiftKeyDown()) {
                     getBusCfg(tags, itemBusPartMachine);
-                    context.getPlayer().displayClientMessage(Component.literal("已复制机器数据"), true);
+                    context.getPlayer().displayClientMessage(Component.translatable("message.gtlcore.machine_data_copied"), true);
                 } else {
                     if (tags.getBoolean("Configuration")) {
                         setBusCfg(tags, itemBusPartMachine);
-                        context.getPlayer().displayClientMessage(Component.literal("已粘贴机器数据"), true);
+                        context.getPlayer().displayClientMessage(Component.translatable("message.gtlcore.machine_data_pasted"), true);
                     } else {
-                        context.getPlayer().displayClientMessage(Component.literal("未找到机器数据"), true);
+                        context.getPlayer().displayClientMessage(Component.translatable("message.gtlcore.machine_data_not_found"), true);
                     }
                 }
             } else if (metaMachine instanceof IAutoConfiguratioGravityPart acgp) {
@@ -63,40 +63,40 @@ public class ConfigurationCopyBehavior implements IToolBehavior, IInteractionIte
                     tags.putBoolean("Configuration", true);
                     tags.putFloat("durationMultiplier", acgp.getDurationMultiplier());
                     tags.putInt("currentGravity", acgp.getCurrentGravity());
-                    context.getPlayer().displayClientMessage(Component.literal("已复制机器数据"), true);
+                    context.getPlayer().displayClientMessage(Component.translatable("message.gtlcore.machine_data_copied"), true);
                 } else {
                     if (tags.getBoolean("Configuration")) {
                         acgp.setDurationMultiplier(tags.getFloat("durationMultiplier"));
                         acgp.setCurrentGravity(tags.getInt("currentGravity"));
-                        context.getPlayer().displayClientMessage(Component.literal("已粘贴机器数据"), true);
+                        context.getPlayer().displayClientMessage(Component.translatable("message.gtlcore.machine_data_pasted"), true);
                     } else {
-                        context.getPlayer().displayClientMessage(Component.literal("未找到机器数据"), true);
+                        context.getPlayer().displayClientMessage(Component.translatable("message.gtlcore.machine_data_not_found"), true);
                     }
                 }
             } else if (metaMachine instanceof IAutoConfigurationMaintenanceHatch acmh) {
                 if (Objects.requireNonNull(context.getPlayer()).isShiftKeyDown()) {
                     tags.putBoolean("Configuration", true);
                     tags.putFloat("durationMultiplier", acmh.getDurationMultiplier());
-                    context.getPlayer().displayClientMessage(Component.literal("已复制机器数据"), true);
+                    context.getPlayer().displayClientMessage(Component.translatable("message.gtlcore.machine_data_copied"), true);
                 } else {
                     if (tags.getBoolean("Configuration")) {
                         acmh.setDurationMultiplier(tags.getFloat("durationMultiplier"));
-                        context.getPlayer().displayClientMessage(Component.literal("已粘贴机器数据"), true);
+                        context.getPlayer().displayClientMessage(Component.translatable("message.gtlcore.machine_data_pasted"), true);
                     } else {
-                        context.getPlayer().displayClientMessage(Component.literal("未找到机器数据"), true);
+                        context.getPlayer().displayClientMessage(Component.translatable("message.gtlcore.machine_data_not_found"), true);
                     }
                 }
             } else if (metaMachine instanceof IGravityPartMachine gpm) {
                 if (Objects.requireNonNull(context.getPlayer()).isShiftKeyDown()) {
                     tags.putBoolean("Configuration", true);
                     tags.putInt("currentGravity", gpm.getCurrentGravity());
-                    context.getPlayer().displayClientMessage(Component.literal("已复制机器数据"), true);
+                    context.getPlayer().displayClientMessage(Component.translatable("message.gtlcore.machine_data_copied"), true);
                 } else {
                     if (tags.getBoolean("Configuration")) {
                         gpm.setCurrentGravity(tags.getInt("currentGravity"));
-                        context.getPlayer().displayClientMessage(Component.literal("已粘贴机器数据"), true);
+                        context.getPlayer().displayClientMessage(Component.translatable("message.gtlcore.machine_data_pasted"), true);
                     } else {
-                        context.getPlayer().displayClientMessage(Component.literal("未找到机器数据"), true);
+                        context.getPlayer().displayClientMessage(Component.translatable("message.gtlcore.machine_data_not_found"), true);
                     }
                 }
             }

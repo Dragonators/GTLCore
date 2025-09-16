@@ -84,7 +84,7 @@ public class MEExtendedAsyncOutputPartMachine extends MEExtendedOutputPartMachin
 
             @Override
             public List<Component> getTabTooltips() {
-                return List.of(Component.literal("更改优先级"));
+                return List.of(Component.translatable("tooltip.gtlcore.change_priority"));
             }
         });
     }

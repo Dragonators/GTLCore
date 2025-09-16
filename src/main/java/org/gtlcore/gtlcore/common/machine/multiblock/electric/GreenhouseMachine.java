@@ -113,6 +113,6 @@ public class GreenhouseMachine extends WorkableElectricMultiblockMachine {
         if (getOffsetTimer() % 10 == 0) {
             getGreenhouseLight();
         }
-        textList.add(Component.literal("当前光照：" + SkyLight));
+        textList.add(Component.translatable("tooltip.gtlcore.current_light_level", SkyLight));
     }
 }

@@ -89,19 +89,19 @@ public class GTLRecipeModifiers {
             if (tier == 1) {
                 if (!Objects.equals(storageMachine.getMachineStorageItem().kjs$getId(), "gtceu:carbon_nanoswarm")) {
                     RecipeResult.of((IRecipeLogicMachine) machine,
-                            RecipeResult.fail(Component.literal("需要放入碳纳米蜂群")));
+                            RecipeResult.fail(Component.translatable("message.gtlcore.need_carbon_nano_swarm")));
                     return null;
                 }
             } else if (tier == 2) {
                 if (!Objects.equals(storageMachine.getMachineStorageItem().kjs$getId(), "gtceu:neutronium_nanoswarm")) {
                     RecipeResult.of((IRecipeLogicMachine) machine,
-                            RecipeResult.fail(Component.literal("需要放入中子素纳米蜂群")));
+                            RecipeResult.fail(Component.translatable("message.gtlcore.need_neutronium_nano_swarm")));
                     return null;
                 }
             } else if (tier == 3) {
                 if (!Objects.equals(storageMachine.getMachineStorageItem().kjs$getId(), "gtceu:draconium_nanoswarm")) {
                     RecipeResult.of((IRecipeLogicMachine) machine,
-                            RecipeResult.fail(Component.literal("需要放入龙纳米蜂群")));
+                            RecipeResult.fail(Component.translatable("message.gtlcore.need_dragon_nano_swarm")));
                     return null;
                 }
             }
