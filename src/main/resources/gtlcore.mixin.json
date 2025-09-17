@@ -49,6 +49,7 @@
     "ae2.service.StorageServiceMixin",
     "ae2.stacks.AEItemKeyMixin",
     "ae2.stacks.AEKey2LongMapMixin",
+    "ae2.stacks.AEKeyMixin",
     "ae2.ticking.TickHandlerMixin",
     "extendedae.ContainerPatternModifierMixin",
     "extendedae.InfinityCellMixin",
