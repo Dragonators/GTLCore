@@ -2,6 +2,7 @@ package org.gtlcore.gtlcore.mixin.gtm.ae.slot;
 
 import org.gtlcore.gtlcore.api.machine.trait.MEStock.IMESlot;
 import org.gtlcore.gtlcore.config.ConfigHolder;
+import org.gtlcore.gtlcore.integration.ae2.AEUtils;
 import org.gtlcore.gtlcore.mixin.gtm.ae.machine.MEHatchPartMachineAccessor;
 
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
@@ -112,7 +113,7 @@ public abstract class ExportOnlyAEStockingFluidListMixin extends ExportOnlyAEFlu
                 else {
                     for (int i = 0, configListSize = configList.size(); i < configListSize; i++) {
                         AEFluidKey aeFluidKey = configList.get(i);
-                        if (ingredient.test(FluidStack.create(aeFluidKey.getFluid(), 1, aeFluidKey.getTag()))) {
+                        if (AEUtils.testFluidIngredient(ingredient, aeFluidKey)) {
                             long extracted = aeNetwork.extract(aeFluidKey, amount, simulate ? Actionable.SIMULATE : Actionable.MODULATE, ((MEHatchPartMachineAccessor) this$0).getActionSource());
                             if (extracted > 0) {
                                 changed = true;

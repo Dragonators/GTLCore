@@ -32,10 +32,14 @@ public class StorageManager extends SavedData {
     public @NotNull CompoundTag save(@NotNull CompoundTag nbt) {
         ListTag diskList = new ListTag();
         for (Map.Entry<UUID, InfinityCellDataStorage> entry : disks.entrySet()) {
-            CompoundTag disk = new CompoundTag();
+            UUID uuid = entry.getKey();
+            InfinityCellDataStorage storage = entry.getValue();
 
-            disk.putUUID("diskuuid", entry.getKey());
-            disk.put("diskdata", entry.getValue().toNbt());
+            if (uuid == null || storage == null) continue;
+
+            CompoundTag disk = new CompoundTag();
+            disk.putUUID("diskuuid", uuid);
+            disk.put("diskdata", storage.toNbt());
             diskList.add(disk);
         }
 

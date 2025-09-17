@@ -8,6 +8,7 @@ import org.gtlcore.gtlcore.api.machine.trait.MEStock.IMESlot;
 import org.gtlcore.gtlcore.api.recipe.ingredient.LongIngredient;
 import org.gtlcore.gtlcore.client.gui.widget.AEDualConfigWidget;
 import org.gtlcore.gtlcore.config.ConfigHolder;
+import org.gtlcore.gtlcore.integration.ae2.AEUtils;
 
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
 import com.gregtechceu.gtceu.api.gui.GuiTextures;
@@ -436,7 +437,7 @@ public class MEDualHatchStockPartMachine extends MEBusPartMachine implements IDa
                     else {
                         for (int i = 0, configListSize = configList.size(); i < configListSize; i++) {
                             AEItemKey aeItemKey = configList.get(i);
-                            if (ingredient.test(aeItemKey.toStack())) {
+                            if (aeItemKey.matches(ingredient)) {
                                 long extracted = aeNetwork.extract(aeItemKey, amount, simulate ? Actionable.SIMULATE : Actionable.MODULATE, getActionSource());
                                 if (extracted > 0) {
                                     changed = true;
@@ -599,7 +600,7 @@ public class MEDualHatchStockPartMachine extends MEBusPartMachine implements IDa
                     else {
                         for (int i = 0, configListSize = configList.size(); i < configListSize; i++) {
                             AEFluidKey aeFluidKey = configList.get(i);
-                            if (ingredient.test(FluidStack.create(aeFluidKey.getFluid(), 1, aeFluidKey.getTag()))) {
+                            if (AEUtils.testFluidIngredient(ingredient, aeFluidKey)) {
                                 long extracted = aeNetwork.extract(aeFluidKey, amount, simulate ? Actionable.SIMULATE : Actionable.MODULATE, getActionSource());
                                 if (extracted > 0) {
                                     changed = true;

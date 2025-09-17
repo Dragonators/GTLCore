@@ -331,7 +331,7 @@ public class TagFilterMEStockBusPartMachine extends MEInputBusPartMachine {
                     else {
                         for (int i = 0, configListSize = configList.size(); i < configListSize; i++) {
                             AEItemKey aeItemKey = configList.get(i);
-                            if (ingredient.test(aeItemKey.toStack())) {
+                            if (aeItemKey.matches(ingredient)) {
                                 long extracted = aeNetwork.extract(aeItemKey, amount, simulate ? Actionable.SIMULATE : Actionable.MODULATE, getActionSource());
                                 if (extracted > 0) {
                                     changed = true;
