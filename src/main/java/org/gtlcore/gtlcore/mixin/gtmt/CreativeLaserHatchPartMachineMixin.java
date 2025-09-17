@@ -1,14 +1,15 @@
 package org.gtlcore.gtlcore.mixin.gtmt;
 
-import org.gtlcore.gtlcore.integration.gtmt.InfinityEnergyContainer;
+import org.gtlcore.gtlcore.integration.gtmt.InfinityLaserContainer;
 import org.gtlcore.gtlcore.integration.gtmt.NewGTValues;
 
 import com.gregtechceu.gtceu.api.GTValues;
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
 import com.gregtechceu.gtceu.api.gui.GuiTextures;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
+import com.gregtechceu.gtceu.api.machine.MetaMachine;
 import com.gregtechceu.gtceu.api.machine.multiblock.part.TieredIOPartMachine;
-import com.gregtechceu.gtceu.api.machine.trait.NotifiableEnergyContainer;
+import com.gregtechceu.gtceu.api.machine.trait.NotifiableLaserContainer;
 import com.gregtechceu.gtceu.api.pattern.MultiblockWorldSavedData;
 import com.gregtechceu.gtceu.utils.GTUtil;
 
@@ -27,26 +28,24 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
 
-import com.hepdd.gtmthings.common.block.machine.multiblock.part.CreativeEnergyHatchPartMachine;
+import com.hepdd.gtmthings.common.block.machine.multiblock.part.CreativeLaserHatchPartMachine;
 import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.NotNull;
+import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.*;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Redirect;
 
 import java.util.Arrays;
 
-@Mixin(CreativeEnergyHatchPartMachine.class)
-public abstract class CreativeEnergyHatchPartMachineMixin extends TieredIOPartMachine {
+@Mixin(CreativeLaserHatchPartMachine.class)
+public abstract class CreativeLaserHatchPartMachineMixin extends TieredIOPartMachine {
 
     @Shadow(remap = false)
-    @Final
-    public NotifiableEnergyContainer energyContainer;
+    private NotifiableLaserContainer buffer;
 
     @Shadow(remap = false)
     private long voltage;
-
-    @Persisted
-    @Shadow(remap = false)
-    private Long maxEnergy;
 
     @Shadow(remap = false)
     private int setTier;
@@ -54,19 +53,27 @@ public abstract class CreativeEnergyHatchPartMachineMixin extends TieredIOPartMa
     @Shadow(remap = false)
     private int amps;
 
-    public CreativeEnergyHatchPartMachineMixin(IMachineBlockEntity holder, int tier, IO io) {
+    @Persisted
+    @Shadow(remap = false)
+    private Long maxEnergy;
+
+    public CreativeLaserHatchPartMachineMixin(IMachineBlockEntity holder, int tier, IO io) {
         super(holder, tier, io);
     }
 
-    /**
-     * @author liansishen
-     * @reason Lastest GTMT
-     */
-    @Overwrite(remap = false)
-    protected NotifiableEnergyContainer createEnergyContainer() {
-        this.voltage = GTValues.VEX[setTier];
+    @Redirect(method = "<init>", at = @At(value = "FIELD", target = "Lcom/hepdd/gtmthings/common/block/machine/multiblock/part/CreativeLaserHatchPartMachine;maxEnergy:Ljava/lang/Long;", opcode = org.objectweb.asm.Opcodes.PUTFIELD), remap = false)
+    private void redirectMaxEnergyAssignment(CreativeLaserHatchPartMachine instance, Long value) {
         this.maxEnergy = this.voltage * this.amps;
-        return new InfinityEnergyContainer(this, this.maxEnergy, this.voltage, this.amps, 0L, 0L);
+    }
+
+    @Redirect(method = "<init>", at = @At(value = "FIELD", target = "Lcom/hepdd/gtmthings/common/block/machine/multiblock/part/CreativeLaserHatchPartMachine;voltage:J", opcode = Opcodes.PUTFIELD), remap = false)
+    private void redirectVoltageAssignment(CreativeLaserHatchPartMachine instance, long value) {
+        this.voltage = GTValues.VEX[this.setTier];
+    }
+
+    @Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Lcom/gregtechceu/gtceu/api/machine/trait/NotifiableLaserContainer;receiverContainer(Lcom/gregtechceu/gtceu/api/machine/MetaMachine;JJJ)Lcom/gregtechceu/gtceu/api/machine/trait/NotifiableLaserContainer;"), remap = false)
+    private NotifiableLaserContainer redirectReceiverContainer(MetaMachine machine, long maxCapacity, long maxInputVoltage, long maxInputAmperage) {
+        return new InfinityLaserContainer(this, this.maxEnergy, this.voltage, this.amps, 0L, 0L);
     }
 
     /**
@@ -81,8 +88,8 @@ public abstract class CreativeEnergyHatchPartMachineMixin extends TieredIOPartMa
                 .widget(new TextFieldWidget(9, 47, 152, 16, () -> String.valueOf(voltage),
                         value -> {
                             gTLCore$setVoltage(Long.parseLong(value));
-                            setTier = GTUtil.getTierByVoltage(this.voltage);
-                        }).setNumbersOnly(8L, Long.MAX_VALUE))
+                            setTier = GTUtil.getTierByVoltage(voltage);
+                        }).setNumbersOnly(8192L, Long.MAX_VALUE))
                 .widget(new LabelWidget(7, 74, "gtceu.creative.energy.amperage"))
                 .widget(new ButtonWidget(7, 87, 20, 20,
                         new GuiTextureGroup(ResourceBorderTexture.BUTTON_COMMON, new TextTexture("-")),
@@ -97,15 +104,15 @@ public abstract class CreativeEnergyHatchPartMachineMixin extends TieredIOPartMa
                             }
                         }))
 
-                .widget(new SelectorWidget(7, 7, 50, 20, Arrays.stream(NewGTValues.VNF).toList(), -1)
+                .widget(new SelectorWidget(7, 7, 30, 20, Arrays.stream(NewGTValues.LASER_VNF).toList(), -1)
                         .setOnChanged(tier -> {
-                            setTier = ArrayUtils.indexOf(NewGTValues.VNF, tier);
+                            setTier = ArrayUtils.indexOf(NewGTValues.LASER_VNF, tier) + 5;
                             gTLCore$setVoltage(GTValues.VEX[setTier]);
                         })
-                        .setSupplier(() -> NewGTValues.VNF[setTier])
+                        .setSupplier(() -> NewGTValues.LASER_VNF[setTier - 5])
                         .setButtonBackground(ResourceBorderTexture.BUTTON_COMMON)
                         .setBackground(ColorPattern.BLACK.rectTexture())
-                        .setValue(NewGTValues.VNF[setTier]));
+                        .setValue(NewGTValues.LASER_VNF[setTier - 5]));
     }
 
     @Override
@@ -130,8 +137,8 @@ public abstract class CreativeEnergyHatchPartMachineMixin extends TieredIOPartMa
 
     @Unique
     private void gTLCore$updateEnergyContainer() {
-        this.energyContainer.resetBasicInfo(this.maxEnergy, this.voltage, this.amps, 0, 0);
-        this.energyContainer.setEnergyStored(this.maxEnergy);
+        this.buffer.resetBasicInfo(this.maxEnergy, this.voltage, this.amps, 0, 0);
+        this.buffer.setEnergyStored(this.maxEnergy);
     }
 
     @Unique
@@ -161,14 +168,14 @@ public abstract class CreativeEnergyHatchPartMachineMixin extends TieredIOPartMa
      * @reason Dont use
      */
     @Overwrite(remap = false)
-    protected void addEnergy() {}
+    protected void AddEngerySubscription() {}
 
     /**
      * @author Dragons
      * @reason Dont use
      */
     @Overwrite(remap = false)
-    protected void InfinityEnergySubscription() {}
+    protected void addEng() {}
 
     @Override
     public void onLoad() {
