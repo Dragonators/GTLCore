@@ -255,13 +255,13 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
                 }
                 needPatternSync = true;
             }));
-        }
-        for (int i = 0; i < maxPatternCount; i++) {
-            final int index = i;
-            catalystItems[index].setOnContentsChanged(() -> reCalculateCatalystItemMap(index));
-            for (IFluidTransfer transfer : catalystFluids[index].transfers) {
-                if (transfer instanceof FluidStorage storage) {
-                    storage.setOnContentsChanged(() -> reCalculateCatalystFluidMap(index));
+            for (int i = 0; i < maxPatternCount; i++) {
+                final int index = i;
+                catalystItems[index].setOnContentsChanged(() -> reCalculateCatalystItemMap(index));
+                for (IFluidTransfer transfer : catalystFluids[index].transfers) {
+                    if (transfer instanceof FluidStorage storage) {
+                        storage.setOnContentsChanged(() -> reCalculateCatalystFluidMap(index));
+                    }
                 }
             }
         }

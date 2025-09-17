@@ -9,6 +9,8 @@ import com.gregtechceu.gtceu.api.recipe.ingredient.FluidIngredient;
 import com.gregtechceu.gtceu.common.data.GTItems;
 import com.gregtechceu.gtceu.common.item.IntCircuitBehaviour;
 
+import com.lowdragmc.lowdraglib.side.fluid.FluidStack;
+
 import net.minecraft.nbt.*;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -20,9 +22,7 @@ import appeng.api.config.Actionable;
 import appeng.api.crafting.IPatternDetails;
 import appeng.api.networking.IGrid;
 import appeng.api.networking.security.IActionSource;
-import appeng.api.stacks.AEKey;
-import appeng.api.stacks.GenericStack;
-import appeng.api.stacks.KeyCounter;
+import appeng.api.stacks.*;
 import appeng.api.storage.MEStorage;
 import appeng.api.storage.StorageHelper;
 import appeng.crafting.inv.ICraftingInventory;
@@ -82,6 +82,25 @@ public class AEUtils {
             }
         }
         return didWork;
+    }
+
+    // ========================================
+    // Recipe
+    // ========================================
+
+    public static boolean testFluidIngredient(FluidIngredient fluidIngredient, AEFluidKey fluidKey) {
+        if (fluidIngredient.isEmpty()) {
+            return false;
+        } else if (fluidIngredient.getNbt() != null && !fluidIngredient.getNbt().equals(fluidKey.getTag())) {
+            return false;
+        } else {
+            for (FluidStack fluidStack : fluidIngredient.getStacks()) {
+                if (fluidStack.getFluid() == fluidKey.getFluid()) {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 
     // ========================================
