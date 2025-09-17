@@ -53,14 +53,12 @@ public interface IParallelLogic {
             }
             if (contentList.isEmpty()) recipeContents.remove(cap);
         }
-        recipe.outputs.clear();
-        for (var it = recipeContents.reference2ObjectEntrySet().fastIterator(); it.hasNext();) {
-            var entry = it.next();
-            List<Content> contentList = new ObjectArrayList<>(entry.getValue().size());
-            contentList.addAll(entry.getValue());
-            recipe.outputs.put(entry.getKey(), contentList);
-        }
-        return recipe;
+        var copy = new GTRecipe(recipe.recipeType, recipe.id, recipe.inputs, recipeContents, recipe.tickInputs, recipe.tickOutputs,
+                recipe.inputChanceLogics, recipe.outputChanceLogics, recipe.tickInputChanceLogics, recipe.tickOutputChanceLogics,
+                recipe.conditions, recipe.ingredientActions, recipe.data, recipe.duration, recipe.isFuel);
+        copy.parallels = recipe.parallels;
+        copy.ocTier = recipe.ocTier;
+        return copy;
     }
 
     static long getParallel(IRecipeCapabilityHolder holder, GTRecipe recipe, long parallelAmount) {
