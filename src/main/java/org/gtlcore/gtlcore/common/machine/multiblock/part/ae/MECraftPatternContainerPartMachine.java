@@ -8,7 +8,7 @@ import com.gregtechceu.gtceu.api.gui.GuiTextures;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.feature.IMachineLife;
 import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMultiController;
-import com.gregtechceu.gtceu.api.machine.multiblock.part.TieredPartMachine;
+import com.gregtechceu.gtceu.api.machine.multiblock.part.MultiblockPartMachine;
 
 import com.lowdragmc.lowdraglib.gui.widget.Widget;
 import com.lowdragmc.lowdraglib.gui.widget.WidgetGroup;
@@ -24,13 +24,12 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.BlockHitResult;
 
 import appeng.crafting.pattern.EncodedPatternItem;
-import com.google.common.math.IntMath;
 import org.jetbrains.annotations.NotNull;
 
-public class MECraftPatternContainerPartMachine extends TieredPartMachine implements IMECraftPatternContainer, IMachineLife {
+public class MECraftPatternContainerPartMachine extends MultiblockPartMachine implements IMECraftPatternContainer, IMachineLife {
 
     protected static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(
-            MECraftPatternContainerPartMachine.class, TieredPartMachine.MANAGED_FIELD_HOLDER);
+            MECraftPatternContainerPartMachine.class, MultiblockPartMachine.MANAGED_FIELD_HOLDER);
 
     private static final int PATTERNS_PER_ROW = 9;
 
@@ -41,9 +40,9 @@ public class MECraftPatternContainerPartMachine extends TieredPartMachine implem
     @Persisted
     private boolean shouldOpen = true;
 
-    public MECraftPatternContainerPartMachine(IMachineBlockEntity holder, int tier) {
-        super(holder, tier);
-        patternInventory = new ItemStackTransfer(IntMath.pow(2, tier - 5) * PATTERNS_PER_ROW);
+    public MECraftPatternContainerPartMachine(IMachineBlockEntity holder) {
+        super(holder);
+        patternInventory = new ItemStackTransfer(12 * PATTERNS_PER_ROW);
         patternInventory.setFilter(itemStack -> AEUtils.molecularFilter(itemStack, getLevel()));
     }
 

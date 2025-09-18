@@ -42,7 +42,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.world.item.ItemStack;
 
-import com.google.common.math.IntMath;
 import com.hepdd.gtmthings.GTMThings;
 import com.hepdd.gtmthings.common.registry.GTMTRegistration;
 import com.hepdd.gtmthings.data.CreativeModeTabs;
@@ -593,7 +592,7 @@ public class GTLMachines {
             .compassNode("dual_hatch")
             .register();
 
-    public class GTAEMachines {
+    public static class GTAEMachines {
 
         public static final MachineDefinition ITEM_IMPORT_BUS_ME = GTRegistration.REGISTRATE
                 .machine("me_input_bus", MEInputBusPartMachine::new)
@@ -802,17 +801,15 @@ public class GTLMachines {
                 .tooltipBuilder(GTL_ADD)
                 .register();
 
-        public static final MachineDefinition[] ME_CRAFT_PATTERN_CONTAINER = GTMachines.registerTieredMachines("me_craft_pattern_container", MECraftPatternContainerPartMachine::new,
-                (tier, builder) -> builder
-                        .langValue(GTValues.VNF[tier] + "Pattern Container")
-                        .rotationState(RotationState.ALL)
-                        .abilities(GTLPartAbility.MOLECULAR_ASSEMBLER_MATRIX)
-                        .workableCasingRenderer(GTCEu.id("block/casings/pattern_core_casing"), GTCEu.id("block/casings/pattern_core_casing"))
-                        .tooltips(Component.translatable("gtceu.universal.disabled"), Component.translatable("gtceu.machine.me_craft_pattern_core.tooltip",
-                                Component.literal(FormattingUtil.formatNumbers(IntMath.pow(2, tier - 5) * 9)).withStyle(ChatFormatting.GOLD)))
-                        .tooltipBuilder(GTL_ADD)
-                        .register(),
-                GTValues.tiersBetween(8, 12));
+        public static final MachineDefinition ME_CRAFT_PATTERN_CONTAINER = REGISTRATE.machine("me_craft_pattern_container", MECraftPatternContainerPartMachine::new)
+                .rotationState(RotationState.ALL)
+                .abilities(GTLPartAbility.MOLECULAR_ASSEMBLER_MATRIX)
+                .workableCasingRenderer(GTCEu.id("block/casings/pattern_core_casing"), GTCEu.id("block/casings/pattern_core_casing"))
+                .langValue("ME Craft Pattern Container")
+                .tooltips(Component.translatable("gtceu.universal.disabled"), Component.translatable("gtceu.machine.me_craft_pattern_core.tooltip",
+                        Component.literal(FormattingUtil.formatNumbers(12 * 9)).withStyle(ChatFormatting.GOLD)))
+                .tooltipBuilder(GTL_ADD)
+                .register();
 
         public static final MachineDefinition ME_MOLECULAR_ASSEMBLER_IO = REGISTRATE
                 .machine("me_molecular_assembler_io", MEMolecularAssemblerIOPartMachine::new)
