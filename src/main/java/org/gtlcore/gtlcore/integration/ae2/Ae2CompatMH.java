@@ -6,9 +6,8 @@ import appeng.api.crafting.IPatternDetails;
 import appeng.api.stacks.AEKeyType;
 import appeng.api.stacks.GenericStack;
 import appeng.api.stacks.KeyCounter;
-import appeng.crafting.execution.InputTemplate;
+import appeng.crafting.execution.CraftingCpuHelper;
 import appeng.crafting.inv.ICraftingInventory;
-import appeng.crafting.pattern.AEProcessingPattern;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandleProxies;
@@ -53,21 +52,18 @@ public final class Ae2CompatMH {
         ADD_MAX_ITEMS_FN = add;
     }
 
-    public static KeyCounter[] extractPatternInputs5Args(IPatternDetails details,
-                                                         ICraftingInventory sourceInv,
-                                                         Level level,
-                                                         KeyCounter expectedOutputs,
-                                                         KeyCounter expectedContainerItems) {
-        return extractPatternInputs5Args(details, sourceInv, level, expectedOutputs, expectedContainerItems, 1);
+    public static KeyCounter[] extractForCraftPattern4Args(IPatternDetails details,
+                                                           ICraftingInventory sourceInv,
+                                                           Level level,
+                                                           KeyCounter expectedOutputs) {
+        return extractForCraftPattern4Args(details, sourceInv, level, expectedOutputs, 1);
     }
 
-    public static KeyCounter[] extractPatternInputs5Args(IPatternDetails details,
-                                                         ICraftingInventory sourceInv,
-                                                         Level level,
-                                                         KeyCounter expectedOutputs,
-                                                         KeyCounter expectedContainerItems,
-                                                         long multiply) {
-        if (details instanceof AEProcessingPattern processingPattern) return AEUtils.extractForProcessingPattern(processingPattern, sourceInv, expectedOutputs);
+    public static KeyCounter[] extractForCraftPattern4Args(IPatternDetails details,
+                                                           ICraftingInventory sourceInv,
+                                                           Level level,
+                                                           KeyCounter expectedOutputs,
+                                                           long multiply) {
         var inputs = details.getInputs();
         KeyCounter[] inputHolder = new KeyCounter[inputs.length];
         boolean found = true;
@@ -77,6 +73,59 @@ public final class Ae2CompatMH {
             long remainingMultiplier = Math.multiplyExact(inputs[x].getMultiplier(), multiply);
             for (var template : getValidItemTemplates(sourceInv, inputs[x], level)) {
                 long extracted = extractTemplates(sourceInv, template, remainingMultiplier);
+                list.add(template.key(), extracted * template.amount());
+
+                var containerItem = inputs[x].getRemainingKey(template.key());
+                if (containerItem != null) {
+                    expectedOutputs.add(containerItem, extracted);
+                }
+
+                remainingMultiplier -= extracted;
+                if (remainingMultiplier == 0)
+                    break;
+            }
+
+            if (remainingMultiplier > 0) {
+                found = false;
+                break;
+            }
+        }
+
+        if (!found) {
+            reinjectPatternInputs(sourceInv, inputHolder);
+            return null;
+        }
+
+        for (GenericStack output : details.getOutputs()) {
+            expectedOutputs.add(output.what(), Math.multiplyExact(output.amount(), multiply));
+        }
+
+        return inputHolder;
+    }
+
+    public static KeyCounter[] extractForCraftPattern5Args(IPatternDetails details,
+                                                           ICraftingInventory sourceInv,
+                                                           Level level,
+                                                           KeyCounter expectedOutputs,
+                                                           KeyCounter expectedContainerItems) {
+        return extractForCraftPattern5Args(details, sourceInv, level, expectedOutputs, expectedContainerItems, 1);
+    }
+
+    public static KeyCounter[] extractForCraftPattern5Args(IPatternDetails details,
+                                                           ICraftingInventory sourceInv,
+                                                           Level level,
+                                                           KeyCounter expectedOutputs,
+                                                           KeyCounter expectedContainerItems,
+                                                           long multiply) {
+        var inputs = details.getInputs();
+        KeyCounter[] inputHolder = new KeyCounter[inputs.length];
+        boolean found = true;
+
+        for (int x = 0; x < inputs.length; x++) {
+            var list = inputHolder[x] = new KeyCounter();
+            long remainingMultiplier = Math.multiplyExact(inputs[x].getMultiplier(), multiply);
+            for (var template : getValidItemTemplates(sourceInv, inputs[x], level)) {
+                long extracted = CraftingCpuHelper.extractTemplates(sourceInv, template, remainingMultiplier);
                 list.add(template.key(), extracted * template.amount());
 
                 var containerItem = inputs[x].getRemainingKey(template.key());
@@ -100,64 +149,11 @@ public final class Ae2CompatMH {
             return null;
         }
 
-        for (var output : details.getOutputs()) {
+        for (GenericStack output : details.getOutputs()) {
             expectedOutputs.add(output.what(), Math.multiplyExact(output.amount(), multiply));
         }
 
         return inputHolder;
-    }
-
-    public static KeyCounter[] extractPatternInputs4Args(IPatternDetails details,
-                                                         ICraftingInventory sourceInv,
-                                                         Level level,
-                                                         KeyCounter expectedOutputs) {
-        return extractPatternInputs4Args(details, sourceInv, level, expectedOutputs, 1);
-    }
-
-    public static KeyCounter[] extractPatternInputs4Args(IPatternDetails details,
-                                                         ICraftingInventory sourceInv,
-                                                         Level level,
-                                                         KeyCounter expectedOutputs,
-                                                         long multiply) {
-        if (details instanceof AEProcessingPattern processingPattern) return AEUtils.extractForProcessingPattern(processingPattern, sourceInv, expectedOutputs);
-        var inputs = details.getInputs();
-        KeyCounter[] inputHolder = new KeyCounter[inputs.length];
-        boolean found = true;
-
-        for (int x = 0; x < inputs.length; ++x) {
-            KeyCounter list = inputHolder[x] = new KeyCounter();
-            long remainingMultiplier = Math.multiplyExact(inputs[x].getMultiplier(), multiply);
-            for (InputTemplate template : getValidItemTemplates(sourceInv, inputs[x], level)) {
-                long extracted = extractTemplates(sourceInv, template, remainingMultiplier);
-                list.add(template.key(), extracted * template.amount());
-
-                var containerItem = inputs[x].getRemainingKey(template.key());
-                if (containerItem != null) {
-                    expectedOutputs.add(containerItem, extracted);
-                }
-
-                remainingMultiplier -= extracted;
-                if (remainingMultiplier == 0L) {
-                    break;
-                }
-            }
-
-            if (remainingMultiplier > 0L) {
-                found = false;
-                break;
-            }
-        }
-
-        if (!found) {
-            reinjectPatternInputs(sourceInv, inputHolder);
-            return null;
-        } else {
-            for (GenericStack output : details.getOutputs()) {
-                expectedOutputs.add(output.what(), Math.multiplyExact(output.amount(), multiply));
-            }
-
-            return inputHolder;
-        }
     }
 
     public static void elapsedTimeTrackerAddMaxItems(Object tracker, long amount, AEKeyType type) {

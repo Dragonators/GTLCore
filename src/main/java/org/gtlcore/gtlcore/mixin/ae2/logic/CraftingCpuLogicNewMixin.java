@@ -4,6 +4,7 @@ import org.gtlcore.gtlcore.api.machine.trait.AECraft.IMECraftIOPart;
 import org.gtlcore.gtlcore.api.machine.trait.MEPart.IMEPatternPartMachine;
 import org.gtlcore.gtlcore.integration.ae2.AEUtils;
 import org.gtlcore.gtlcore.integration.ae2.Ae2CompatMH;
+import org.gtlcore.gtlcore.integration.ae2.ICraftingProviderList;
 
 import net.minecraft.world.level.Level;
 
@@ -18,7 +19,6 @@ import appeng.crafting.inv.ListCraftingInventory;
 import appeng.crafting.pattern.AEProcessingPattern;
 import appeng.me.cluster.implementations.CraftingCPUCluster;
 import appeng.me.service.CraftingService;
-import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.*;
 
 @Mixin(CraftingCpuLogic.class)
@@ -45,7 +45,7 @@ public abstract class CraftingCpuLogicNewMixin {
         var job = (ExecutingCraftingJobAccessor) (this.job);
         if (job == null) return 0;
 
-        var pushedPatterns = 0;
+        int remainingPatterns = maxPatterns;
 
         var it = job.getTasks().entrySet().iterator();
         taskLoop:
@@ -58,20 +58,24 @@ public abstract class CraftingCpuLogicNewMixin {
             }
 
             var details = task.getKey();
+            if (!(craftingService.getProviders(details) instanceof ICraftingProviderList list)) continue;
+
             final boolean isProcessing = details instanceof AEProcessingPattern;
+            final int baseSize = maxPatterns / list.size();
+            final int remainder = maxPatterns % list.size();
 
             KeyCounter expectedOutputs = new KeyCounter(), expectedContainerItems = new KeyCounter();
-            @Nullable
             KeyCounter[] craftingContainer = null;
-
             boolean needExtract = true;
+            int index = 0;
 
-            for (var provider : craftingService.getProviders(details)) {
+            for (var provider : list) {
                 final boolean isMEPatternProvider = isProcessing && provider instanceof IMEPatternPartMachine;
                 final boolean isMECraftProvider = provider instanceof IMECraftIOPart;
+                final int size = isProcessing ? (int) Math.min(Math.min(baseSize + (index++ < remainder ? 1 : 0), remainingPatterns), taskProgress.getValue()) : 1;
 
                 if (needExtract) {
-                    craftingContainer = isMEPatternProvider ? AEUtils.extractForMEPatternBuffer((AEProcessingPattern) details, inventory, taskProgress.getValue(), expectedOutputs) : isMECraftProvider ? Ae2CompatMH.extractPatternInputs5Args(details, inventory, level, expectedOutputs, expectedContainerItems, taskProgress.getValue()) : Ae2CompatMH.extractPatternInputs5Args(details, inventory, level, expectedOutputs, expectedContainerItems);
+                    craftingContainer = isMEPatternProvider ? AEUtils.extractForProcessingPattern((AEProcessingPattern) details, inventory, expectedOutputs, taskProgress.getValue()) : isMECraftProvider ? Ae2CompatMH.extractForCraftPattern5Args(details, inventory, level, expectedOutputs, expectedContainerItems, taskProgress.getValue()) : isProcessing ? AEUtils.extractForProcessingPattern((AEProcessingPattern) details, inventory, expectedOutputs, size) : Ae2CompatMH.extractForCraftPattern5Args(details, inventory, level, expectedOutputs, expectedContainerItems);
                     needExtract = false;
                     if (craftingContainer == null) {
                         break;
@@ -87,7 +91,6 @@ public abstract class CraftingCpuLogicNewMixin {
 
                 if (isMECraftProvider ? ((IMECraftIOPart) provider).pushPattern(details, taskProgress.getValue()) : provider.pushPattern(details, craftingContainer)) {
                     energyService.extractAEPower(patternPower, Actionable.MODULATE, PowerMultiplier.CONFIG);
-                    pushedPatterns++;
 
                     for (var expectedOutput : expectedOutputs) {
                         job.getWaitingFor().insert(expectedOutput.getKey(), expectedOutput.getLongValue(),
@@ -105,18 +108,20 @@ public abstract class CraftingCpuLogicNewMixin {
                     // 1) MEPatternBuffer || MECraftProvider
                     if (isMEPatternProvider || isMECraftProvider) {
                         taskProgress.setValue(0);
+                        remainingPatterns--;
                         it.remove();
                         continue taskLoop;
                     }
 
                     // 2) Others
-                    taskProgress.setValue(taskProgress.getValue() - 1);
+                    taskProgress.setValue(taskProgress.getValue() - size);
+                    remainingPatterns -= size;
                     if (taskProgress.getValue() <= 0) {
                         it.remove();
                         continue taskLoop;
                     }
 
-                    if (pushedPatterns == maxPatterns) {
+                    if (remainingPatterns == 0) {
                         break taskLoop;
                     }
 
@@ -132,6 +137,6 @@ public abstract class CraftingCpuLogicNewMixin {
             }
         }
 
-        return pushedPatterns;
+        return maxPatterns - remainingPatterns;
     }
 }
