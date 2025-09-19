@@ -1,5 +1,6 @@
 package org.gtlcore.gtlcore.mixin.gtm.api.recipe;
 
+import org.gtlcore.gtlcore.api.recipe.IGTRecipe;
 import org.gtlcore.gtlcore.api.recipe.RecipeResult;
 
 import com.gregtechceu.gtceu.api.capability.recipe.*;
@@ -12,6 +13,7 @@ import com.gregtechceu.gtceu.utils.GTUtil;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 
+import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
@@ -22,11 +24,12 @@ import java.util.List;
 import java.util.Map;
 
 @Mixin(GTRecipe.class)
-public abstract class GTRecipeMixin {
+public abstract class GTRecipeMixin implements IGTRecipe {
 
     @Unique
     private int tier = -1;
     @Unique
+    @Setter
     private boolean hasTick;
     @Unique
     private IO io;
@@ -89,4 +92,9 @@ public abstract class GTRecipeMixin {
 
     @Shadow(remap = false)
     protected abstract GTRecipe.ActionResult matchRecipe(IRecipeCapabilityHolder holder, boolean tick);
+
+    @Override
+    public int getEuTier() {
+        return this.tier = tier == -1 ? this.data.getInt("euTier") : tier;
+    }
 }
