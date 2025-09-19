@@ -45,7 +45,6 @@
     "ae2.logic.ExecutingCraftingJobTaskProgressAccessor",
     "ae2.logic.PatternProviderLogicMixin",
     "ae2.pattern.AEProcessingPatternMixin",
-    "ae2.service.CraftingProviderListMixin",
     "ae2.service.CraftingServiceMixin",
     "ae2.service.StorageServiceMixin",
     "ae2.stacks.AEItemKeyMixin",
