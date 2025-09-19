@@ -4,7 +4,6 @@ import org.gtlcore.gtlcore.api.machine.trait.AECraft.IMECraftIOPart;
 import org.gtlcore.gtlcore.api.machine.trait.MEPart.IMEPatternPartMachine;
 import org.gtlcore.gtlcore.integration.ae2.AEUtils;
 import org.gtlcore.gtlcore.integration.ae2.Ae2CompatMH;
-import org.gtlcore.gtlcore.integration.ae2.ICraftingProviderList;
 
 import net.minecraft.world.level.Level;
 
@@ -48,7 +47,7 @@ public abstract class CraftingCpuLogicOldMixin {
         var job = (ExecutingCraftingJobAccessor) (this.job);
         if (job == null) return 0;
 
-        int remainingPatterns = maxPatterns;
+        var pushedPatterns = 0;
 
         var it = job.getTasks().entrySet().iterator();
         taskLoop:
@@ -61,24 +60,18 @@ public abstract class CraftingCpuLogicOldMixin {
             }
 
             var details = task.getKey();
-            if (!(craftingService.getProviders(details) instanceof ICraftingProviderList list)) continue;
-
             final boolean isProcessing = details instanceof AEProcessingPattern;
-            final int baseSize = maxPatterns / list.size();
-            final int remainder = maxPatterns % list.size();
 
             KeyCounter expectedOutputs = new KeyCounter();
             KeyCounter[] craftingContainer = null;
             boolean needExtract = true;
-            int index = 0;
 
-            for (var provider : list) {
+            for (var provider : craftingService.getProviders(details)) {
                 final boolean isMEPatternProvider = isProcessing && provider instanceof IMEPatternPartMachine;
                 final boolean isMECraftProvider = provider instanceof IMECraftIOPart;
-                final int size = isProcessing ? (int) Math.min(Math.min(baseSize + (index++ < remainder ? 1 : 0), remainingPatterns), taskProgress.getValue()) : 1;
 
                 if (needExtract) {
-                    craftingContainer = isMEPatternProvider ? AEUtils.extractForProcessingPattern((AEProcessingPattern) details, inventory, expectedOutputs, taskProgress.getValue()) : isMECraftProvider ? Ae2CompatMH.extractForCraftPattern4Args(details, inventory, level, expectedOutputs, taskProgress.getValue()) : isProcessing ? AEUtils.extractForProcessingPattern((AEProcessingPattern) details, inventory, expectedOutputs, size) : Ae2CompatMH.extractForCraftPattern4Args(details, inventory, level, expectedOutputs);
+                    craftingContainer = isProcessing ? (isMEPatternProvider ? AEUtils.extractForProcessingPattern((AEProcessingPattern) details, inventory, expectedOutputs, taskProgress.getValue()) : AEUtils.extractForProcessingPattern((AEProcessingPattern) details, inventory, expectedOutputs)) : (isMECraftProvider ? Ae2CompatMH.extractForCraftPattern4Args(details, inventory, level, expectedOutputs, taskProgress.getValue()) : Ae2CompatMH.extractForCraftPattern4Args(details, inventory, level, expectedOutputs));
 
                     needExtract = false;
                     if (craftingContainer == null) {
@@ -95,6 +88,7 @@ public abstract class CraftingCpuLogicOldMixin {
 
                 if (isMECraftProvider ? ((IMECraftIOPart) provider).pushPattern(details, taskProgress.getValue()) : provider.pushPattern(details, craftingContainer)) {
                     energyService.extractAEPower(patternPower, Actionable.MODULATE, PowerMultiplier.CONFIG);
+                    pushedPatterns++;
 
                     for (var expectedOutput : expectedOutputs) {
                         job.getWaitingFor().insert(expectedOutput.getKey(), expectedOutput.getLongValue(),
@@ -106,20 +100,18 @@ public abstract class CraftingCpuLogicOldMixin {
                     // 1) MEPatternBuffer || MECraftProvider
                     if (isMEPatternProvider || isMECraftProvider) {
                         taskProgress.setValue(0);
-                        remainingPatterns--;
                         it.remove();
                         continue taskLoop;
                     }
 
                     // 2) Others
-                    taskProgress.setValue(taskProgress.getValue() - size);
-                    remainingPatterns -= size;
+                    taskProgress.setValue(taskProgress.getValue() - 1);
                     if (taskProgress.getValue() <= 0) {
                         it.remove();
                         continue taskLoop;
                     }
 
-                    if (remainingPatterns == 0) {
+                    if (pushedPatterns == maxPatterns) {
                         break taskLoop;
                     }
 
@@ -134,6 +126,6 @@ public abstract class CraftingCpuLogicOldMixin {
             }
         }
 
-        return maxPatterns - remainingPatterns;
+        return pushedPatterns;
     }
 }
