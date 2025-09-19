@@ -76,7 +76,7 @@ public abstract class GTRecipeMixin {
         }
         GTRecipe.ActionResult result = this.matchRecipe(holder, true);
         if (!result.isSuccess() && result.reason() != null) {
-            String s = result.reason().get().getContents().toString();
+            String s = result.reason().get().toString();
             if (s.contains("_in")) {
                 if (s.contains("cwu")) RecipeResult.of((IRecipeLogicMachine) holder, RecipeResult.FAIL_NO_ENOUGH_CWU_IN);
                 else if (s.contains("eu.name")) RecipeResult.of((IRecipeLogicMachine) holder, RecipeResult.FAIL_NO_ENOUGH_EU_IN);

@@ -258,7 +258,7 @@ public class Misc {
                 .inputFluids(Mendelevium.getFluid(1728))
                 .inputFluids(DamascusSteel.getFluid(2304))
                 .inputFluids(Titanium50.getFluid(2304))
-                .outputItems(GTLMachines.GTAEMachines.ME_CRAFT_PATTERN_CONTAINER[UV])
+                .outputItems(GTLMachines.GTAEMachines.ME_CRAFT_PATTERN_CONTAINER)
                 .EUt(VA[9]).duration(200)
                 .stationResearch((b) -> b.researchStack(EX_PATTERN_PROVIDER.asItem().getDefaultInstance())
                         .dataStack(GTItems.TOOL_DATA_MODULE.asStack()).EUt(VA[9]).CWUt(128))
