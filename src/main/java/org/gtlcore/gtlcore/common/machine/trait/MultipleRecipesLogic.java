@@ -3,13 +3,11 @@ package org.gtlcore.gtlcore.common.machine.trait;
 import org.gtlcore.gtlcore.api.machine.multiblock.ParallelMachine;
 import org.gtlcore.gtlcore.api.machine.trait.ILockRecipe;
 
-import com.gregtechceu.gtceu.api.capability.recipe.*;
 import com.gregtechceu.gtceu.api.machine.feature.IRecipeLogicMachine;
 import com.gregtechceu.gtceu.api.machine.multiblock.WorkableElectricMultiblockMachine;
 import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.RecipeHelper;
-import com.gregtechceu.gtceu.api.recipe.content.Content;
 import com.gregtechceu.gtceu.api.recipe.content.ContentModifier;
 import com.gregtechceu.gtceu.data.recipe.builder.GTRecipeBuilder;
 
@@ -64,9 +62,7 @@ public class MultipleRecipesLogic extends RecipeLogic implements ILockRecipe {
         long maxEUt = getMachine().getOverclockVoltage();
         if (maxEUt <= 0) return null;
         var iterator = lookupRecipeIterator();
-        GTRecipe output = GTRecipeBuilder.ofRaw().buildRawRecipe();
-        output.outputs.put(ItemRecipeCapability.CAP, new ArrayList<>());
-        output.outputs.put(FluidRecipeCapability.CAP, new ArrayList<>());
+        var output = GTRecipeBuilder.ofRaw();
         long totalEu = 0;
         long remain = (long) this.parallel.getMaxParallel() * MAX_THREADS;
         while (remain > 0 && iterator.hasNext()) {
@@ -76,25 +72,20 @@ public class MultipleRecipesLogic extends RecipeLogic implements ILockRecipe {
             if (p <= 0) continue;
             else if (p > 1) match = match.copy(ContentModifier.multiplier(p), false);
             match.parallels = Ints.saturatedCast(p);
-            getRecipeOutputChance(machine, match);
+            match = getRecipeOutputChance(machine, match);
             remain -= p;
             if (handleRecipeInput(machine, match)) {
                 totalEu += RecipeHelper.getInputEUt(match) * match.duration;
-                var item = match.outputs.get(ItemRecipeCapability.CAP);
-                if (item != null) output.outputs.get(ItemRecipeCapability.CAP).addAll(item);
-                var fluid = match.outputs.get(FluidRecipeCapability.CAP);
-                if (fluid != null) output.outputs.get(FluidRecipeCapability.CAP).addAll(fluid);
+                output.output.putAll(match.outputs);
             }
             if (totalEu / maxEUt > 20 * 500) break;
         }
-        if (output.outputs.get(ItemRecipeCapability.CAP).isEmpty() && output.outputs.get(FluidRecipeCapability.CAP).isEmpty())
-            return null;
+        if (output.output.isEmpty()) return null;
         double d = (double) totalEu / maxEUt;
         long eut = d > 20 ? maxEUt : (long) (maxEUt * d / 20);
-        output.tickInputs.put(EURecipeCapability.CAP,
-                List.of(new Content(eut, 10000, 10000, 0, null, null)));
+        output.EUt(eut);
         output.duration = (int) Math.max(d, 20);
-        return output;
+        return output.buildRawRecipe();
     }
 
     private Iterator<GTRecipe> lookupRecipeIterator() {
