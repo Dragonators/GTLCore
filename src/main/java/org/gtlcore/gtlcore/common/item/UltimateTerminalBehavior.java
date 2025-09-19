@@ -43,6 +43,11 @@ import static org.gtlcore.gtlcore.common.block.BlockMap.*;
 
 public class UltimateTerminalBehavior implements IItemUIFactory {
 
+    static final Component SC = Component.translatable("gui.gtlcore.stellar_thermal_container");
+    static final Component SEPM = Component.translatable("gui.gtlcore.space_elevator_module");
+    static final Component CAL = Component.translatable("gui.gtlcore.component_assembly_casing");
+    static final Component COIL = Component.translatable("gui.gtlcore.coil");
+
     public UltimateTerminalBehavior() {}
 
     @Override
@@ -86,6 +91,7 @@ public class UltimateTerminalBehavior implements IItemUIFactory {
 
     @Override
     public ModularUI createUI(HeldItemUIFactory.HeldItemHolder heldItemHolder, Player player) {
+        if (tierBlockMap.isEmpty()) build();
         return (new ModularUI(176, 166, heldItemHolder, player)).widget(this.createWidget(player));
     }
 
@@ -120,15 +126,13 @@ public class UltimateTerminalBehavior implements IItemUIFactory {
                         new GuiTextureGroup(GuiTextures.BUTTON, new TextTexture("ON"))));
         BlockMapSelectorWidget tier = new BlockMapSelectorWidget(80, 23, 56, 16, List.of());
         SelectorWidget type = new SelectorWidget(140, 23, 36, 16,
-                List.of("恒星热力容器", "太空电梯动力模块", "部件装配线外壳", "线圈"), -1);
+                List.of(SC.getString(), SEPM.getString(), CAL.getString(), COIL.getString()), -1);
         type.setValue(getBlock(handItem)).setOnChanged(selectedValue -> {
-            String s = switch (selectedValue) {
-                case "恒星热力容器" -> "sc";
-                case "太空电梯动力模块" -> "sepm";
-                case "部件装配线外壳" -> "cal";
-                case "线圈" -> "coil";
-                default -> "";
-            };
+            String s = "";
+            if (selectedValue.equals(SC.getString())) s = "sc";
+            else if (selectedValue.equals(SEPM.getString())) s = "sepm";
+            else if (selectedValue.equals(CAL.getString())) s = "cal";
+            else if (selectedValue.equals(COIL.getString())) s = "coil";
             CompoundTag tag = handItem.getTag();
             tag.putString("blocks", s);
             Block[] blocks = tierBlockMap.getOrDefault(s, new Block[0]);
@@ -152,16 +156,16 @@ public class UltimateTerminalBehavior implements IItemUIFactory {
         if (tag != null && !tag.isEmpty()) {
             switch (tag.getString("blocks")) {
                 case "sc" -> {
-                    return "恒星热力容器";
+                    return SC.getString();
                 }
                 case "sepm" -> {
-                    return "太空电梯动力模块";
+                    return SEPM.getString();
                 }
                 case "cal" -> {
-                    return "部件装配线外壳";
+                    return CAL.getString();
                 }
                 case "coil" -> {
-                    return "线圈";
+                    return COIL.getString();
                 }
             }
         }

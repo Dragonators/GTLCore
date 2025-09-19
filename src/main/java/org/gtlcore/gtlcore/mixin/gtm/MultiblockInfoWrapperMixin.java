@@ -1,7 +1,6 @@
 package org.gtlcore.gtlcore.mixin.gtm;
 
 import org.gtlcore.gtlcore.api.gui.PatternPreviewWidget;
-import org.gtlcore.gtlcore.common.block.BlockMap;
 
 import com.gregtechceu.gtceu.api.machine.MultiblockMachineDefinition;
 import com.gregtechceu.gtceu.integration.jei.multipage.MultiblockInfoWrapper;
@@ -20,7 +19,6 @@ public class MultiblockInfoWrapperMixin {
                at = @At(value = "INVOKE",
                         target = "Lcom/lowdragmc/lowdraglib/jei/ModularWrapper;<init>(Lcom/lowdragmc/lowdraglib/gui/widget/Widget;)V"))
     private static Widget MultiblockInfoWrapper(Widget par1, @Local(ordinal = 0, argsOnly = true) MultiblockMachineDefinition definition) {
-        BlockMap.build();
         return PatternPreviewWidget.getPatternWidget(definition);
     }
 }
