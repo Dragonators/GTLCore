@@ -3,6 +3,7 @@ package org.gtlcore.gtlcore.common.machine.trait;
 import org.gtlcore.gtlcore.api.machine.multiblock.ParallelMachine;
 import org.gtlcore.gtlcore.api.machine.trait.ILockRecipe;
 
+import com.gregtechceu.gtceu.api.capability.recipe.*;
 import com.gregtechceu.gtceu.api.machine.feature.IRecipeLogicMachine;
 import com.gregtechceu.gtceu.api.machine.multiblock.WorkableElectricMultiblockMachine;
 import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic;
@@ -14,6 +15,7 @@ import com.gregtechceu.gtceu.data.recipe.builder.GTRecipeBuilder;
 import net.minecraft.nbt.CompoundTag;
 
 import com.google.common.primitives.Ints;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import lombok.Getter;
 
 import java.util.*;
@@ -63,6 +65,8 @@ public class MultipleRecipesLogic extends RecipeLogic implements ILockRecipe {
         if (maxEUt <= 0) return null;
         var iterator = lookupRecipeIterator();
         var output = GTRecipeBuilder.ofRaw();
+        output.output.put(ItemRecipeCapability.CAP, new ObjectArrayList<>());
+        output.output.put(FluidRecipeCapability.CAP, new ObjectArrayList<>());
         long totalEu = 0;
         long remain = (long) this.parallel.getMaxParallel() * MAX_THREADS;
         while (remain > 0 && iterator.hasNext()) {
@@ -76,11 +80,16 @@ public class MultipleRecipesLogic extends RecipeLogic implements ILockRecipe {
             remain -= p;
             if (handleRecipeInput(machine, match)) {
                 totalEu += RecipeHelper.getInputEUt(match) * match.duration;
-                output.output.putAll(match.outputs);
+                var item = match.outputs.get(ItemRecipeCapability.CAP);
+                if (item != null) output.output.get(ItemRecipeCapability.CAP).addAll(item);
+                var fluid = match.outputs.get(FluidRecipeCapability.CAP);
+                if (fluid != null) output.output.get(FluidRecipeCapability.CAP).addAll(fluid);
             }
             if (totalEu / maxEUt > 20 * 500) break;
         }
-        if (output.output.isEmpty()) return null;
+        if (output.output.get(ItemRecipeCapability.CAP).isEmpty() &&
+                output.output.get(FluidRecipeCapability.CAP).isEmpty())
+            return null;
         double d = (double) totalEu / maxEUt;
         long eut = d > 20 ? maxEUt : (long) (maxEUt * d / 20);
         output.EUt(eut);
