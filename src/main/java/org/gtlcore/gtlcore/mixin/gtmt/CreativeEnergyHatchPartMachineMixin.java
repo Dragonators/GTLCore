@@ -65,6 +65,7 @@ public abstract class CreativeEnergyHatchPartMachineMixin extends TieredIOPartMa
      */
     @Overwrite(remap = false)
     protected NotifiableEnergyContainer createEnergyContainer() {
+        this.setTier = 30;
         this.voltage = GTValues.VEX[setTier];
         this.maxEnergy = NumberUtils.saturatedMultiply(this.voltage, this.amps);
         return new InfinityEnergyContainer(this, this.maxEnergy, this.voltage, this.amps, 0L, 0L);

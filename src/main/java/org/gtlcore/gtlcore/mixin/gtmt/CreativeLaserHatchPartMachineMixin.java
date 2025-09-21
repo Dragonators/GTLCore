@@ -69,6 +69,7 @@ public abstract class CreativeLaserHatchPartMachineMixin extends TieredIOPartMac
 
     @Redirect(method = "<init>", at = @At(value = "FIELD", target = "Lcom/hepdd/gtmthings/common/block/machine/multiblock/part/CreativeLaserHatchPartMachine;voltage:J", opcode = Opcodes.PUTFIELD), remap = false)
     private void redirectVoltageAssignment(CreativeLaserHatchPartMachine instance, long value) {
+        this.setTier = 30;
         this.voltage = GTValues.VEX[this.setTier];
     }
 
