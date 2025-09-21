@@ -2,12 +2,13 @@ package org.gtlcore.gtlcore.api.recipe;
 
 import org.gtlcore.gtlcore.api.machine.trait.IRecipeCapabilityMachine;
 import org.gtlcore.gtlcore.api.machine.trait.MEPatternRecipeHandlePart;
+import org.gtlcore.gtlcore.api.recipe.chance.ILongChanceLogic;
 import org.gtlcore.gtlcore.api.recipe.ingredient.LongIngredient;
 
 import com.gregtechceu.gtceu.api.capability.recipe.*;
 import com.gregtechceu.gtceu.api.machine.feature.IRecipeLogicMachine;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
-import com.gregtechceu.gtceu.api.recipe.RecipeHelper;
+import com.gregtechceu.gtceu.api.recipe.chance.logic.ChanceLogic;
 import com.gregtechceu.gtceu.api.recipe.content.Content;
 import com.gregtechceu.gtceu.api.recipe.content.ContentModifier;
 import com.gregtechceu.gtceu.api.recipe.ingredient.FluidIngredient;
@@ -40,11 +41,9 @@ public interface IParallelLogic {
             }
             if (!chancedContents.isEmpty()) {
                 var function = recipe.getType().getChanceFunction();
-                var logic = recipe.getChanceLogicForCapability(cap, IO.OUT, true);
-                int recipeTier = RecipeHelper.getPreOCRecipeEuTier(recipe);
                 int holderTier = holder.getChanceTier();
                 var cache = ((IRecipeLogicMachine) holder).getRecipeLogic().getChanceCaches().get(cap);
-                chancedContents = logic.roll(chancedContents, function, recipeTier, holderTier, cache, recipe.parallels, cap);
+                chancedContents = ((ILongChanceLogic) ChanceLogic.OR).roll(chancedContents, function, ((IGTRecipe) recipe).getEuTier(), holderTier, cache, ((IGTRecipe) recipe).getRealParallels(), cap);
                 if (chancedContents != null) {
                     for (var cont : chancedContents) {
                         contentList.add(new Content(cont.content, 10000, 10000, 0, null, null));
@@ -56,7 +55,7 @@ public interface IParallelLogic {
         var copy = new GTRecipe(recipe.recipeType, recipe.id, recipe.inputs, recipeContents, recipe.tickInputs, recipe.tickOutputs,
                 recipe.inputChanceLogics, recipe.outputChanceLogics, recipe.tickInputChanceLogics, recipe.tickOutputChanceLogics,
                 recipe.conditions, recipe.ingredientActions, recipe.data, recipe.duration, recipe.isFuel);
-        copy.parallels = recipe.parallels;
+        ((IGTRecipe) copy).setRealParallels(((IGTRecipe) recipe).getRealParallels());
         copy.ocTier = recipe.ocTier;
         return copy;
     }

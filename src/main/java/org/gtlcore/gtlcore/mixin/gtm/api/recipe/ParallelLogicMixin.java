@@ -1,5 +1,6 @@
 package org.gtlcore.gtlcore.mixin.gtm.api.recipe;
 
+import org.gtlcore.gtlcore.api.recipe.IGTRecipe;
 import org.gtlcore.gtlcore.api.recipe.IParallelLogic;
 
 import com.gregtechceu.gtceu.api.capability.recipe.IRecipeCapabilityHolder;
@@ -74,7 +75,7 @@ public class ParallelLogicMixin {
             int limitByOutput = limitByOutputMerging(currentRecipe, machine, multiplierByInputs, machine::canVoidRecipeOutputs);
             if (limitByOutput > 1) {
                 GTRecipe multiRecipe = currentRecipe.copy(ContentModifier.multiplier(limitByOutput), modifyDuration);
-                multiRecipe.parallels = Ints.saturatedCast((long) limitByOutput * currentRecipe.parallels);
+                ((IGTRecipe) multiRecipe).setRealParallels((long) limitByOutput * ((IGTRecipe) currentRecipe).getRealParallels());
                 multiRecipe = IParallelLogic.getRecipeOutputChance(machine, multiRecipe);
                 return Pair.of(multiRecipe, limitByOutput);
             } else {

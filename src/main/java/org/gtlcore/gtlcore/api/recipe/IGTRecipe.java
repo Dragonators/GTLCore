@@ -11,4 +11,8 @@ public interface IGTRecipe {
     void setHasTick(boolean hasTick);
 
     int getEuTier();
+
+    long getRealParallels();
+
+    void setRealParallels(long realParallels);
 }
