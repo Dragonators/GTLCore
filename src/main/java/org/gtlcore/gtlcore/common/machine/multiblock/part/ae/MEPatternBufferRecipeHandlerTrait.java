@@ -1,6 +1,7 @@
 package org.gtlcore.gtlcore.common.machine.multiblock.part.ae;
 
 import org.gtlcore.gtlcore.api.machine.trait.IMERecipeHandlerTrait;
+import org.gtlcore.gtlcore.api.recipe.ingredient.LongIngredient;
 import org.gtlcore.gtlcore.integration.ae2.AEUtils;
 
 import com.gregtechceu.gtceu.api.capability.recipe.*;
@@ -209,7 +210,7 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
                 if (items.length != 0) {
                     ItemStack output = items[0];
                     if (!output.isEmpty()) {
-                        pendingRefundData.addTo(AEItemKey.of(output), output.getCount());
+                        pendingRefundData.addTo(AEItemKey.of(output), ingredient instanceof LongIngredient longIngredient ? longIngredient.getActualAmount() : output.getCount());
                     }
                 }
             }

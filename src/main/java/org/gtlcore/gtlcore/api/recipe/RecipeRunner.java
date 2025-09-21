@@ -1,10 +1,10 @@
 package org.gtlcore.gtlcore.api.recipe;
 
 import org.gtlcore.gtlcore.api.machine.trait.*;
+import org.gtlcore.gtlcore.api.recipe.chance.ILongChanceLogic;
 
 import com.gregtechceu.gtceu.api.capability.recipe.*;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
-import com.gregtechceu.gtceu.api.recipe.RecipeHelper;
 import com.gregtechceu.gtceu.api.recipe.chance.boost.ChanceBoostFunction;
 import com.gregtechceu.gtceu.api.recipe.chance.logic.ChanceLogic;
 import com.gregtechceu.gtceu.api.recipe.content.Content;
@@ -71,11 +71,9 @@ public class RecipeRunner {
             }
             if (!chancedContents.isEmpty()) {
                 ChanceBoostFunction function = recipe.getType().getChanceFunction();
-                ChanceLogic logic = recipe.getChanceLogicForCapability(cap, this.io, this.isTick);
-                int recipeTier = RecipeHelper.getPreOCRecipeEuTier(recipe);
                 int holderTier = holder.getChanceTier();
                 var cache = this.chanceCaches.get(cap);
-                chancedContents = logic.roll(chancedContents, function, recipeTier, holderTier, cache, recipe.parallels, cap);
+                chancedContents = ((ILongChanceLogic) ChanceLogic.OR).roll(chancedContents, function, ((IGTRecipe) recipe).getEuTier(), holderTier, cache, ((IGTRecipe) recipe).getRealParallels(), cap);
                 if (chancedContents != null) {
                     for (Content cont : chancedContents) {
                         contentList.add(cont.content);

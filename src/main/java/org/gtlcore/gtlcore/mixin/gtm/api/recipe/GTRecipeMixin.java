@@ -13,6 +13,8 @@ import com.gregtechceu.gtceu.utils.GTUtil;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 
+import com.google.common.primitives.Ints;
+import lombok.Getter;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.*;
@@ -29,11 +31,16 @@ public abstract class GTRecipeMixin implements IGTRecipe {
     @Unique
     private int tier = -1;
     @Unique
+    @Getter
+    private long realParallels = 1;
+    @Unique
     @Setter
     private boolean hasTick;
     @Unique
     private IO io;
 
+    @Shadow(remap = false)
+    public int parallels;
     @Shadow(remap = false)
     public ResourceLocation id;
     @Shadow(remap = false)
@@ -96,5 +103,11 @@ public abstract class GTRecipeMixin implements IGTRecipe {
     @Override
     public int getEuTier() {
         return this.tier = tier == -1 ? this.data.getInt("euTier") : tier;
+    }
+
+    @Override
+    public void setRealParallels(long realParallel) {
+        this.realParallels = realParallel;
+        this.parallels = Ints.saturatedCast(realParallel);
     }
 }
