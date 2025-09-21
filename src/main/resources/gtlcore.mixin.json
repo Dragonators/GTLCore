@@ -16,6 +16,7 @@
     "gtm.gui.ProspectingMapWidgetMixin",
     "gtm.gui.ProspectingTextureMixin",
     "ldlib.CustomBakedModelFixed",
+    "mc.GuiGraphicsMixin",
     "meRequester.NumberFieldMixin"
   ],
   "mixins": [

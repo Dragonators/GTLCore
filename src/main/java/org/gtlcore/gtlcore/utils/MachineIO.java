@@ -18,12 +18,14 @@ import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.Objects;
 
+import static org.gtlcore.gtlcore.api.recipe.RecipeRunnerHelper.*;
+
 public class MachineIO {
 
     public static boolean inputItem(WorkableMultiblockMachine machine, ItemStack item) {
         GTRecipe recipe = new GTRecipeBuilder(item.kjs$getIdLocation(), GTRecipeTypes.DUMMY_RECIPES).inputItems(item).buildRawRecipe();
-        if (recipe.matchRecipe(machine).isSuccess()) {
-            return recipe.handleRecipeIO(IO.IN, machine, machine.recipeLogic.getChanceCaches());
+        if (matchRecipeInput(machine, recipe)) {
+            return handleRecipeInput(machine, recipe);
         } else RecipeResult.of(machine, RecipeResult.fail(Component.translatable("gtceu.recipe.fail.no.input.item", item.getDisplayName())));
         return false;
     }
@@ -31,8 +33,8 @@ public class MachineIO {
     public static boolean outputItem(WorkableMultiblockMachine machine, ItemStack item) {
         if (!item.isEmpty()) {
             GTRecipe recipe = new GTRecipeBuilder(item.kjs$getIdLocation(), GTRecipeTypes.DUMMY_RECIPES).outputItems(item).buildRawRecipe();
-            if (recipe.matchRecipe(machine).isSuccess()) {
-                return recipe.handleRecipeIO(IO.OUT, machine, machine.recipeLogic.getChanceCaches());
+            if (matchRecipeOutput(machine, recipe)) {
+                return handleRecipeOutput(machine, recipe);
             }
         }
         return false;
@@ -49,8 +51,8 @@ public class MachineIO {
 
     public static boolean inputFluid(WorkableMultiblockMachine machine, FluidStack fluid) {
         GTRecipe recipe = new GTRecipeBuilder(Objects.requireNonNull(ForgeRegistries.FLUIDS.getKey(fluid.getFluid())), GTRecipeTypes.DUMMY_RECIPES).inputFluids(fluid).buildRawRecipe();
-        if (recipe.matchRecipe(machine).isSuccess()) {
-            return recipe.handleRecipeIO(IO.IN, machine, machine.recipeLogic.getChanceCaches());
+        if (matchRecipeInput(machine, recipe)) {
+            return handleRecipeInput(machine, recipe);
         } else RecipeResult.of(machine, RecipeResult.fail(Component.translatable("gtceu.recipe.fail.no.input.fluid", fluid.getDisplayName())));
         return false;
     }
@@ -58,8 +60,8 @@ public class MachineIO {
     public static boolean outputFluid(WorkableMultiblockMachine machine, FluidStack fluid) {
         if (!fluid.isEmpty()) {
             GTRecipe recipe = new GTRecipeBuilder(Objects.requireNonNull(ForgeRegistries.FLUIDS.getKey(fluid.getFluid())), GTRecipeTypes.DUMMY_RECIPES).outputFluids(fluid).buildRawRecipe();
-            if (recipe.matchRecipe(machine).isSuccess()) {
-                return recipe.handleRecipeIO(IO.OUT, machine, machine.recipeLogic.getChanceCaches());
+            if (matchRecipeOutput(machine, recipe)) {
+                return handleRecipeOutput(machine, recipe);
             }
         }
         return false;
@@ -67,8 +69,8 @@ public class MachineIO {
 
     public static boolean inputEU(WorkableMultiblockMachine machine, long eu) {
         GTRecipe recipe = new GTRecipeBuilder(GTCEu.id(String.valueOf(eu)), GTRecipeTypes.DUMMY_RECIPES).inputEU(eu).buildRawRecipe();
-        if (recipe.matchRecipe(machine).isSuccess()) {
-            return recipe.handleRecipeIO(IO.IN, machine, machine.recipeLogic.getChanceCaches());
+        if (recipe.matchTickRecipe(machine).isSuccess()) {
+            return recipe.handleTickRecipeIO(IO.IN, machine, machine.recipeLogic.getChanceCaches());
         }
         return false;
     }
