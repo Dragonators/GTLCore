@@ -53,7 +53,7 @@ public abstract class GTRecipeMixin implements IGTRecipe {
             at = @At("RETURN"),
             remap = false)
     public void GTRecipe(GTRecipeType recipeType, ResourceLocation id, Map inputs, Map outputs, Map tickInputs, Map tickOutputs, Map inputChanceLogics, Map outputChanceLogics, Map tickInputChanceLogics, Map tickOutputChanceLogics, List conditions, List ingredientActions, CompoundTag data, int duration, boolean isFuel, CallbackInfo ci) {
-        this.tier = this.data.getInt("euTier");
+        this.tier = this.getEuTier();
         this.hasTick = !tickInputs.isEmpty() || !tickOutputs.isEmpty();
         this.io = tickInputs.isEmpty() ? (tickOutputs.isEmpty() ? IO.NONE : IO.OUT) : IO.IN;
     }
@@ -77,8 +77,7 @@ public abstract class GTRecipeMixin implements IGTRecipe {
         if (holder instanceof WorkableElectricMultiblockMachine machine && this.io == IO.IN) {
             GTRecipe lastRecipe = machine.getRecipeLogic().getLastOriginRecipe();
             if (lastRecipe == null || !this.id.equals(lastRecipe.id)) {
-                this.tier = tier == -1 ? this.data.getInt("euTier") : tier;
-                if (this.tier > GTUtil.getFloorTierByVoltage(machine.getMaxVoltage())) {
+                if (this.getEuTier() > GTUtil.getFloorTierByVoltage(machine.getMaxVoltage())) {
                     RecipeResult.of((IRecipeLogicMachine) holder, RecipeResult.FAIL_VOLTAGE_TIER);
                     return GTRecipe.ActionResult.fail(() -> null);
                 }

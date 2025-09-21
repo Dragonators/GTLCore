@@ -22,6 +22,7 @@ import com.lowdragmc.lowdraglib.utils.CycleItemStackHandler;
 import com.lowdragmc.lowdraglib.utils.ItemStackKey;
 import com.lowdragmc.lowdraglib.utils.TrackedDummyWorld;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.core.BlockPos;
@@ -187,9 +188,15 @@ public class PatternPreviewWidget extends WidgetGroup {
         slotWidgets = new SlotWidget[Math.min(pattern.parts.size(), 36)];
         var itemHandler = new CycleItemStackHandler(pattern.parts);
         for (int i = 0; i < slotWidgets.length; i++) {
+            final var itemStack = pattern.parts.get(i).get(0);
             slotWidgets[i] = new SlotWidget(itemHandler, i, 4 + i * 18, 0, false, false)
                     .setBackgroundTexture(ColorPattern.T_GRAY.rectTexture())
-                    .setIngredientIO(IngredientIO.INPUT);
+                    .setIngredientIO(IngredientIO.INPUT)
+                    .setOnAddedTooltips((w, tips) -> {
+                        tips.add(Component.translatable("gtceu.machine.quantum_chest.items_stored")
+                                .withStyle(ChatFormatting.DARK_AQUA)
+                                .append(Component.literal(String.valueOf(itemStack.getCount()))));
+                    });
             scrollableWidgetGroup.addWidget(slotWidgets[i]);
         }
     }
