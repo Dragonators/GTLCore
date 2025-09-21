@@ -2,6 +2,7 @@ package org.gtlcore.gtlcore.mixin.gtmt;
 
 import org.gtlcore.gtlcore.integration.gtmt.InfinityEnergyContainer;
 import org.gtlcore.gtlcore.integration.gtmt.NewGTValues;
+import org.gtlcore.gtlcore.utils.NumberUtils;
 
 import com.gregtechceu.gtceu.api.GTValues;
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
@@ -65,7 +66,7 @@ public abstract class CreativeEnergyHatchPartMachineMixin extends TieredIOPartMa
     @Overwrite(remap = false)
     protected NotifiableEnergyContainer createEnergyContainer() {
         this.voltage = GTValues.VEX[setTier];
-        this.maxEnergy = this.voltage * this.amps;
+        this.maxEnergy = NumberUtils.saturatedMultiply(this.voltage, this.amps);
         return new InfinityEnergyContainer(this, this.maxEnergy, this.voltage, this.amps, 0L, 0L);
     }
 
@@ -117,14 +118,14 @@ public abstract class CreativeEnergyHatchPartMachineMixin extends TieredIOPartMa
     @Unique
     private void gTLCore$setVoltage(long voltage) {
         this.voltage = voltage;
-        this.maxEnergy = this.voltage * this.amps;
+        this.maxEnergy = NumberUtils.saturatedMultiply(this.voltage, this.amps);
         gTLCore$updateMachine();
     }
 
     @Unique
     private void gTLCore$setAmps(int amps) {
         this.amps = amps;
-        this.maxEnergy = this.voltage * this.amps;
+        this.maxEnergy = NumberUtils.saturatedMultiply(this.voltage, this.amps);
         gTLCore$updateMachine();
     }
 

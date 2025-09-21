@@ -2,6 +2,7 @@ package org.gtlcore.gtlcore.mixin.gtmt;
 
 import org.gtlcore.gtlcore.integration.gtmt.InfinityLaserContainer;
 import org.gtlcore.gtlcore.integration.gtmt.NewGTValues;
+import org.gtlcore.gtlcore.utils.NumberUtils;
 
 import com.gregtechceu.gtceu.api.GTValues;
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
@@ -63,7 +64,7 @@ public abstract class CreativeLaserHatchPartMachineMixin extends TieredIOPartMac
 
     @Redirect(method = "<init>", at = @At(value = "FIELD", target = "Lcom/hepdd/gtmthings/common/block/machine/multiblock/part/CreativeLaserHatchPartMachine;maxEnergy:Ljava/lang/Long;", opcode = org.objectweb.asm.Opcodes.PUTFIELD), remap = false)
     private void redirectMaxEnergyAssignment(CreativeLaserHatchPartMachine instance, Long value) {
-        this.maxEnergy = this.voltage * this.amps;
+        this.maxEnergy = NumberUtils.saturatedMultiply(this.voltage, this.amps);
     }
 
     @Redirect(method = "<init>", at = @At(value = "FIELD", target = "Lcom/hepdd/gtmthings/common/block/machine/multiblock/part/CreativeLaserHatchPartMachine;voltage:J", opcode = Opcodes.PUTFIELD), remap = false)
@@ -124,14 +125,14 @@ public abstract class CreativeLaserHatchPartMachineMixin extends TieredIOPartMac
     @Unique
     private void gTLCore$setVoltage(long voltage) {
         this.voltage = voltage;
-        this.maxEnergy = this.voltage * this.amps;
+        this.maxEnergy = NumberUtils.saturatedMultiply(this.voltage, this.amps);
         gTLCore$updateMachine();
     }
 
     @Unique
     private void gTLCore$setAmps(int amps) {
         this.amps = amps;
-        this.maxEnergy = this.voltage * this.amps;
+        this.maxEnergy = NumberUtils.saturatedMultiply(this.voltage, this.amps);
         gTLCore$updateMachine();
     }
 
