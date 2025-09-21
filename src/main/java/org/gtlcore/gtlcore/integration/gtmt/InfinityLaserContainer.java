@@ -1,5 +1,7 @@
 package org.gtlcore.gtlcore.integration.gtmt;
 
+import org.gtlcore.gtlcore.api.capability.IInt128EnergyContainer;
+
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
 import com.gregtechceu.gtceu.api.machine.MetaMachine;
 import com.gregtechceu.gtceu.api.machine.trait.NotifiableLaserContainer;
@@ -11,7 +13,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-public class InfinityLaserContainer extends NotifiableLaserContainer {
+public class InfinityLaserContainer extends NotifiableLaserContainer implements IInt128EnergyContainer {
 
     public InfinityLaserContainer(MetaMachine machine, long maxCapacity, long maxInputVoltage, long maxInputAmperage, long maxOutputVoltage, long maxOutputAmperage) {
         super(machine, maxCapacity, maxInputVoltage, maxInputAmperage, maxOutputVoltage, maxOutputAmperage);
@@ -19,7 +21,7 @@ public class InfinityLaserContainer extends NotifiableLaserContainer {
 
     @Override
     public List<Long> handleRecipeInner(IO io, GTRecipe recipe, List<Long> left, @Nullable String slotName, boolean simulate) {
-        return super.handleRecipeInner(io, recipe, left, slotName, true);
+        return null;
     }
 
     @Override
@@ -27,7 +29,9 @@ public class InfinityLaserContainer extends NotifiableLaserContainer {
         long oldEnergyStored = getEnergyStored();
         long newEnergyStored = (getEnergyCapacity() - oldEnergyStored < energyToAdd) ? getEnergyCapacity() : (oldEnergyStored + energyToAdd);
         if (newEnergyStored < 0) newEnergyStored = 0;
-        return newEnergyStored - oldEnergyStored;
+        final long change = newEnergyStored - oldEnergyStored;
+        addEnergyPerSec(change);
+        return change;
     }
 
     @Override
@@ -49,5 +53,10 @@ public class InfinityLaserContainer extends NotifiableLaserContainer {
     @Override
     public boolean inputsEnergy(Direction side) {
         return false;
+    }
+
+    @Override
+    public long getEnergyStored() {
+        return this.getEnergyCapacity();
     }
 }
