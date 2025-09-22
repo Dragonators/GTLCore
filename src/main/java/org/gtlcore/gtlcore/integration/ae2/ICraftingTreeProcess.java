@@ -9,9 +9,13 @@ public interface ICraftingTreeProcess {
 
     void fastRequest(CraftingSimulationState inv, long times) throws CraftBranchFailure, InterruptedException;
 
+    void ultraFastRequest(CraftingSimulationState inv, long times) throws CraftBranchFailure, InterruptedException;
+
     IPatternDetails getDetails();
 
     boolean getPossible();
+
+    void setPossible(boolean b);
 
     long getOutputCountTest(AEKey what);
 

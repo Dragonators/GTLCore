@@ -93,7 +93,7 @@
   "config.gtlcore.option.cellType": "AE Storage Cell Type Multiplier",
   "config.gtlcore.option.disableDrift": "Disable Flight Inertia",
   "config.gtlcore.option.durationMultiplier": "Recipe Duration Multiplier",
-  "config.gtlcore.option.enableAE2FastCalculation": "Enable AE2 Fast Crafting Calculation",
+  "config.gtlcore.option.ae2CalculationMode": "AE2 Calculation Mode",
   "config.gtlcore.option.enablePrimitiveVoidOre": "Enable Primitive Void Ore Miner",
   "config.gtlcore.option.enableUltimateMEStocking": "Enable Ultimate ME Stocking Pull Mode",
   "config.gtlcore.option.exPatternProvider": "Extended Pattern Provider Pattern Capacity",

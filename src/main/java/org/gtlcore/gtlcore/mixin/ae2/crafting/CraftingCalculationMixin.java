@@ -91,10 +91,10 @@ public abstract class CraftingCalculationMixin implements ICraftingCalculation {
                                      CraftingSimulationState craftingInventory,
                                      long amount,
                                      KeyCounter containerItems) throws CraftBranchFailure, InterruptedException {
-        if (AEUtils.USE_FAST_CALCULATION) {
-            ((ICraftingTreeNode) tree).fastRequest(craftingInventory, amount, containerItems);
-        } else {
-            ((ICraftingTreeNode) tree).legacyRequest(craftingInventory, amount, containerItems);
+        switch (AEUtils.CALCULATION_MODE) {
+            case ULTRA_FAST -> ((ICraftingTreeNode) tree).ultraFastRequest(craftingInventory, amount, containerItems);
+            case FAST -> ((ICraftingTreeNode) tree).fastRequest(craftingInventory, amount, containerItems);
+            case LEGACY -> ((ICraftingTreeNode) tree).legacyRequest(craftingInventory, amount, containerItems);
         }
     }
 }
