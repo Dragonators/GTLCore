@@ -213,6 +213,8 @@ public class CraftingTreeNodeMixin implements ICraftingTreeNode {
                                 if (totalRequestedItems <= 0) {
                                     return;
                                 }
+                            } else {
+                                pro.setPossible(false);
                             }
                         }
                     } catch (CraftBranchFailure fail) {
@@ -223,6 +225,113 @@ public class CraftingTreeNodeMixin implements ICraftingTreeNode {
                 // If no process succeeded in this iteration, we're done trying
                 if (!anySucceeded) {
                     break;
+                }
+            }
+        }
+
+        if (this.job.isSimulation()) {
+            this.job.getMissingItems().add(this.what, totalRequestedItems);
+        } else {
+            throw new CraftBranchFailure(this.what, totalRequestedItems);
+        }
+    }
+
+    @Override
+    @Unique
+    public void ultraFastRequest(CraftingSimulationState inv, long requestedAmount,
+                                 @Nullable KeyCounter containerItems) throws CraftBranchFailure, InterruptedException {
+        ((ICraftingCalculation) this.job).handlePausing();
+
+        inv.addStackBytes(what, amount, requestedAmount);
+
+        for (var template : getValidItemTemplates(inv)) {
+            long extracted = CraftingCpuHelper.extractTemplates(inv, template, requestedAmount);
+
+            if (extracted > 0) {
+                requestedAmount -= extracted;
+                addContainerItems(template.key(), extracted, containerItems);
+
+                if (requestedAmount == 0) {
+                    return;
+                }
+            }
+        }
+
+        addContainerItems(what, requestedAmount, containerItems);
+
+        if (this.canEmit) {
+            inv.emitItems(this.what, this.amount * requestedAmount);
+            return;
+        }
+
+        buildChildPatterns();
+        long totalRequestedItems = requestedAmount * this.amount;
+        if (this.nodes.size() == 1) {
+            final ICraftingTreeProcess pro = (ICraftingTreeProcess) (this.nodes.get(0));
+            var craftedPerPattern = pro.getOutputCountTest(this.what);
+
+            while (pro.getPossible() && totalRequestedItems > 0) {
+                long times;
+                if (pro.limitsQuantityTest()) {
+                    times = 1;
+                } else {
+                    times = (totalRequestedItems + craftedPerPattern - 1) / craftedPerPattern;
+                }
+                pro.ultraFastRequest(inv, times);
+
+                var available = inv.extract(this.what, totalRequestedItems, Actionable.MODULATE);
+                if (available != 0) {
+                    totalRequestedItems -= available;
+
+                    if (totalRequestedItems <= 0) {
+                        return;
+                    }
+                } else {
+                    var pattern = pro.getDetails().getDefinition();
+                    String outputs = Stream.of(pro.getDetails().getOutputs())
+                            .map(GenericStack::toString)
+                            .collect(Collectors.joining(", "));
+                    String errorMessage = """
+                            Unexpected error in the crafting calculation: can't find created items.
+                            This is an AE2 bug, please report it, with the following important information:
+
+                            - Found none of %s. Remaining request: %d of %d*%d.
+                            - Tried crafting %d times the pattern %s with tag %s.
+                            - Pattern outputs: %s.
+                            """.formatted(what, totalRequestedItems, requestedAmount, amount, times, pattern,
+                            pattern.getTag(), outputs);
+                    throw new UnsupportedOperationException(errorMessage);
+                }
+            }
+        } else if (this.nodes.size() > 1) {
+            // Multiple branches: try maximum value for each node only once
+            // This optimization strategy attempts the full remaining request on each pattern once
+
+            for (CraftingTreeProcess node : this.nodes) {
+                ICraftingTreeProcess pro = (ICraftingTreeProcess) node;
+
+                try {
+                    var craftedPerPattern = pro.getOutputCountTest(this.what);
+                    long times = pro.limitsQuantityTest() ? 1 : (totalRequestedItems + craftedPerPattern - 1) / craftedPerPattern;
+
+                    if (times > 0) {
+                        final ChildCraftingSimulationState child = new ChildCraftingSimulationState(inv);
+                        pro.ultraFastRequest(child, times);
+
+                        var available = child.extract(this.what, totalRequestedItems, Actionable.MODULATE);
+
+                        if (available != 0) {
+                            child.applyDiff(inv);
+
+                            totalRequestedItems -= available;
+
+                            if (totalRequestedItems <= 0) {
+                                return;
+                            }
+                        }
+                    }
+                } catch (CraftBranchFailure fail) {
+                    // This process failed, move to next node
                 }
             }
         }

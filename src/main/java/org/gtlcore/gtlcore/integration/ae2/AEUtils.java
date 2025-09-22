@@ -3,6 +3,7 @@ package org.gtlcore.gtlcore.integration.ae2;
 import org.gtlcore.gtlcore.api.recipe.ingredient.CacheHashStrategies;
 import org.gtlcore.gtlcore.api.recipe.ingredient.LongIngredient;
 import org.gtlcore.gtlcore.common.machine.multiblock.part.ae.MEPatternBufferPartMachine;
+import org.gtlcore.gtlcore.config.AE2CalculationMode;
 import org.gtlcore.gtlcore.config.ConfigHolder;
 
 import com.gregtechceu.gtceu.api.recipe.ingredient.FluidIngredient;
@@ -244,7 +245,7 @@ public class AEUtils {
     // ME Processing Pattern Multiply
     // ========================================
 
-    public static final boolean USE_FAST_CALCULATION = ConfigHolder.INSTANCE.enableAE2FastCalculation;
+    public static final AE2CalculationMode CALCULATION_MODE = ConfigHolder.INSTANCE.ae2CalculationMode;
 
     public static void pushInputsToMEPatternBufferInventory(KeyCounter[] inputHolder, IPatternDetails.PatternInputSink inputSink) {
         for (var inputList : inputHolder) {

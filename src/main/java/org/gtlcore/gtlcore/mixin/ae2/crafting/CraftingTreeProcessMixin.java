@@ -53,6 +53,25 @@ public abstract class CraftingTreeProcessMixin implements ICraftingTreeProcess {
             ((ICraftingTreeNode) entry.getKey()).fastRequest(inv, entry.getValue() * times, containerItems);
         }
 
+        onSucceed(inv, times, containerItems);
+    }
+
+    @Override
+    @Unique
+    public void ultraFastRequest(CraftingSimulationState inv, long times) throws CraftBranchFailure, InterruptedException {
+        ((ICraftingCalculation) this.job).handlePausing();
+
+        var containerItems = this.containerItems ? new KeyCounter() : null;
+
+        for (var entry : this.nodes.entrySet()) {
+            ((ICraftingTreeNode) entry.getKey()).ultraFastRequest(inv, entry.getValue() * times, containerItems);
+        }
+
+        onSucceed(inv, times, containerItems);
+    }
+
+    @Unique
+    private void onSucceed(CraftingSimulationState inv, long times, KeyCounter containerItems) {
         if (containerItems != null) {
             for (var stack : containerItems) {
                 inv.insert(stack.getKey(), stack.getLongValue(), Actionable.MODULATE);
@@ -72,6 +91,12 @@ public abstract class CraftingTreeProcessMixin implements ICraftingTreeProcess {
     @Unique
     public boolean getPossible() {
         return this.possible;
+    }
+
+    @Override
+    @Unique
+    public void setPossible(boolean b) {
+        this.possible = b;
     }
 
     @Override

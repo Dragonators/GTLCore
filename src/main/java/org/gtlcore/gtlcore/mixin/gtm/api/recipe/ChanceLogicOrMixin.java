@@ -60,21 +60,7 @@ public abstract class ChanceLogicOrMixin extends ChanceLogic implements ILongCha
 
             int newChance = gTLCore$getChance(entry, boostFunction, baseTier, machineTier);
             long totalChance = times * newChance;
-            long guaranteed = totalChance / maxChance;
-            if (guaranteed > 0) out.add(entry.copy(cap, preciseDivision(guaranteed, times)));
-            newChance = (int) (totalChance % maxChance);
-
-            int cached = gTLCore$getCachedChance(entry, cache);
-            int chance = newChance + cached;
-            if (chance >= maxChance) {
-                do {
-                    out.add(entry.copy(cap, preciseDivision(1, times)));
-                    chance -= maxChance;
-                    newChance -= maxChance;
-                } while (chance >= maxChance);
-            }
-
-            gTLCore$updateCachedChance(entry.content, cache, newChance / 2 + cached);
+            gTLCore$modifyByChance(cache, times, cap, out, entry, maxChance, totalChance);
         }
 
         return out.isEmpty() ? null : out;
@@ -100,23 +86,28 @@ public abstract class ChanceLogicOrMixin extends ChanceLogic implements ILongCha
 
             int newChance = gTLCore$getChance(entry, boostFunction, baseTier, machineTier);
             long totalChance = (long) times * newChance;
-            long guaranteed = totalChance / maxChance;
-            if (guaranteed > 0) out.add(entry.copy(cap, preciseDivision(guaranteed, times)));
-            newChance = (int) (totalChance % maxChance);
-
-            int cached = gTLCore$getCachedChance(entry, cache);
-            int chance = newChance + cached;
-            if (chance >= maxChance) {
-                do {
-                    out.add(entry.copy(cap, preciseDivision(1, times)));
-                    chance -= maxChance;
-                    newChance -= maxChance;
-                } while (chance >= maxChance);
-            }
-
-            gTLCore$updateCachedChance(entry.content, cache, newChance / 2 + cached);
+            gTLCore$modifyByChance(cache, times, cap, out, entry, maxChance, totalChance);
         }
 
         return out.isEmpty() ? null : out;
+    }
+
+    @Unique
+    private static void gTLCore$modifyByChance(@Nullable Object2IntMap<?> cache, long times, RecipeCapability<?> cap, List<Content> out, Content entry, int maxChance, long totalChance) {
+        long guaranteed = totalChance / maxChance;
+        if (guaranteed > 0) out.add(entry.copy(cap, preciseDivision(guaranteed, times)));
+        int newChance = (int) (totalChance % maxChance);
+
+        int cached = gTLCore$getCachedChance(entry, cache);
+        int chance = newChance + cached;
+        if (chance >= maxChance) {
+            do {
+                out.add(entry.copy(cap, preciseDivision(1, times)));
+                chance -= maxChance;
+                newChance -= maxChance;
+            } while (chance >= maxChance);
+        }
+
+        gTLCore$updateCachedChance(entry.content, cache, newChance / 2 + cached);
     }
 }
