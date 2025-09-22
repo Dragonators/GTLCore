@@ -74,7 +74,7 @@ public abstract class RecipeModifierListMixin {
                     // last was subTick Modifier
                     if (durationFactor != 0 && voltageFactor != 0) {
                         int additionalTier = NumberUtils.getAdditionalTier(durationFactor, actualAppliedMultiply);
-                        long actualEUt = Math.round((Math.pow(voltageFactor, additionalTier) * result.getEut() * actualAppliedMultiply));
+                        long actualEUt = Math.round((Math.pow(voltageFactor, additionalTier) * result.getEut() * actualAppliedMultiply / tryParallelMultiply));
 
                         if (result.getEut() > 0L) {
                             modifiedRecipe.tickInputs.put(EURecipeCapability.CAP, List.of(new Content(actualEUt, ChanceLogic.getMaxChancedValue(), ChanceLogic.getMaxChancedValue(), 0, null, null)));

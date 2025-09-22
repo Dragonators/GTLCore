@@ -40,12 +40,18 @@ public final class Int128 extends Number implements Comparable<Int128> {
 
     @Override
     public int intValue() {
-        return Ints.saturatedCast(low);
+        return Ints.saturatedCast(longValue());
     }
 
     @Override
     public long longValue() {
-        return low;
+        // 正常范围内的数字
+        if ((high == 0 && low >= 0) || (high == -1L && low < 0)) {
+            return low;
+        }
+
+        // 超出范围，饱和到边界值
+        return isNegative() ? Long.MIN_VALUE : Long.MAX_VALUE;
     }
 
     @Override

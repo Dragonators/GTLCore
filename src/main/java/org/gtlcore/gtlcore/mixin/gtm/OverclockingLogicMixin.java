@@ -86,31 +86,17 @@ public class OverclockingLogicMixin {
                 break;
             }
 
+            eut = potentialVoltage;
             if (shouldParallel) {
-                double potentialParallel = parallel / durationFactor;
-
-                if (potentialVoltage * potentialParallel > (double) maxVoltage) {
-                    break;
-                }
-
-                eut = potentialVoltage;
-                parallel = potentialParallel;
+                parallel /= durationFactor;
                 vfPowParallel *= voltageFactor;
             } else {
                 double potentialDuration = duration * durationFactor;
                 if (potentialDuration < (double) 1.0F) {
-                    double potentialParallel = parallel / durationFactor;
-
-                    if (potentialVoltage * potentialParallel > (double) maxVoltage) {
-                        break;
-                    }
-
-                    eut = potentialVoltage;
-                    parallel = potentialParallel;
+                    parallel /= durationFactor;
                     vfPowParallel *= voltageFactor;
                     shouldParallel = true;
                 } else {
-                    eut = potentialVoltage;
                     duration = potentialDuration;
                     ++baseOCLevel;
                 }
