@@ -8,22 +8,23 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.saveddata.SavedData;
 
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
 public class StorageManager extends SavedData {
 
-    private final Map<UUID, InfinityCellDataStorage> disks;
+    private final Object2ObjectMap<UUID, InfinityCellDataStorage> disks;
 
     public StorageManager() {
-        disks = new HashMap<>();
+        disks = new Object2ObjectOpenHashMap<>();
         this.setDirty();
     }
 
-    private StorageManager(Map<UUID, InfinityCellDataStorage> disks) {
+    private StorageManager(Object2ObjectMap<UUID, InfinityCellDataStorage> disks) {
         this.disks = disks;
         this.setDirty();
     }
@@ -48,7 +49,7 @@ public class StorageManager extends SavedData {
     }
 
     public static StorageManager readNbt(CompoundTag nbt) {
-        Map<UUID, InfinityCellDataStorage> disks = new HashMap<>();
+        Object2ObjectMap<UUID, InfinityCellDataStorage> disks = new Object2ObjectOpenHashMap<>();
         ListTag diskList = nbt.getList("disklist", CompoundTag.TAG_COMPOUND);
         for (int i = 0; i < diskList.size(); i++) {
             CompoundTag disk = diskList.getCompound(i);
@@ -67,15 +68,15 @@ public class StorageManager extends SavedData {
         setDirty();
     }
 
-    public InfinityCellDataStorage getOrCreateDisk(UUID uuid) {
+    public InfinityCellDataStorage getOrCreateDisk(UUID uuid, boolean isFastCell) {
         if (!disks.containsKey(uuid)) {
-            updateDisk(uuid, new InfinityCellDataStorage());
+            updateDisk(uuid, new InfinityCellDataStorage(isFastCell));
         }
         return disks.get(uuid);
     }
 
-    public void modifyDisk(UUID diskID, ListTag stackKeys, ListTag amounts, double totalAmount) {
-        InfinityCellDataStorage diskToModify = getOrCreateDisk(diskID);
+    public void modifyDisk(UUID diskID, ListTag stackKeys, ListTag amounts, double totalAmount, boolean isFastCell) {
+        InfinityCellDataStorage diskToModify = getOrCreateDisk(diskID, isFastCell);
         if (stackKeys != null && amounts != null) {
             diskToModify.stackKeys = stackKeys;
             diskToModify.amounts = amounts;

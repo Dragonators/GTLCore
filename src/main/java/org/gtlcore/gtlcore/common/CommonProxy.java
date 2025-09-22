@@ -5,6 +5,7 @@ import org.gtlcore.gtlcore.common.data.*;
 import org.gtlcore.gtlcore.common.data.machines.GeneratorMachine;
 import org.gtlcore.gtlcore.config.ConfigHolder;
 import org.gtlcore.gtlcore.integration.ae2.InfinityCellGuiHandler;
+import org.gtlcore.gtlcore.integration.ae2.storage.FastInfinityCellHandler;
 import org.gtlcore.gtlcore.integration.ae2.storage.InfinityCellHandler;
 import org.gtlcore.gtlcore.network.GTLNetworkHandler;
 
@@ -50,6 +51,7 @@ public class CommonProxy {
 
     private void commonSetup(final FMLCommonSetupEvent event) {
         StorageCells.addCellHandler(InfinityCellHandler.INSTANCE);
+        StorageCells.addCellHandler(FastInfinityCellHandler.INSTANCE);
         StorageCells.addCellGuiHandler(new InfinityCellGuiHandler());
         event.enqueueWork(this::postRegistrationInitialization).whenComplete((res, err) -> {
             if (err != null) {
