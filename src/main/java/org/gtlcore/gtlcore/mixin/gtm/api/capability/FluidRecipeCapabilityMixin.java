@@ -14,6 +14,8 @@ import com.lowdragmc.lowdraglib.gui.widget.TankWidget;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 import com.google.common.primitives.Ints;
 import com.llamalad7.mixinextras.sugar.Local;
@@ -67,6 +69,7 @@ public class FluidRecipeCapabilityMixin extends RecipeCapability<FluidIngredient
         return Ints.saturatedCast(IParallelLogic.getInputFluidParallel(holder, recipe, parallelAmount));
     }
 
+    @OnlyIn(Dist.CLIENT)
     @ModifyArg(method = "applyWidgetInfo",
                at = @At(value = "INVOKE",
                         target = "Lcom/lowdragmc/lowdraglib/gui/widget/TankWidget;setOnAddedTooltips(Ljava/util/function/BiConsumer;)Lcom/lowdragmc/lowdraglib/gui/widget/TankWidget;"),
