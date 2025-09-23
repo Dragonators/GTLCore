@@ -104,7 +104,7 @@ public abstract class GTRecipeLookupMixin {
 
                         var existing = capToList.get(cap);
                         if (existing == null) {
-                            capToList.put(cap, new ArrayList<>(values));
+                            capToList.put(cap, new ObjectArrayList<>(values));
                         } else {
                             existing.addAll(values);
                         }

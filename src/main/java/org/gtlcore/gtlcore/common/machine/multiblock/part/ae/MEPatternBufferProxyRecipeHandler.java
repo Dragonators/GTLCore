@@ -50,7 +50,7 @@ public class MEPatternBufferProxyRecipeHandler<T extends Predicate<S>, S> extend
     }
 
     @Override
-    public Int2ObjectMap<List<Object>> getActiveAndUnCachedSlotsLimitContentsMap() {
+    public Int2ObjectMap<List<S>> getActiveAndUnCachedSlotsLimitContentsMap() {
         if (handler != null) {
             return handler.getActiveAndUnCachedSlotsLimitContentsMap();
         }
