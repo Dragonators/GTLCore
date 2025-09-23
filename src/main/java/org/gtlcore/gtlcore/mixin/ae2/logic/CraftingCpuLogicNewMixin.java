@@ -68,7 +68,7 @@ public abstract class CraftingCpuLogicNewMixin {
                 final boolean isMECraftProvider = provider instanceof IMECraftIOPart;
 
                 if (needExtract) {
-                    craftingContainer = isProcessing ? (isMEPatternProvider ? AEUtils.extractForProcessingPattern((AEProcessingPattern) details, inventory, expectedOutputs, taskProgress.getValue()) : AEUtils.extractForProcessingPattern((AEProcessingPattern) details, inventory, expectedOutputs)) : (isMECraftProvider ? Ae2CompatMH.extractForCraftPattern5Args(details, inventory, level, expectedOutputs, expectedContainerItems, taskProgress.getValue()) : Ae2CompatMH.extractForCraftPattern5Args(details, inventory, level, expectedOutputs, expectedContainerItems));
+                    craftingContainer = isProcessing ? ((isMEPatternProvider || isMECraftProvider) ? AEUtils.extractForProcessingPattern((AEProcessingPattern) details, inventory, expectedOutputs, taskProgress.getValue()) : AEUtils.extractForProcessingPattern((AEProcessingPattern) details, inventory, expectedOutputs)) : (isMECraftProvider ? Ae2CompatMH.extractForCraftPattern5Args(details, inventory, level, expectedOutputs, expectedContainerItems, taskProgress.getValue()) : Ae2CompatMH.extractForCraftPattern5Args(details, inventory, level, expectedOutputs, expectedContainerItems));
                     needExtract = false;
                     if (craftingContainer == null) {
                         break;

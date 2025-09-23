@@ -7,15 +7,18 @@ import org.gtlcore.gtlcore.integration.ae2.AEUtils;
 import org.gtlcore.gtlcore.integration.lowdragmc.misc.MutableItemTransferList;
 
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
+import com.gregtechceu.gtceu.api.gui.fancy.ConfiguratorPanel;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.MultiblockMachineDefinition;
 import com.gregtechceu.gtceu.api.machine.TickableSubscription;
+import com.gregtechceu.gtceu.api.machine.fancyconfigurator.FancyInvConfigurator;
 import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMultiController;
 import com.gregtechceu.gtceu.integration.ae2.gui.widget.AETextInputButtonWidget;
 
 import com.lowdragmc.lowdraglib.gui.widget.LabelWidget;
 import com.lowdragmc.lowdraglib.gui.widget.Widget;
 import com.lowdragmc.lowdraglib.gui.widget.WidgetGroup;
+import com.lowdragmc.lowdraglib.misc.ItemStackTransfer;
 import com.lowdragmc.lowdraglib.side.item.IItemTransfer;
 import com.lowdragmc.lowdraglib.syncdata.annotation.DescSynced;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
@@ -27,6 +30,7 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.BlockHitResult;
 
@@ -41,13 +45,16 @@ import appeng.api.networking.ticking.IGridTickable;
 import appeng.api.networking.ticking.TickRateModulation;
 import appeng.api.networking.ticking.TickingRequest;
 import appeng.api.stacks.AEItemKey;
+import appeng.api.stacks.AEKey;
 import appeng.api.stacks.GenericStack;
 import appeng.api.stacks.KeyCounter;
-import appeng.blockentity.crafting.IMolecularAssemblerSupportedPattern;
+import appeng.crafting.pattern.AECraftingPattern;
 import appeng.crafting.pattern.EncodedPatternItem;
 import appeng.helpers.patternprovider.PatternContainer;
-import it.unimi.dsi.fastutil.ints.Int2ReferenceMap;
-import it.unimi.dsi.fastutil.ints.Int2ReferenceOpenHashMap;
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -119,37 +126,64 @@ public class MEMolecularAssemblerIOPartMachine extends MEIOPartMachine implement
     // Inventory
     // ========================================
 
-    private final Int2ReferenceMap<@NotNull IPatternDetails> patternSlotMap;
+    @Persisted
+    protected final ItemStackTransfer sharedToolsInventory;
+
+    private final BiMap<@NotNull IPatternDetails, Integer> patternSlotMap;
+
+    private final Int2ObjectMap<@NotNull ObjectSet<@NotNull Item>> toolsSlotMap;
 
     @Getter
     private final Object2LongLinkedOpenHashMap<GenericStack> outputItems;  // must 1 count
 
     @Getter
-    private final Object2LongOpenHashMap<AEItemKey> buffer;
+    private final Object2LongOpenHashMap<AEKey> buffer;
 
     public MEMolecularAssemblerIOPartMachine(IMachineBlockEntity holder) {
         super(holder, IO.BOTH);
         getMainNode().addService(IGridTickable.class, new Ticker()).addService(ICraftingProvider.class, this);
 
-        patternSlotMap = new Int2ReferenceOpenHashMap<>();
+        patternSlotMap = HashBiMap.create();
+        toolsSlotMap = new Int2ObjectOpenHashMap<>();
         outputItems = new Object2LongLinkedOpenHashMap<>();
         buffer = new Object2LongOpenHashMap<>();
         maHandler = new MECraftHandler(this);
+        sharedToolsInventory = new ItemStackTransfer(9);
 
         mutableItemTransferList = new MutableItemTransferList();
     }
 
     @Override
     public boolean pushPattern(IPatternDetails details, long multiply) {
-        if (!getMainNode().isActive() || !(details instanceof IMolecularAssemblerSupportedPattern molecularAssemblerSupportedPattern)) {
+        if (!getMainNode().isActive() || !patternSlotMap.containsKey(details)) {
             return false;
         }
 
-        final GenericStack output = molecularAssemblerSupportedPattern.getOutputs()[0];
+        final GenericStack output = details.getOutputs()[0];
         if (!(output.what() instanceof AEItemKey)) return false;
+
+        int slot = patternSlotMap.get(details);
+        if (toolsSlotMap.containsKey(slot)) {
+            var requiredTools = new ObjectOpenHashSet<>(toolsSlotMap.get(slot));
+
+            for (int i = 0; i < sharedToolsInventory.getSlots(); i++) {
+                final var stack = sharedToolsInventory.getStackInSlot(i);
+                if (!stack.isDamageableItem()) requiredTools.remove(stack.getItem());
+                if (requiredTools.isEmpty()) break;
+            }
+
+            if (!requiredTools.isEmpty()) {
+                for (IPatternDetails.IInput input : details.getInputs()) {
+                    final var stack = input.getPossibleInputs()[0];
+                    buffer.addTo(stack.what(), stack.amount() * multiply);
+                }
+                notifySelfIO();
+                return true;
+            }
+        }
+
         outputItems.addTo(output, multiply);
         maHandler.notifyListeners();
-
         return true;
     }
 
@@ -157,11 +191,12 @@ public class MEMolecularAssemblerIOPartMachine extends MEIOPartMachine implement
     public void init(@NotNull List<IItemTransfer> transfers) {
         mutableItemTransferList.clear();
         patternSlotMap.clear();
+        toolsSlotMap.clear();
         if (!transfers.isEmpty()) {
             mutableItemTransferList.addTransfers(transfers);
             for (int i = 0; i < mutableItemTransferList.getSlots(); i++) {
-                var pattern = getPatternDetails(mutableItemTransferList.getStackInSlot(i));
-                if (pattern != null) patternSlotMap.put(i, pattern);
+                var pattern = getPatternDetails(mutableItemTransferList.getStackInSlot(i), i);
+                if (pattern != null) patternSlotMap.forcePut(pattern, i);
             }
             shouldOpen = true;
         } else {
@@ -183,13 +218,21 @@ public class MEMolecularAssemblerIOPartMachine extends MEIOPartMachine implement
     protected void clear() {
         mutableItemTransferList.clear();
         patternSlotMap.clear();
+        toolsSlotMap.clear();
         shouldOpen = false;
     }
 
-    private @Nullable IPatternDetails getPatternDetails(ItemStack stack) {
+    private @Nullable IPatternDetails getPatternDetails(ItemStack stack, int slotIndex) {
         if (!stack.isEmpty()) {
             if (stack.getItem() instanceof EncodedPatternItem encodedPatternItem) {
-                return encodedPatternItem.decode(stack, getLevel(), false);
+                final var decodePattern = encodedPatternItem.decode(stack, getLevel(), false);
+                if (decodePattern instanceof AECraftingPattern craftingPattern) {
+                    final var pair = AEUtils.createCraftOrProcessingPattern(craftingPattern, getLevel());
+                    final var remainingStacks = pair.getRight();
+                    if (remainingStacks != null && !remainingStacks.isEmpty()) toolsSlotMap.put(slotIndex, remainingStacks);
+                    else toolsSlotMap.remove(slotIndex);
+                    return pair.getLeft();
+                } else return decodePattern;
             }
         }
         return null;
@@ -246,10 +289,10 @@ public class MEMolecularAssemblerIOPartMachine extends MEIOPartMachine implement
         if (isRemote()) return;
 
         var newPattern = mutableItemTransferList.getStackInSlot(index);
-        var newPatternDetails = getPatternDetails(newPattern);
+        var newPatternDetails = getPatternDetails(newPattern, index);
 
-        if (newPatternDetails != null) patternSlotMap.put(index, newPatternDetails);
-        else patternSlotMap.remove(index);
+        if (newPatternDetails != null) patternSlotMap.forcePut(newPatternDetails, index);
+        else patternSlotMap.inverse().remove(index);
 
         needPatternSync = true;
     }
@@ -288,6 +331,16 @@ public class MEMolecularAssemblerIOPartMachine extends MEIOPartMachine implement
     }
 
     @Override
+    public void attachConfigurators(ConfiguratorPanel configuratorPanel) {
+        // Share inventory configurator
+        configuratorPanel.attachConfigurators(new FancyInvConfigurator(
+                sharedToolsInventory, Component.translatable("gui.gtceu.share_inventory.title"))
+                .setTooltips(List.of(
+                        Component.translatable("gui.gtceu.share_inventory.desc.0"),
+                        Component.translatable("gui.gtceu.share_inventory.desc.1"))));
+    }
+
+    @Override
     public boolean shouldOpenUI(Player player, InteractionHand hand, BlockHitResult hit) {
         return shouldOpen;
     }
@@ -300,7 +353,7 @@ public class MEMolecularAssemblerIOPartMachine extends MEIOPartMachine implement
     public void saveCustomPersistedData(@NotNull CompoundTag tag, boolean forDrop) {
         super.saveCustomPersistedData(tag, forDrop);
         if (buffer.isEmpty() && outputItems.isEmpty()) return;
-        ListTag bufferTag = AEUtils.createListTag(AEItemKey::toTag, buffer);
+        ListTag bufferTag = AEUtils.createListTag(AEKey::toTagGeneric, buffer);
         if (!bufferTag.isEmpty()) tag.put("buffer", bufferTag);
 
         ListTag outputTag = AEUtils.createListTag(GenericStack::writeTag, outputItems);
@@ -312,7 +365,7 @@ public class MEMolecularAssemblerIOPartMachine extends MEIOPartMachine implement
         super.loadCustomPersistedData(tag);
         buffer.clear();
         ListTag bufferTag = tag.getList("buffer", Tag.TAG_COMPOUND);
-        AEUtils.loadInventory(bufferTag, AEItemKey::fromTag, buffer);
+        AEUtils.loadInventory(bufferTag, AEKey::fromTagGeneric, buffer);
 
         ListTag outputTag = tag.getList("outputItems", Tag.TAG_COMPOUND);
         AEUtils.loadInventory(outputTag, GenericStack::readTag, outputItems);
@@ -324,7 +377,7 @@ public class MEMolecularAssemblerIOPartMachine extends MEIOPartMachine implement
 
     @Override
     public List<IPatternDetails> getAvailablePatterns() {
-        return new ObjectArrayList<>(patternSlotMap.values());
+        return new ObjectArrayList<>(patternSlotMap.keySet());
     }
 
     @Override
