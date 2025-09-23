@@ -347,6 +347,8 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
             }
             tag.put("gtRecipeCache", recipeCacheTag);
         }
+        ListTag bufferTag = AEUtils.createListTag(AEKey::toTagGeneric, buffer);
+        if (!bufferTag.isEmpty()) tag.put("buffer", bufferTag);
     }
 
     @Override
@@ -365,6 +367,8 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
                 }
             }
         }
+        ListTag bufferTag = tag.getList("buffer", Tag.TAG_COMPOUND);
+        AEUtils.loadInventory(bufferTag, AEKey::fromTagGeneric, buffer);
     }
 
     private void reCalculateCatalystItemMap(int slot) {
