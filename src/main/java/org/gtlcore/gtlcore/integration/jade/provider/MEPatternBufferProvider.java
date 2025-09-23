@@ -159,7 +159,7 @@ public class MEPatternBufferProvider implements IBlockComponentProvider, IServer
 
         // Add pending refund data
         ListTag listTag = new ListTag();
-        for (var it = buffer.getPendingRefundData().getBuffer().object2LongEntrySet().fastIterator(); it.hasNext();) {
+        for (var it = buffer.getBuffer().object2LongEntrySet().fastIterator(); it.hasNext();) {
             var entry = it.next();
             var count = entry.getLongValue();
             if (count > 0) {

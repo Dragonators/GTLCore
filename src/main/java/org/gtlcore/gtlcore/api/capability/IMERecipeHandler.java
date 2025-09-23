@@ -46,7 +46,7 @@ public interface IMERecipeHandler<T extends Predicate<S>, S> extends IFilteredHa
      *
      * @return slot到限制内容列表的映射
      */
-    Int2ObjectMap<List<Object>> getActiveAndUnCachedSlotsLimitContentsMap();
+    Int2ObjectMap<List<S>> getActiveAndUnCachedSlotsLimitContentsMap();
 
     /**
      * 获取指定slot中所有与handler对应内容 -> amount的映射

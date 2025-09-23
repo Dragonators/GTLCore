@@ -83,9 +83,6 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import static org.gtlcore.gtlcore.integration.ae2.AEUtils.createListTag;
-import static org.gtlcore.gtlcore.integration.ae2.AEUtils.loadInventory;
-
 public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInteractedMachine, ICraftingProvider, PatternContainer, IMEPatternPartMachine {
 
     protected static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(
@@ -162,6 +159,9 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
     @Persisted
     protected final InternalSlot[] internalInventory;
 
+    @Getter
+    protected final Object2LongOpenHashMap<AEKey> buffer;
+
     // ========================================
     // Handlers
     // ========================================
@@ -169,10 +169,6 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
     /** Pattern circuit handler for managing circuit logic */
     @Getter
     protected final PatternCircuitHandler circuitHandler;
-
-    @Persisted
-    @Getter
-    private final PendingRefundData pendingRefundData;
 
     /** Recipe handler trait for ME Pattern Buffer */
     protected final MEPatternBufferRecipeHandlerTrait recipeHandler;
@@ -209,6 +205,7 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
         this.catalystFluids = new FluidTransferList[maxPatternCount];
 
         // Initialize inventories
+        this.buffer = new Object2LongOpenHashMap<>();
         this.patternInventory = new ItemStackTransfer(maxPatternCount);
         this.patternInventory.setFilter(AEUtils.PROCESS_FILTER);
         Arrays.setAll(internalInventory, InternalSlot::new);
@@ -220,17 +217,17 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
         Arrays.setAll(catalystFluids, i -> new FluidTransferList(Stream.generate(() -> (IFluidTransfer) new FluidStorage(16 * FluidHelper.getBucket()))
                 .limit(9)
                 .toList()));
+
         getMainNode().addService(ICraftingProvider.class, this);
         if (io == IO.BOTH) {
             getMainNode().addService(IGridTickable.class, new Ticker());
         }
 
-        this.pendingRefundData = new PendingRefundData();
         this.sharedCircuitInventory = new NotifiableCircuitItemStackHandler(this);
         this.circuitHandler = new PatternCircuitHandler((NotifiableCircuitItemStackHandler) sharedCircuitInventory);
         this.sharedCatalystInventory = new CatalystItemStackHandler(this, 9, IO.IN, IO.NONE);
         this.sharedCatalystTank = new CatalystFluidStackHandler(this, 9, 16 * FluidHelper.getBucket(), IO.IN, IO.NONE);
-        this.recipeHandler = new MEPatternBufferRecipeHandlerTrait(this, pendingRefundData, io);
+        this.recipeHandler = new MEPatternBufferRecipeHandlerTrait(this, this.buffer, io);
     }
 
     // ========================================
@@ -318,7 +315,7 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
                 cacheRecipe[index] = false;
                 recipeCacheMap.remove(index);
                 refundSlot(internalInv);
-                pendingRefundData.reFunds();
+                AEUtils.reFunds(buffer, getMainNode().getGrid(), actionSource);
             }
         }
 
@@ -440,7 +437,7 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
                     .forEach(this::refundSlot);
 
             // Immediately try to process pending refunds
-            pendingRefundData.reFunds();
+            AEUtils.reFunds(buffer, getMainNode().getGrid(), actionSource);
         }
     }
 
@@ -450,7 +447,7 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
             var entry = it.next();
             long amount = entry.getLongValue();
             if (amount > 0) {
-                pendingRefundData.addTo(entry.getKey(), amount);
+                buffer.addTo(entry.getKey(), amount);
                 it.remove();
             }
         }
@@ -460,7 +457,7 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
             var entry = it.next();
             long amount = entry.getLongValue();
             if (amount > 0) {
-                pendingRefundData.addTo(entry.getKey(), amount);
+                buffer.addTo(entry.getKey(), amount);
                 it.remove();
             }
         }
@@ -828,8 +825,8 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
             return fluidInputMap;
         }
 
-        public List<Object> getLimitItemStackInput() {
-            var limitInput = new ObjectArrayList<>(itemInventory.size());
+        public ObjectList<ItemStack> getLimitItemStackInput() {
+            var limitInput = new ObjectArrayList<ItemStack>(itemInventory.size());
             for (var it = Object2LongMaps.fastIterator(itemInventory); it.hasNext();) {
                 var entry = it.next();
                 long amount = entry.getLongValue();
@@ -845,8 +842,8 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
             return limitInput;
         }
 
-        public List<Object> getLimitFluidStackInput() {
-            var limitInput = new ObjectArrayList<>(fluidInventory.size());
+        public ObjectList<FluidStack> getLimitFluidStackInput() {
+            var limitInput = new ObjectArrayList<FluidStack>(fluidInventory.size());
             for (var it = Object2LongMaps.fastIterator(fluidInventory); it.hasNext();) {
                 var entry = it.next();
                 long amount = entry.getLongValue();
@@ -983,16 +980,16 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
         public CompoundTag serializeNBT() {
             CompoundTag tag = new CompoundTag();
 
-            ListTag itemsTag = createListTag(AEItemKey::toTag, itemInventory);
+            ListTag itemsTag = AEUtils.createListTag(AEItemKey::toTag, itemInventory);
             if (!itemsTag.isEmpty()) tag.put("inventory", itemsTag);
 
-            ListTag itemCatalystTag = createListTag(AEItemKey::toTag, itemCatalystInventory);
+            ListTag itemCatalystTag = AEUtils.createListTag(AEItemKey::toTag, itemCatalystInventory);
             if (!itemCatalystTag.isEmpty()) tag.put("catalystInventory", itemCatalystTag);
 
-            ListTag fluidsTag = createListTag(AEFluidKey::toTag, fluidInventory);
+            ListTag fluidsTag = AEUtils.createListTag(AEFluidKey::toTag, fluidInventory);
             if (!fluidsTag.isEmpty()) tag.put("fluidInventory", fluidsTag);
 
-            ListTag fluidCatalystTag = createListTag(AEFluidKey::toTag, fluidCatalystInventory);
+            ListTag fluidCatalystTag = AEUtils.createListTag(AEFluidKey::toTag, fluidCatalystInventory);
             if (!fluidCatalystTag.isEmpty()) tag.put("catalystFluidInventory", fluidCatalystTag);
 
             return tag;
@@ -1006,54 +1003,16 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
             fluidCatalystInventory.clear();
 
             ListTag items = tag.getList("inventory", Tag.TAG_COMPOUND);
-            loadInventory(items, AEItemKey::fromTag, itemInventory);
+            AEUtils.loadInventory(items, AEItemKey::fromTag, itemInventory);
 
             ListTag catalystItems = tag.getList("catalystInventory", Tag.TAG_COMPOUND);
-            loadInventory(catalystItems, AEItemKey::fromTag, itemCatalystInventory);
+            AEUtils.loadInventory(catalystItems, AEItemKey::fromTag, itemCatalystInventory);
 
             ListTag fluids = tag.getList("fluidInventory", Tag.TAG_COMPOUND);
-            loadInventory(fluids, AEFluidKey::fromTag, fluidInventory);
+            AEUtils.loadInventory(fluids, AEFluidKey::fromTag, fluidInventory);
 
             ListTag catalystFluids = tag.getList("catalystFluidInventory", Tag.TAG_COMPOUND);
-            loadInventory(catalystFluids, AEFluidKey::fromTag, fluidCatalystInventory);
-        }
-    }
-
-    public class PendingRefundData implements ITagSerializable<CompoundTag>, IContentChangeAware {
-
-        @Getter
-        @Setter
-        protected Runnable onContentsChanged = () -> {};
-        @Getter
-        private final Object2LongOpenHashMap<AEKey> buffer = new Object2LongOpenHashMap<>();
-
-        public PendingRefundData() {
-            buffer.defaultReturnValue(0L);
-        }
-
-        public void addTo(AEKey key, long amount) {
-            if (amount > 0) {
-                buffer.addTo(key, amount);
-            }
-        }
-
-        public boolean reFunds() {
-            return AEUtils.reFunds(buffer, getMainNode().getGrid(), actionSource);
-        }
-
-        @Override
-        public CompoundTag serializeNBT() {
-            CompoundTag tag = new CompoundTag();
-            ListTag listTag = createListTag(AEKey::toTagGeneric, buffer);
-            if (!listTag.isEmpty()) tag.put("buffer", listTag);
-            return tag;
-        }
-
-        @Override
-        public void deserializeNBT(CompoundTag tag) {
-            buffer.clear();
-            ListTag listTag = tag.getList("buffer", Tag.TAG_COMPOUND);
-            loadInventory(listTag, AEKey::fromTagGeneric, buffer);
+            AEUtils.loadInventory(catalystFluids, AEFluidKey::fromTag, fluidCatalystInventory);
         }
     }
 
@@ -1070,12 +1029,12 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
                 return TickRateModulation.SLEEP;
             }
 
-            if (pendingRefundData.buffer.isEmpty()) {
+            if (buffer.isEmpty()) {
                 if (ticksSinceLastCall >= MEExtendedOutputPartMachineBase.MAX_FREQUENCY) {
                     isSleeping = true;
                     return TickRateModulation.SLEEP;
                 } else return TickRateModulation.SLOWER;
-            } else return pendingRefundData.reFunds() ? TickRateModulation.URGENT : TickRateModulation.SLOWER;
+            } else return AEUtils.reFunds(buffer, getMainNode().getGrid(), actionSource) ? TickRateModulation.URGENT : TickRateModulation.SLOWER;
         }
     }
 }

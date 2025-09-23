@@ -215,7 +215,7 @@ public abstract class MEExtendedOutputPartMachineBase extends MEIOPartMachine im
         }
 
         @Override
-        public Int2ObjectMap<List<Object>> getActiveAndUnCachedSlotsLimitContentsMap() {
+        public Int2ObjectMap<List<ItemStack>> getActiveAndUnCachedSlotsLimitContentsMap() {
             return Int2ObjectMaps.emptyMap();
         }
 
@@ -271,7 +271,7 @@ public abstract class MEExtendedOutputPartMachineBase extends MEIOPartMachine im
         }
 
         @Override
-        public Int2ObjectMap<List<Object>> getActiveAndUnCachedSlotsLimitContentsMap() {
+        public Int2ObjectMap<List<FluidStack>> getActiveAndUnCachedSlotsLimitContentsMap() {
             return Int2ObjectMaps.emptyMap();
         }
 

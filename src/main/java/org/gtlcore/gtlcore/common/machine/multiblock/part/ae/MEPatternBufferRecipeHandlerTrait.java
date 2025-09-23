@@ -18,6 +18,7 @@ import net.minecraft.world.item.crafting.Ingredient;
 
 import appeng.api.stacks.AEFluidKey;
 import appeng.api.stacks.AEItemKey;
+import appeng.api.stacks.AEKey;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.objects.*;
@@ -40,13 +41,13 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
     @Getter
     protected final MEFluidHandler meFluidHandler;
 
-    private final MEPatternBufferPartMachine.PendingRefundData pendingRefundData;
+    protected final Object2LongOpenHashMap<AEKey> buffer;
 
-    public MEPatternBufferRecipeHandlerTrait(MEPatternBufferPartMachine ioBuffer, MEPatternBufferPartMachine.PendingRefundData pendingRefundData, IO io) {
+    public MEPatternBufferRecipeHandlerTrait(MEPatternBufferPartMachine ioBuffer, Object2LongOpenHashMap<AEKey> buffer, IO io) {
         super(ioBuffer);
+        this.buffer = buffer;
         meItemHandler = new MEItemInputHandler(ioBuffer, io);
         meFluidHandler = new MEFluidHandler(ioBuffer, io);
-        this.pendingRefundData = pendingRefundData;
     }
 
     @Override
@@ -143,11 +144,12 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
             return MEPatternBufferRecipeHandlerTrait.this.getActiveAndUnCachedSlots(getMachine().getInternalInventory(), ItemRecipeCapability.CAP);
         }
 
+        @SuppressWarnings("unchecked")
         @Override
-        public Int2ObjectMap<List<Object>> getActiveAndUnCachedSlotsLimitContentsMap() {
-            var map = new Int2ObjectArrayMap<List<Object>>();
+        public Int2ObjectMap<List<ItemStack>> getActiveAndUnCachedSlotsLimitContentsMap() {
+            var map = new Int2ObjectArrayMap<List<ItemStack>>();
             var machine = getMachine();
-            var shared = machine.getSharedCatalystInventory().getContents();
+            var shared = (List<ItemStack>) (Object) machine.getSharedCatalystInventory().getContents();
             for (int slot : getActiveAndUnCachedSlots()) {
                 var inputs = machine.getInternalInventory()[slot].getLimitItemStackInput();
 
@@ -210,7 +212,7 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
                 if (items.length != 0) {
                     ItemStack output = items[0];
                     if (!output.isEmpty()) {
-                        pendingRefundData.addTo(AEItemKey.of(output), ingredient instanceof LongIngredient longIngredient ? longIngredient.getActualAmount() : output.getCount());
+                        buffer.addTo(AEItemKey.of(output), ingredient instanceof LongIngredient longIngredient ? longIngredient.getActualAmount() : output.getCount());
                     }
                 }
             }
@@ -250,11 +252,12 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
             return MEPatternBufferRecipeHandlerTrait.this.getActiveAndUnCachedSlots(getMachine().getInternalInventory(), FluidRecipeCapability.CAP);
         }
 
+        @SuppressWarnings("unchecked")
         @Override
-        public Int2ObjectMap<List<Object>> getActiveAndUnCachedSlotsLimitContentsMap() {
-            var map = new Int2ObjectArrayMap<List<Object>>();
+        public Int2ObjectMap<List<FluidStack>> getActiveAndUnCachedSlotsLimitContentsMap() {
+            var map = new Int2ObjectArrayMap<List<FluidStack>>();
             var machine = getMachine();
-            var shared = machine.getSharedCatalystTank().getContents();
+            var shared = (List<FluidStack>) (Object) machine.getSharedCatalystTank().getContents();
             for (int slot : getActiveAndUnCachedSlots()) {
                 var inputs = machine.getInternalInventory()[slot].getLimitFluidStackInput();
                 inputs.addAll(shared);
@@ -291,13 +294,13 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
 
         @Override
         public List<FluidIngredient> meHandleRecipeOutputInner(List<FluidIngredient> left, boolean simulate) {
-            if (simulate) return List.of();;
+            if (simulate) return List.of();
             for (FluidIngredient fluidIngredient : left) {
                 if (!fluidIngredient.isEmpty()) {
                     FluidStack[] fluids = fluidIngredient.getStacks();
                     if (fluids.length != 0) {
                         FluidStack output = fluids[0];
-                        pendingRefundData.addTo(AEFluidKey.of(output.getFluid()), output.getAmount());
+                        buffer.addTo(AEFluidKey.of(output.getFluid()), output.getAmount());
                     }
                 }
             }
