@@ -21,6 +21,7 @@ import net.minecraft.world.level.material.Fluid;
 
 import appeng.api.config.Actionable;
 import appeng.api.crafting.IPatternDetails;
+import appeng.api.crafting.PatternDetailsHelper;
 import appeng.api.networking.IGrid;
 import appeng.api.networking.security.IActionSource;
 import appeng.api.stacks.*;
@@ -214,7 +215,7 @@ public class AEUtils {
         if (item instanceof CraftingPatternItem craftingPatternItem) {
             var pattern = craftingPatternItem.decode(stack, level, false);
             if (pattern != null) {
-                return !hasContainerItems(pattern) && !pattern.canSubstitute();
+                return !pattern.canSubstitute() && !hasContainerItems(pattern);
             }
         } else {
             return item instanceof SmithingTablePatternItem || item instanceof StonecuttingPatternItem;
@@ -222,23 +223,55 @@ public class AEUtils {
         return false;
     }
 
+    // must !canSubstitute
     private static boolean hasContainerItems(AECraftingPattern pattern) {
         IPatternDetails.IInput[] inputs = pattern.getInputs();
 
         for (IPatternDetails.IInput input : inputs) {
-            GenericStack[] possibleInputs = input.getPossibleInputs();
-
-            for (GenericStack possibleInput : possibleInputs) {
-                AEKey key = possibleInput.what();
-
-                AEKey remainingKey = input.getRemainingKey(key);
-                if (remainingKey != null) {
+            AEKey key = input.getPossibleInputs()[0].what();
+            AEKey remainingKey = input.getRemainingKey(key);
+            if (remainingKey != null) {
+                if (!(remainingKey instanceof AEItemKey itemKey) || itemKey.toStack().isDamageableItem()) {
                     return true;
                 }
             }
         }
 
         return false;
+    }
+
+    // must !canSubstitute
+    public static Pair<IPatternDetails, @Nullable ObjectSet<Item>> createCraftOrProcessingPattern(AECraftingPattern craftingPattern, Level level) {
+        IPatternDetails.IInput[] inputs = craftingPattern.getInputs();
+        boolean hasUnDamageable = false;
+
+        for (var input : inputs) {
+            AEKey key = input.getPossibleInputs()[0].what();
+            AEKey remainingKey = input.getRemainingKey(key);
+            if (remainingKey != null) {
+                if (remainingKey instanceof AEItemKey itemKey && !itemKey.toStack().isDamageableItem()) {
+                    hasUnDamageable = true;
+                    break;
+                }
+            }
+        }
+
+        if (!hasUnDamageable) return ImmutablePair.of(craftingPattern, null);
+        else {
+            ObjectArrayList<GenericStack> normalInputs = new ObjectArrayList<>();
+            ObjectSet<Item> remainingInputs = new ObjectArraySet<>();
+            for (IPatternDetails.IInput input : inputs) {
+                final var remaining = input.getRemainingKey(input.getPossibleInputs()[0].what());
+                if (remaining != null) {
+                    remainingInputs.add(((AEItemKey) remaining).getItem());
+                } else {
+                    normalInputs.add(input.getPossibleInputs()[0]);
+                }
+            }
+            ItemStack pattern = PatternDetailsHelper.encodeProcessingPattern(normalInputs.toArray(new GenericStack[0]), craftingPattern.getOutputs());
+
+            return ImmutablePair.of(PatternDetailsHelper.decodePattern(pattern, level), remainingInputs);
+        }
     }
 
     // ========================================
