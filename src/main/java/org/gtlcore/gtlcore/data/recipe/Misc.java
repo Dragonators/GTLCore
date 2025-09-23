@@ -45,6 +45,20 @@ public class Misc {
         VanillaRecipeHelper.addShapelessRecipe(provider, GTLCore.id("me_pattern_buffer_copy"),
                 GTLItems.ME_PATTERN_BUFFER_COPY.asStack(),
                 "A", MEMORY_CARD);
+        VanillaRecipeHelper.addShapedRecipe(provider, true, GTLCore.id("fast_infinity_cell_0"),
+                GTLItems.FAST_INFINITY_CELL.asStack(),
+                "AAA", "BCD", "AAA",
+                'A', QUANTUM_ENTANGLED_SINGULARITY.stack(),
+                'B', GTLItems.ITEM_INFINITY_CELL.asStack(),
+                'C', ZERO_POINT_MODULE.asStack(),
+                'D', GTLItems.FLUID_INFINITY_CELL.asStack());
+        VanillaRecipeHelper.addShapedRecipe(provider, true, GTLCore.id("fast_infinity_cell_1"),
+                GTLItems.FAST_INFINITY_CELL.asStack(),
+                "AAA", "DCB", "AAA",
+                'A', QUANTUM_ENTANGLED_SINGULARITY.stack(),
+                'B', GTLItems.ITEM_INFINITY_CELL.asStack(),
+                'C', ZERO_POINT_MODULE.asStack(),
+                'D', GTLItems.FLUID_INFINITY_CELL.asStack());
         if (ConfigHolder.INSTANCE.enablePrimitiveVoidOre) {
             VanillaRecipeHelper.addShapedRecipe(provider, true, "primitive_void_ore_recipes",
                     PRIMITIVE_VOID_ORE.asStack(), "DCD", "CGC", "DCD",
