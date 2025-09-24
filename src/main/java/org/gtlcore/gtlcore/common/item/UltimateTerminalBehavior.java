@@ -28,8 +28,8 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.*;
+import net.minecraftforge.common.util.Lazy;
 
 import com.hepdd.gtmthings.api.gui.widget.TerminalInputWidget;
 import it.unimi.dsi.fastutil.objects.*;
@@ -38,30 +38,32 @@ import lombok.Setter;
 
 import java.util.*;
 
+import static net.minecraft.network.chat.Component.translatable;
 import static org.gtlcore.gtlcore.api.pattern.AdvancedBlockPattern.getAdvancedBlockPattern;
 import static org.gtlcore.gtlcore.common.block.BlockMap.*;
 
 public class UltimateTerminalBehavior implements IItemUIFactory {
 
-    static final Component SC = Component.translatable("gui.gtlcore.stellar_thermal_container");
-    static final Component SEPM = Component.translatable("gui.gtlcore.space_elevator_module");
-    static final Component CAL = Component.translatable("gui.gtlcore.component_assembly_casing");
-    static final Component COIL = Component.translatable("gui.gtlcore.coil");
+    static final String SC = translatable("gui.gtlcore.stellar_thermal_container").getString();
+    static final String SEPM = translatable("gui.gtlcore.space_elevator_module").getString();
+    static final String CAL = translatable("gui.gtlcore.component_assembly_casing").getString();
+    static final String COIL = translatable("gui.gtlcore.coil").getString();
 
     public UltimateTerminalBehavior() {}
 
     @Override
     public InteractionResult useOn(UseOnContext context) {
         if (context.getPlayer() != null && context.getPlayer().isShiftKeyDown()) {
-            Level level = context.getLevel();
-            BlockPos blockPos = context.getClickedPos();
+            var level = context.getLevel();
+            var blockPos = context.getClickedPos();
+            var metaMachine = MetaMachine.getMachine(level, blockPos);
             if (context.getPlayer() != null && !level.isClientSide() &&
-                    MetaMachine.getMachine(level, blockPos) instanceof IMultiController controller) {
-                AutoBuildSetting autoBuildSetting = getAutoBuildSetting(context.getPlayer().getMainHandItem());
+                    metaMachine instanceof IMultiController controller) {
+                var autoBuildSetting = getAutoBuildSetting(context.getPlayer().getMainHandItem());
 
                 if (!controller.isFormed()) {
                     getAdvancedBlockPattern(controller.getPattern()).autoBuild(context.getPlayer(), controller.getMultiblockState(), autoBuildSetting);
-                } else if (MetaMachine.getMachine(level, blockPos) instanceof WorkableMultiblockMachine machine && autoBuildSetting.isReplaceMode()) {
+                } else if (metaMachine instanceof WorkableMultiblockMachine machine && autoBuildSetting.isReplaceMode()) {
                     getAdvancedBlockPattern(controller.getPattern()).autoBuild(context.getPlayer(), controller.getMultiblockState(), autoBuildSetting);
                     machine.onPartUnload();
                 }
@@ -72,7 +74,7 @@ public class UltimateTerminalBehavior implements IItemUIFactory {
     }
 
     private AutoBuildSetting getAutoBuildSetting(ItemStack mainHandItem) {
-        AutoBuildSetting autoBuildSetting = new AutoBuildSetting();
+        var autoBuildSetting = new AutoBuildSetting();
         var tag = mainHandItem.getTag();
         if (tag != null && !tag.isEmpty()) {
             autoBuildSetting.setTier(tag.getInt("Tier"));
@@ -82,7 +84,7 @@ public class UltimateTerminalBehavior implements IItemUIFactory {
             autoBuildSetting.setFlipped(tag.getBoolean("IsFlipped"));
             String block = tag.getString("blocks");
             if (!block.isEmpty()) {
-                autoBuildSetting.tierBlock = tierBlockMap.get(block);
+                autoBuildSetting.tierBlock = tierBlockMap.get(block).get();
                 autoBuildSetting.blocks = new ObjectOpenHashSet<>(autoBuildSetting.tierBlock);
             }
         }
@@ -91,63 +93,59 @@ public class UltimateTerminalBehavior implements IItemUIFactory {
 
     @Override
     public ModularUI createUI(HeldItemUIFactory.HeldItemHolder heldItemHolder, Player player) {
-        if (tierBlockMap.isEmpty()) build();
         return (new ModularUI(176, 166, heldItemHolder, player)).widget(this.createWidget(player));
     }
 
     private Widget createWidget(Player player) {
-        ItemStack handItem = player.getMainHandItem();
+        final var handItem = player.getMainHandItem();
         WidgetGroup group = new WidgetGroup(0, 0, 190, 136);
-        DraggableScrollableWidgetGroup contain = new DraggableScrollableWidgetGroup(4, 4, 182, 128)
+        var contain = new DraggableScrollableWidgetGroup(4, 4, 182, 128)
                 .setBackground(GuiTextures.DISPLAY).setYScrollBarWidth(2)
                 .setYBarStyle(null, ColorPattern.T_WHITE.rectTexture().setRadius(1.0F));
-        contain.addWidget(new LabelWidget(65, 8, () -> Component.translatable("gui.gtlcore.ultimate_terminal_settings").getString()));
-        contain.addWidget(new LabelWidget(14, 26, () -> Component.translatable("gui.gtlcore.tier_blocks").getString()));
-        contain.addWidget(new LabelWidget(14, 46, () -> Component.translatable("gui.gtlcore.repeat_count").getString()));
-        contain.addWidget(new LabelWidget(14, 66, () -> Component.translatable("gui.gtlcore.no_hatch_mode").getString() + (getIsBuildHatches(handItem) ? Component.translatable("gui.gtlcore.yes").getString() : Component.translatable("gui.gtlcore.no").getString()))
-                .setHoverTooltips(Component.translatable("tooltip.gtlcore.no_hatch_mode")));
-        contain.addWidget(new LabelWidget(14, 86, () -> Component.translatable("gui.gtlcore.replace_mode").getString() + (getReplaceMode(handItem) ? Component.translatable("gui.gtlcore.yes").getString() : Component.translatable("gui.gtlcore.no").getString()))
-                .setHoverTooltips(Component.translatable("tooltip.gtlcore.replace_mode")));
-        contain.addWidget(new LabelWidget(14, 106, () -> Component.translatable("gui.gtlcore.mirror_mode").getString() + (getIsFlip(handItem) ? Component.translatable("gui.gtlcore.yes").getString() : Component.translatable("gui.gtlcore.no").getString()))
-                .setHoverTooltips(Component.translatable("tooltip.gtlcore.mirror_mode")));
-        contain.addWidget(new TerminalInputWidget(140, 45, 36, 12,
-                () -> getRepeatCount(handItem), (v) -> setRepeatCount(v, handItem)).setMax(100).setMin(0));
-        contain.addWidget(new SwitchWidget(140, 63, 36, 14,
-                (c, b) -> setIsBuildHatches(!getIsBuildHatches(handItem), handItem)).setPressed(getIsBuildHatches(handItem))
-                .setTexture(new GuiTextureGroup(GuiTextures.BUTTON, new TextTexture("OFF")),
-                        new GuiTextureGroup(GuiTextures.BUTTON, new TextTexture("ON"))));
-        contain.addWidget(new SwitchWidget(140, 83, 36, 14,
-                (c, b) -> setReplaceMode(!getReplaceMode(handItem), handItem)).setPressed(getReplaceMode(handItem))
-                .setTexture(new GuiTextureGroup(GuiTextures.BUTTON, new TextTexture("OFF")),
-                        new GuiTextureGroup(GuiTextures.BUTTON, new TextTexture("ON"))));
-        contain.addWidget(new SwitchWidget(140, 103, 36, 14,
-                (c, b) -> setIsFlip(!getIsFlip(handItem), handItem)).setPressed(getIsFlip(handItem))
-                .setTexture(new GuiTextureGroup(GuiTextures.BUTTON, new TextTexture("OFF")),
-                        new GuiTextureGroup(GuiTextures.BUTTON, new TextTexture("ON"))));
-        BlockMapSelectorWidget tier = new BlockMapSelectorWidget(80, 23, 56, 16, List.of());
-        SelectorWidget type = new SelectorWidget(140, 23, 36, 16,
-                List.of(SC.getString(), SEPM.getString(), CAL.getString(), COIL.getString()), -1);
+        contain.addWidget(new ExtendLabelWidget(65, 8, translatable("gui.gtlcore.ultimate_terminal_settings")))
+                .addWidget(new ExtendLabelWidget(14, 26, translatable("gui.gtlcore.tier_blocks")))
+                .addWidget(new ExtendLabelWidget(14, 46, translatable("gui.gtlcore.repeat_count")))
+                .addWidget(new ExtendLabelWidget(14, 66, translatable("gui.gtlcore.no_hatch_mode"))
+                        .setHoverTooltips(translatable("tooltip.gtlcore.no_hatch_mode")))
+                .addWidget(new ExtendLabelWidget(14, 86, translatable("gui.gtlcore.replace_mode"))
+                        .setHoverTooltips(translatable("tooltip.gtlcore.replace_mode")))
+                .addWidget(new ExtendLabelWidget(14, 106, translatable("gui.gtlcore.mirror_mode"))
+                        .setHoverTooltips(translatable("tooltip.gtlcore.mirror_mode")))
+                .addWidget(new TerminalInputWidget(140, 45, 36, 12,
+                        () -> getRepeatCount(handItem), (v) -> setRepeatCount(v, handItem)).setMax(100).setMin(0))
+                .addWidget(new SwitchWidget(140, 63, 36, 14,
+                        (c, b) -> setIsBuildHatches(!getIsBuildHatches(handItem), handItem)).setPressed(getIsBuildHatches(handItem))
+                        .setTexture(new GuiTextureGroup(GuiTextures.BUTTON, new TextTexture("OFF")),
+                                new GuiTextureGroup(GuiTextures.BUTTON, new TextTexture("ON"))))
+                .addWidget(new SwitchWidget(140, 83, 36, 14,
+                        (c, b) -> setReplaceMode(!getReplaceMode(handItem), handItem)).setPressed(getReplaceMode(handItem))
+                        .setTexture(new GuiTextureGroup(GuiTextures.BUTTON, new TextTexture("OFF")),
+                                new GuiTextureGroup(GuiTextures.BUTTON, new TextTexture("ON"))))
+                .addWidget(new SwitchWidget(140, 103, 36, 14,
+                        (c, b) -> setIsFlip(!getIsFlip(handItem), handItem)).setPressed(getIsFlip(handItem))
+                        .setTexture(new GuiTextureGroup(GuiTextures.BUTTON, new TextTexture("OFF")),
+                                new GuiTextureGroup(GuiTextures.BUTTON, new TextTexture("ON"))));
+        var tier = new BlockMapSelectorWidget(80, 23, 56, 16, List.of());
+        var type = new SelectorWidget(140, 23, 36, 16, List.of(SC, SEPM, CAL, COIL), -1);
         type.setValue(getBlock(handItem)).setOnChanged(selectedValue -> {
             String s = "";
-            if (selectedValue.equals(SC.getString())) s = "sc";
-            else if (selectedValue.equals(SEPM.getString())) s = "sepm";
-            else if (selectedValue.equals(CAL.getString())) s = "cal";
-            else if (selectedValue.equals(COIL.getString())) s = "coil";
-            CompoundTag tag = handItem.getTag();
+            if (selectedValue.equals(SC)) s = "sc";
+            else if (selectedValue.equals(SEPM)) s = "sepm";
+            else if (selectedValue.equals(CAL)) s = "cal";
+            else if (selectedValue.equals(COIL)) s = "coil";
+            var tag = handItem.getOrCreateTag();
             tag.putString("blocks", s);
-            Block[] blocks = tierBlockMap.getOrDefault(s, new Block[0]);
+            var blocks = tierBlockMap.getOrDefault(s, Lazy.of(() -> new Block[0])).get();
             if (blocks.length > 0) {
                 tier.setBlocks(new ObjectArrayList<>(blocks));
                 tier.isShow();
             }
         }).setBackground(GuiTextures.BACKGROUND_INVERSE).setButtonBackground(GuiTextures.BUTTON).textTexture.setRollSpeed(.5f);
         tier.setOnChanged(s -> setTier(tier.getIndex(s), handItem));
-        String block = handItem.getTag().getString("blocks");
-        if (!block.isEmpty()) tier.setIndex(getTier(handItem), List.of(tierBlockMap.get(block)));
-        contain.addWidget(tier);
-        contain.addWidget(type);
-        group.addWidget(contain);
-        group.setBackground(GuiTextures.BACKGROUND_INVERSE);
+        var block = handItem.getOrCreateTag().getString("blocks");
+        if (!block.isEmpty()) tier.setIndex(getTier(handItem), List.of(tierBlockMap.get(block).get()));
+        contain.addWidget(tier).addWidget(type);
+        group.addWidget(contain).setBackground(GuiTextures.BACKGROUND_INVERSE);
         return group;
     }
 
@@ -156,16 +154,16 @@ public class UltimateTerminalBehavior implements IItemUIFactory {
         if (tag != null && !tag.isEmpty()) {
             switch (tag.getString("blocks")) {
                 case "sc" -> {
-                    return SC.getString();
+                    return SC;
                 }
                 case "sepm" -> {
-                    return SEPM.getString();
+                    return SEPM;
                 }
                 case "cal" -> {
-                    return CAL.getString();
+                    return CAL;
                 }
                 case "coil" -> {
-                    return COIL.getString();
+                    return COIL;
                 }
             }
         }
@@ -285,6 +283,14 @@ public class UltimateTerminalBehavior implements IItemUIFactory {
                     if (d.createMetaMachine((IMachineBlockEntity) d.getBlockEntityType().create(BlockPos.ZERO, block.defaultBlockState())) instanceof MultiblockPartMachine) Set.add(block);
                 });
             }
+        }
+    }
+
+    private static class ExtendLabelWidget extends LabelWidget {
+
+        public ExtendLabelWidget(int xPosition, int yPosition, Component component) {
+            super(xPosition, yPosition, component);
+            this.setText(component.getString());
         }
     }
 }
