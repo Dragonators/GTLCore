@@ -2,6 +2,7 @@ package org.gtlcore.gtlcore.mixin.gtm;
 
 import org.gtlcore.gtlcore.api.recipe.ingredient.LongIngredient;
 import org.gtlcore.gtlcore.utils.GTLUtil;
+import org.gtlcore.gtlcore.utils.NumberUtils;
 
 import com.gregtechceu.gtceu.api.capability.recipe.ItemRecipeCapability;
 import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic;
@@ -182,7 +183,7 @@ public abstract class RecipeOutputProviderMixin extends CapabilityBlockProvider<
                 long count = tag.getLong("Count");
                 iTooltip.add(helper.smallItem(stack));
                 Component text = Component.literal(" ")
-                        .append(String.valueOf(count))
+                        .append(NumberUtils.formatLong(count))
                         .append("× ")
                         .append(getItemName(stack))
                         .withStyle(ChatFormatting.WHITE);
