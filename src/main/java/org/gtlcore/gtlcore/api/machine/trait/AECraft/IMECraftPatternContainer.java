@@ -2,6 +2,8 @@ package org.gtlcore.gtlcore.api.machine.trait.AECraft;
 
 import com.lowdragmc.lowdraglib.side.item.IItemTransfer;
 
+import net.minecraft.core.BlockPos;
+
 public interface IMECraftPatternContainer {
 
     static int sumNonEmpty(IItemTransfer itemTransfer) {
@@ -13,5 +15,7 @@ public interface IMECraftPatternContainer {
         return sum;
     }
 
-    IItemTransfer getItemTransfer();
+    BlockPos getBlockPos();
+
+    int getSlots();
 }

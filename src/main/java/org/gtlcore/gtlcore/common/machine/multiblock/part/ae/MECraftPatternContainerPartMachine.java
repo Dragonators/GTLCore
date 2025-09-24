@@ -13,17 +13,18 @@ import com.gregtechceu.gtceu.api.machine.multiblock.part.MultiblockPartMachine;
 import com.lowdragmc.lowdraglib.gui.widget.Widget;
 import com.lowdragmc.lowdraglib.gui.widget.WidgetGroup;
 import com.lowdragmc.lowdraglib.misc.ItemStackTransfer;
-import com.lowdragmc.lowdraglib.side.item.IItemTransfer;
 import com.lowdragmc.lowdraglib.syncdata.annotation.DescSynced;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.BlockHitResult;
 
 import appeng.crafting.pattern.EncodedPatternItem;
+import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
 public class MECraftPatternContainerPartMachine extends MultiblockPartMachine implements IMECraftPatternContainer, IMachineLife {
@@ -33,6 +34,7 @@ public class MECraftPatternContainerPartMachine extends MultiblockPartMachine im
 
     private static final int PATTERNS_PER_ROW = 9;
 
+    @Getter
     @Persisted
     protected final ItemStackTransfer patternInventory;
 
@@ -52,8 +54,13 @@ public class MECraftPatternContainerPartMachine extends MultiblockPartMachine im
     }
 
     @Override
-    public IItemTransfer getItemTransfer() {
-        return patternInventory;
+    public BlockPos getBlockPos() {
+        return getPos();
+    }
+
+    @Override
+    public int getSlots() {
+        return this.patternInventory.getSlots();
     }
 
     @Override

@@ -1,6 +1,7 @@
 package org.gtlcore.gtlcore.common.machine.multiblock.part.ae;
 
 import org.gtlcore.gtlcore.api.machine.trait.AECraft.IMECraftIOPart;
+import org.gtlcore.gtlcore.api.machine.trait.AECraft.IMECraftPatternContainer;
 import org.gtlcore.gtlcore.common.data.GTLMachines;
 import org.gtlcore.gtlcore.common.machine.multiblock.part.PaginationUIManager;
 import org.gtlcore.gtlcore.integration.ae2.AEUtils;
@@ -9,6 +10,7 @@ import org.gtlcore.gtlcore.integration.lowdragmc.misc.MutableItemTransferList;
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
 import com.gregtechceu.gtceu.api.gui.fancy.ConfiguratorPanel;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
+import com.gregtechceu.gtceu.api.machine.MetaMachine;
 import com.gregtechceu.gtceu.api.machine.MultiblockMachineDefinition;
 import com.gregtechceu.gtceu.api.machine.TickableSubscription;
 import com.gregtechceu.gtceu.api.machine.fancyconfigurator.FancyInvConfigurator;
@@ -24,6 +26,7 @@ import com.lowdragmc.lowdraglib.syncdata.annotation.DescSynced;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -61,8 +64,7 @@ import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import static org.gtlcore.gtlcore.integration.ae2.AEUtils.*;
 
@@ -117,7 +119,6 @@ public class MEMolecularAssemblerIOPartMachine extends MEIOPartMachine implement
 
     protected final NotifiableMAHandlerTrait maHandler;
 
-    @DescSynced
     private final MutableItemTransferList mutableItemTransferList;
 
     protected PaginationUIManager paginationUIManager;
@@ -138,6 +139,10 @@ public class MEMolecularAssemblerIOPartMachine extends MEIOPartMachine implement
 
     @Getter
     private final Object2LongOpenHashMap<AEKey> buffer;
+
+    @DescSynced
+    private final ObjectOpenHashSet<BlockPos> proxies = new ObjectOpenHashSet<>();
+    private final ReferenceSortedSet<IItemTransfer> proxyStackTransfers = new ReferenceLinkedOpenHashSet<>();
 
     public MEMolecularAssemblerIOPartMachine(IMachineBlockEntity holder) {
         super(holder, IO.BOTH);
@@ -188,12 +193,13 @@ public class MEMolecularAssemblerIOPartMachine extends MEIOPartMachine implement
     }
 
     @Override
-    public void init(@NotNull List<IItemTransfer> transfers) {
-        mutableItemTransferList.clear();
-        patternSlotMap.clear();
-        toolsSlotMap.clear();
-        if (!transfers.isEmpty()) {
-            mutableItemTransferList.addTransfers(transfers);
+    public void init(@NotNull Set<BlockPos> proxies) {
+        clear();
+
+        this.proxies.addAll(proxies);
+        mutableItemTransferList.addTransfers(getProxies());
+
+        if (!mutableItemTransferList.isEmpty()) {
             for (int i = 0; i < mutableItemTransferList.getSlots(); i++) {
                 var pattern = getPatternDetails(mutableItemTransferList.getStackInSlot(i), i);
                 if (pattern != null) patternSlotMap.forcePut(pattern, i);
@@ -216,9 +222,10 @@ public class MEMolecularAssemblerIOPartMachine extends MEIOPartMachine implement
     }
 
     protected void clear() {
-        mutableItemTransferList.clear();
-        patternSlotMap.clear();
-        toolsSlotMap.clear();
+        this.mutableItemTransferList.clear();
+        this.patternSlotMap.clear();
+        this.toolsSlotMap.clear();
+        this.proxies.clear();
         shouldOpen = false;
     }
 
@@ -236,6 +243,22 @@ public class MEMolecularAssemblerIOPartMachine extends MEIOPartMachine implement
             }
         }
         return null;
+    }
+
+    protected ReferenceSortedSet<IItemTransfer> getProxies() {
+        if (proxyStackTransfers.size() != proxies.size()) {
+            proxyStackTransfers.clear();
+            ObjectList<IItemTransfer> patternInventories = new ObjectArrayList<>();
+            for (var pos : proxies) {
+                if (MetaMachine.getMachine(Objects.requireNonNull(getLevel()), pos) instanceof MECraftPatternContainerPartMachine proxy) {
+                    patternInventories.add(proxy.getPatternInventory());
+                }
+            }
+            patternInventories.sort(Comparator.comparingInt(IMECraftPatternContainer::sumNonEmpty).reversed()
+                    .thenComparingInt(IItemTransfer::getSlots));
+            proxyStackTransfers.addAll(patternInventories);
+        }
+        return ReferenceSortedSets.unmodifiable(proxyStackTransfers);
     }
 
     @Override
@@ -267,6 +290,11 @@ public class MEMolecularAssemblerIOPartMachine extends MEIOPartMachine implement
         super.removedFromController(controller);
         clear();
         needPatternSync = true;
+    }
+
+    @Override
+    public void onMachineRemoved() {
+        clearInventory(sharedToolsInventory);
     }
 
     protected void updateSubscription() {
@@ -303,7 +331,9 @@ public class MEMolecularAssemblerIOPartMachine extends MEIOPartMachine implement
 
     @Override
     public @NotNull Widget createUIWidget() {
-        final int totalCount = mutableItemTransferList.getSlots();
+        var tempmutableItemTransferList = new MutableItemTransferList(getProxies());
+
+        final int totalCount = tempmutableItemTransferList.getSlots();
         final int colSize = 9;
         final int uiWidth = Math.max(PATTERNS_PER_ROW * 18 + 16, 106);
         final int uiHeight = ROWS_PER_PAGE * 18 + 28;
@@ -311,7 +341,7 @@ public class MEMolecularAssemblerIOPartMachine extends MEIOPartMachine implement
         this.paginationUIManager = new PaginationUIManager(9, ROWS_PER_PAGE, totalCount,
                 uiWidth, uiHeight,
                 this::onPatternChange,
-                mutableItemTransferList);
+                tempmutableItemTransferList);
 
         var group = new WidgetGroup(0, 0, paginationUIManager.getUiWidth(), paginationUIManager.getUiHeight());
 

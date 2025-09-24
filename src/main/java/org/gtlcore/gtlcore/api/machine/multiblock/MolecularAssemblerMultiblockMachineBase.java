@@ -19,7 +19,6 @@ import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.GTRecipeType;
 
-import com.lowdragmc.lowdraglib.side.item.IItemTransfer;
 import com.lowdragmc.lowdraglib.syncdata.ISubscription;
 import com.lowdragmc.lowdraglib.syncdata.annotation.DescSynced;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
@@ -34,13 +33,13 @@ import com.google.common.primitives.Ints;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import it.unimi.dsi.fastutil.longs.LongSets;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import it.unimi.dsi.fastutil.objects.ObjectList;
+import it.unimi.dsi.fastutil.objects.ObjectArraySet;
+import it.unimi.dsi.fastutil.objects.ObjectSet;
 import lombok.Getter;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
@@ -145,7 +144,7 @@ public abstract class MolecularAssemblerMultiblockMachineBase extends Multiblock
     }
 
     private void update() {
-        final ObjectList<IItemTransfer> patternInventories = new ObjectArrayList<IItemTransfer>();
+        final ObjectSet<BlockPos> patternInventoryPos = new ObjectArraySet<>();
         int speedTier = 0;
         int totalSlots = 0;
         long totalParallel = 0;
@@ -153,8 +152,8 @@ public abstract class MolecularAssemblerMultiblockMachineBase extends Multiblock
 
         for (IMultiPart part : this.getParts()) {
             if (part instanceof IMECraftPatternContainer craftPatternContainer) {
-                patternInventories.add(craftPatternContainer.getItemTransfer());
-                totalSlots += craftPatternContainer.getItemTransfer().getSlots();
+                patternInventoryPos.add(craftPatternContainer.getBlockPos());
+                totalSlots += craftPatternContainer.getSlots();
             } else if (part instanceof IMECraftParallelCore parallelCore) {
                 totalParallel += parallelCore.getParallel();
 
@@ -175,9 +174,7 @@ public abstract class MolecularAssemblerMultiblockMachineBase extends Multiblock
         this.patternSize = totalSlots;
         this.tickDuration = speedTier <= 39 ? 40 - speedTier : 1;
         this.maxParallel = Ints.saturatedCast(totalParallel);
-        patternInventories.sort(Comparator.comparingInt(IMECraftPatternContainer::sumNonEmpty).reversed()
-                .thenComparingInt(IItemTransfer::getSlots));
-        meCraftIOPart.init(patternInventories);
+        meCraftIOPart.init(patternInventoryPos);
 
         var handlerTrait = meCraftIOPart.getNotifiableMAHandlerTrait();
         this.traitSubscriptions.add(handlerTrait.addChangedListener(recipeLogic::updateTickSubscription));
@@ -206,20 +203,6 @@ public abstract class MolecularAssemblerMultiblockMachineBase extends Multiblock
             if (this.recipeLogic != null) {
                 this.recipeLogic.updateSound();
             }
-        }
-    }
-
-    @Override
-    protected void onPartsUpdated(BlockPos @NotNull [] newValue, BlockPos @NotNull [] oldValue) {
-        super.onPartsUpdated(newValue, oldValue);
-        if (isRemote()) {
-            IMECraftIOPart meCraftIOPart = null;
-            final var patternInventories = new ObjectArrayList<IItemTransfer>();
-            for (IMultiPart part : this.getParts()) {
-                if (part instanceof IMECraftPatternContainer craftPatternContainer) patternInventories.add(craftPatternContainer.getItemTransfer());
-                else if (part instanceof IMECraftIOPart ioPart) meCraftIOPart = ioPart;
-            }
-            if (meCraftIOPart != null) meCraftIOPart.init(patternInventories);
         }
     }
 
