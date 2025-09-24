@@ -17,7 +17,7 @@ import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
+import java.util.Set;
 import java.util.function.Predicate;
 
 /**
@@ -40,7 +40,7 @@ public class MutableItemTransferList implements IItemTransfer, ITagSerializable<
         transfers.ensureCapacity(initialCapacity);
     }
 
-    public MutableItemTransferList(List<IItemTransfer> initialTransfers) {
+    public MutableItemTransferList(Set<IItemTransfer> initialTransfers) {
         if (initialTransfers != null && !initialTransfers.isEmpty()) {
             transfers.addAll(initialTransfers);
             invalidateSlotsCache();
@@ -70,7 +70,7 @@ public class MutableItemTransferList implements IItemTransfer, ITagSerializable<
      * @param transfers 要添加的传输对象列表
      * @return 是否成功添加
      */
-    public boolean addTransfers(@Nullable List<IItemTransfer> transfers) {
+    public boolean addTransfers(@Nullable Set<IItemTransfer> transfers) {
         if (transfers == null) return false;
         boolean added = this.transfers.addAll(transfers);
         if (added) {
