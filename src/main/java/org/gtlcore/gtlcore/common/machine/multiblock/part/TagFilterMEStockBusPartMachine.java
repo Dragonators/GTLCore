@@ -5,6 +5,7 @@ import org.gtlcore.gtlcore.api.machine.trait.MEStock.IMEPartMachine;
 import org.gtlcore.gtlcore.api.machine.trait.MEStock.IMESlot;
 import org.gtlcore.gtlcore.api.recipe.ingredient.LongIngredient;
 import org.gtlcore.gtlcore.config.ConfigHolder;
+import org.gtlcore.gtlcore.integration.ae2.Ae2CompatMH;
 
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
 import com.gregtechceu.gtceu.api.gui.GuiTextures;
@@ -25,17 +26,12 @@ import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 
 import net.minecraft.MethodsReturnNonnullByDefault;
-import net.minecraft.core.Holder;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.TickTask;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.tags.TagKey;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraft.world.level.material.Fluid;
-import net.minecraftforge.registries.ForgeRegistries;
 
 import appeng.api.config.Actionable;
 import appeng.api.networking.IGrid;
@@ -43,12 +39,10 @@ import appeng.api.networking.storage.IStorageService;
 import appeng.api.stacks.*;
 import appeng.api.storage.MEStorage;
 import appeng.util.prioritylist.IPartitionList;
-import com.glodblock.github.extendedae.common.me.taglist.TagExpParser;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.objects.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -122,8 +116,8 @@ public class TagFilterMEStockBusPartMachine extends MEInputBusPartMachine {
             if (config != null) {
                 // Try to fill the slot
                 var key = config.what();
-                // try max fill Integer.MAX_VALUE
-                long extracted = networkInv.extract(key, Integer.MAX_VALUE, Actionable.SIMULATE, actionSource);
+                // try max fill Long.MAX_VALUE
+                long extracted = networkInv.extract(key, Long.MAX_VALUE, Actionable.SIMULATE, actionSource);
                 if (extracted > 0) {
                     slot.setStock(new GenericStack(key, extracted));
                     continue;
@@ -141,8 +135,8 @@ public class TagFilterMEStockBusPartMachine extends MEInputBusPartMachine {
         }
         IStorageService storageService = grid.getStorageService();
         MEStorage networkStorage = storageService.getInventory();
-        IPartitionList filter = new ItemTagPriority(TagExpParser.getMatchingOre(this.tagWhite),
-                TagExpParser.getMatchingOre(this.tagBlack), this.tagWhite + this.tagBlack);
+        IPartitionList filter = Ae2CompatMH.createTagFilter(this.tagWhite, this.tagBlack);
+
         List<GenericStack> order = new ObjectArrayList<>();
         final var inventory = this.aeItemHandler.getInventory();
 
@@ -425,60 +419,6 @@ public class TagFilterMEStockBusPartMachine extends MEInputBusPartMachine {
         @Override
         public ExportOnlyAEStockingItemSlot copy() {
             return new ExportOnlyAEStockingItemSlot(this.config == null ? null : copy(this.config), this.stock == null ? null : copy(this.stock));
-        }
-    }
-
-    private static class ItemTagPriority implements IPartitionList {
-
-        private final Set<TagKey<?>> whiteSet;
-        private final Set<TagKey<?>> blackSet;
-        private final String tagExp;
-        private final Reference2BooleanMap<Object> memory = new Reference2BooleanOpenHashMap<>();
-
-        public ItemTagPriority(Set<TagKey<?>> whiteSet, Set<TagKey<?>> blackSet, String tagExp) {
-            this.whiteSet = whiteSet;
-            this.blackSet = blackSet;
-            this.tagExp = tagExp;
-        }
-
-        @Override
-        public boolean isListed(AEKey aeKey) {
-            Object key = aeKey.getPrimaryKey();
-            return this.memory.computeIfAbsent(key, this::eval);
-        }
-
-        @Override
-        public boolean isEmpty() {
-            return tagExp.isEmpty();
-        }
-
-        @Override
-        public Iterable<AEKey> getItems() {
-            return List.of();
-        }
-
-        private boolean eval(@NotNull Object obj) {
-            Holder<?> refer = null;
-            if (obj instanceof Item item) {
-                refer = ForgeRegistries.ITEMS.getHolder(item).orElse(null);
-            } else if (obj instanceof Fluid) {
-                return false;
-            }
-
-            if (refer != null) {
-                if (this.whiteSet.isEmpty()) {
-                    return false;
-                }
-
-                boolean pass = refer.tags().anyMatch(whiteSet::contains);
-                if (pass) {
-                    if (!this.blackSet.isEmpty()) {
-                        return refer.tags().noneMatch(blackSet::contains);
-                    }
-                    return true;
-                }
-            }
-            return false;
         }
     }
 }
