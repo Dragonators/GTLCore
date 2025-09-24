@@ -7,6 +7,7 @@
   "client": [
     "ae2.client.BuiltInModelHooksAccessor",
     "ae2.client.ModelBakeryMixin",
+    "ae2.gui.SetProcessingPatternAmountScreenMixin",
     "gtm.MultiblockInfoWrapperMixin",
     "gtm.MultiblockInWorldPreviewRendererMixin",
     "gtm.TagPrefixItemRendererMixin",
