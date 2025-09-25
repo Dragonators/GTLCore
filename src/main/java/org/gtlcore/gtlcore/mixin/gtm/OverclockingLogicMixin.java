@@ -58,7 +58,7 @@ public class OverclockingLogicMixin {
             }
         }
 
-        eut *= Math.min(1, Math.pow(0.95, Math.max(0, (providedTemp - requiredTemp) / 900)));
+        eut *= Math.min(1, NumberUtils.pow95(Math.max(0, (providedTemp - requiredTemp) / 900)));
 
         ((IAdvancedOCResult) (Object) result).init((long) (eut / vfPowParallel), (int) duration, (int) parallel, (long) eut, baseOCLevel, ocLevel, PERFECT_DURATION_FACTOR, STD_VOLTAGE_FACTOR);
     }
