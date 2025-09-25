@@ -3,17 +3,15 @@ package org.gtlcore.gtlcore.mixin.gtm.api.machine;
 import org.gtlcore.gtlcore.api.machine.trait.ILockRecipe;
 import org.gtlcore.gtlcore.api.machine.trait.IRecipeStatus;
 import org.gtlcore.gtlcore.api.recipe.RecipeResult;
-import org.gtlcore.gtlcore.api.recipe.RecipeRunnerHelper;
 
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
+import com.gregtechceu.gtceu.api.capability.recipe.IRecipeCapabilityHolder;
 import com.gregtechceu.gtceu.api.capability.recipe.RecipeCapability;
 import com.gregtechceu.gtceu.api.machine.feature.IRecipeLogicMachine;
 import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
-import com.gregtechceu.gtceu.api.recipe.GTRecipeType;
 import com.gregtechceu.gtceu.api.recipe.logic.OCParams;
 import com.gregtechceu.gtceu.api.recipe.logic.OCResult;
-import com.gregtechceu.gtceu.api.recipe.lookup.RecipeIterator;
 import com.gregtechceu.gtceu.common.machine.multiblock.electric.research.ResearchStationMachine;
 
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
@@ -23,10 +21,14 @@ import net.minecraft.network.chat.Component;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import lombok.Getter;
 import lombok.Setter;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.*;
 
 import java.util.*;
+import java.util.function.Predicate;
+
+import static org.gtlcore.gtlcore.api.recipe.RecipeRunnerHelper.*;
 
 @Mixin(RecipeLogic.class)
 public abstract class RecipeLogicMixin implements ILockRecipe, IRecipeStatus {
@@ -121,7 +123,7 @@ public abstract class RecipeLogicMixin implements ILockRecipe, IRecipeStatus {
     @Overwrite(remap = false)
     protected boolean handleRecipeIO(GTRecipe recipe, IO io) {
         if (!(this.machine.hasProxies() && io != IO.BOTH)) return false;
-        return RecipeRunnerHelper.handleRecipeInput(this.machine, recipe);
+        return handleRecipeInput(this.machine, recipe);
     }
 
     /**
@@ -205,7 +207,28 @@ public abstract class RecipeLogicMixin implements ILockRecipe, IRecipeStatus {
             }
         } else {
             this.lastOriginRecipe = null;
-            this.handleSearchingRecipes(this.machine instanceof ResearchStationMachine ? this.searchResearchRecipe() : this.searchRecipe());
+            this.handleSearchingRecipes(gtlcore$searchRecipe(this.machine, this.machine instanceof ResearchStationMachine ?
+                    (r) -> {
+                        if (!this.machine.hasProxies()) return false;
+                        else {
+                            var result = r.matchRecipeContents(IO.IN, this.machine, r.inputs, false);
+                            if (!result.isSuccess()) {
+                                RecipeResult.of(this.machine, RecipeResult.FAIL_FIND);
+                                return false;
+                            } else if (r.hasTick()) {
+                                result = r.matchRecipeContents(IO.IN, this.machine, r.tickInputs, true);
+                                if (!result.isSuccess() && result.reason() != null) {
+                                    String s = result.reason().get().toString();
+                                    if (s.contains("cwu")) RecipeResult.of(this.machine, RecipeResult.FAIL_NO_ENOUGH_CWU_IN);
+                                    else if (s.contains("eu")) RecipeResult.of(this.machine, RecipeResult.FAIL_NO_ENOUGH_EU_IN);
+                                }
+                                return result.isSuccess();
+                            } else return true;
+                        }
+                    } :
+                    (r) -> matchRecipe(this.machine, r) &&
+                            r.matchTickRecipe(this.machine).isSuccess() &&
+                            r.checkConditions(this.machine.getRecipeLogic()).isSuccess()));
         }
         this.recipeDirty = false;
     }
@@ -238,7 +261,7 @@ public abstract class RecipeLogicMixin implements ILockRecipe, IRecipeStatus {
     public void onRecipeFinish() {
         this.machine.afterWorking();
         if (this.lastRecipe != null) {
-            RecipeRunnerHelper.handleRecipeOutput(this.machine, this.lastRecipe);
+            handleRecipeOutput(this.machine, this.lastRecipe);
             if (this.machine.alwaysTryModifyRecipe()) {
                 if (this.lastOriginRecipe != null) {
                     GTRecipe modified = this.machine.fullModifyRecipe(this.lastOriginRecipe.copy(), this.ocParams, this.ocResult);
@@ -263,28 +286,13 @@ public abstract class RecipeLogicMixin implements ILockRecipe, IRecipeStatus {
     }
 
     @Unique
-    protected @Nullable Iterator<GTRecipe> searchResearchRecipe() {
-        IRecipeLogicMachine holder = this.machine;
-        if (!holder.hasProxies()) return null;
-        else {
-            RecipeIterator iterator = this.machine.getRecipeType().getLookup().getRecipeIterator(holder, (r) -> {
-                if (r.isFuel || !holder.hasProxies()) return false;
-                else {
-                    GTRecipe.ActionResult result = r.matchRecipeContents(IO.IN, holder, r.inputs, false);
-                    if (!result.isSuccess()) {
-                        RecipeResult.of(this.machine, RecipeResult.FAIL_FIND);
-                        return false;
-                    } else if (r.hasTick()) {
-                        result = r.matchRecipeContents(IO.IN, holder, r.tickInputs, true);
-                        if (!result.isSuccess() && result.reason() != null) {
-                            String s = result.reason().get().getSiblings().get(1).toString();
-                            if (s.contains("eu")) RecipeResult.of(holder, RecipeResult.FAIL_NO_ENOUGH_EU_IN);
-                            else if (s.contains("cwu")) RecipeResult.of(holder, RecipeResult.FAIL_NO_ENOUGH_CWU_IN);
-                        }
-                        return result.isSuccess();
-                    } else return true;
-                }
-            });
+    public Iterator<GTRecipe> gtlcore$searchRecipe(IRecipeCapabilityHolder holder,
+                                                   @NotNull Predicate<GTRecipe> canHandle) {
+        if (!holder.hasProxies()) {
+            return null;
+        } else {
+            var iterator = this.machine.getRecipeType().getLookup().getRecipeIterator(holder, canHandle);
+
             boolean any = false;
             GTRecipe recipe = null;
             while (iterator.hasNext()) {
@@ -294,15 +302,14 @@ public abstract class RecipeLogicMixin implements ILockRecipe, IRecipeStatus {
                     break;
                 }
             }
+
             if (any) {
                 iterator.reset();
                 return Collections.singleton(recipe).iterator();
             } else {
-                for (GTRecipeType.ICustomRecipeLogic logic : this.machine.getRecipeType().getCustomRecipeLogicRunners()) {
+                for (var logic : this.machine.getRecipeType().getCustomRecipeLogicRunners()) {
                     recipe = logic.createCustomRecipe(holder);
-                    if (recipe != null) {
-                        return Collections.singleton(recipe).iterator();
-                    }
+                    if (recipe != null) return Collections.singleton(recipe).iterator();
                 }
                 return Collections.emptyIterator();
             }
@@ -311,8 +318,7 @@ public abstract class RecipeLogicMixin implements ILockRecipe, IRecipeStatus {
 
     @Unique
     private boolean gtlcore$checkLastRecipe(GTRecipe lastRecipe) {
-        return RecipeRunnerHelper.matchRecipe(this.machine, lastRecipe) &&
-                lastRecipe.matchTickRecipe(this.machine).isSuccess() &&
-                lastRecipe.checkConditions(this.machine.getRecipeLogic()).isSuccess();
+        return matchRecipe(this.machine, lastRecipe) &&
+                lastRecipe.matchTickRecipe(this.machine).isSuccess();
     }
 }
