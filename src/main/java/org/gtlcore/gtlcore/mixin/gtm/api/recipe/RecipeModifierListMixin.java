@@ -73,16 +73,21 @@ public abstract class RecipeModifierListMixin {
 
                     // last was subTick Modifier
                     if (durationFactor != 0 && voltageFactor != 0) {
-                        int additionalTier = NumberUtils.getAdditionalTier(durationFactor, actualAppliedMultiply);
-                        long actualEUt = Math.round((Math.pow(voltageFactor, additionalTier) * result.getEut() * actualAppliedMultiply / tryParallelMultiply));
+                        long actualEUt;
+                        if (actualAppliedMultiply == tryParallelMultiply) {
+                            actualEUt = result.getParallelEUt();
+                            modifiedRecipe.ocTier = result.getOcLevel();
+                        } else {
+                            int additionalTier = NumberUtils.getAdditionalTier(durationFactor, actualAppliedMultiply);
+                            actualEUt = Math.round((Math.pow(voltageFactor, additionalTier) * result.getEut() * actualAppliedMultiply / tryParallelMultiply));
+                            modifiedRecipe.ocTier += additionalTier;
+                        }
 
                         if (result.getEut() > 0L) {
                             modifiedRecipe.tickInputs.put(EURecipeCapability.CAP, List.of(new Content(actualEUt, ChanceLogic.getMaxChancedValue(), ChanceLogic.getMaxChancedValue(), 0, null, null)));
                         } else if (result.getEut() < 0L) {
                             modifiedRecipe.tickOutputs.put(EURecipeCapability.CAP, List.of(new Content(-actualEUt, ChanceLogic.getMaxChancedValue(), ChanceLogic.getMaxChancedValue(), 0, null, null)));
                         }
-
-                        modifiedRecipe.ocTier += additionalTier;
                     }
                 }
             } else {

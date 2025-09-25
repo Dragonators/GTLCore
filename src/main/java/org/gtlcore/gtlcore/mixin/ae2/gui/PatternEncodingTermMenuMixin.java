@@ -28,7 +28,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 /**
  * @author EasterFG on 2024/9/12
  */
-@Mixin(PatternEncodingTermMenu.class)
+@Mixin(value = PatternEncodingTermMenu.class, priority = 900)
 public abstract class PatternEncodingTermMenuMixin extends MEStorageMenu implements IMenuCraftingPacket, PatterEncodingTermMenuModify {
 
     @Unique
