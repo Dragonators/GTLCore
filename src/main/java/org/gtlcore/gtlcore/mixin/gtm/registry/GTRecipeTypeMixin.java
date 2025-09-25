@@ -1,16 +1,11 @@
 package org.gtlcore.gtlcore.mixin.gtm.registry;
 
-import org.gtlcore.gtlcore.api.recipe.RecipeRunnerHelper;
 import org.gtlcore.gtlcore.common.data.GTLMaterials;
 
 import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.api.GTValues;
 import com.gregtechceu.gtceu.api.capability.recipe.FluidRecipeCapability;
-import com.gregtechceu.gtceu.api.capability.recipe.IRecipeCapabilityHolder;
-import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.GTRecipeType;
-import com.gregtechceu.gtceu.api.recipe.lookup.GTRecipeLookup;
-import com.gregtechceu.gtceu.api.recipe.lookup.RecipeIterator;
 import com.gregtechceu.gtceu.common.data.GTMaterials;
 import com.gregtechceu.gtceu.data.recipe.builder.GTRecipeBuilder;
 import com.gregtechceu.gtceu.utils.GTUtil;
@@ -121,51 +116,5 @@ public class GTRecipeTypeMixin {
         }
         recipeBuilder.onSave(onBuild);
         return recipeBuilder.recipeType;
-    }
-
-    /**
-     * @author .
-     * @reason .
-     */
-    @Overwrite(remap = false)
-    public Iterator<GTRecipe> searchRecipe(IRecipeCapabilityHolder holder) {
-        if (!holder.hasProxies()) {
-            return null;
-        } else {
-            RecipeIterator iterator = this.getLookup().getRecipeIterator(holder,
-                    (recipex) -> RecipeRunnerHelper.matchRecipe(holder, recipex) && recipex.matchTickRecipe(holder).isSuccess());
-
-            GTRecipe recipe = null;
-            if (iterator.hasNext()) {
-                recipe = iterator.next();
-            }
-
-            if (recipe != null) {
-                iterator.reset();
-                return Collections.singleton(recipe).iterator();
-            } else {
-                for (GTRecipeType.ICustomRecipeLogic logic : this.customRecipeLogicRunners) {
-                    recipe = logic.createCustomRecipe(holder);
-                    if (recipe != null) {
-                        return Collections.singleton(recipe).iterator();
-                    }
-                }
-                return Collections.emptyIterator();
-            }
-        }
-    }
-
-    public GTRecipeTypeMixin(List<GTRecipeType.ICustomRecipeLogic> customRecipeLogicRunners) {
-        this.customRecipeLogicRunners = customRecipeLogicRunners;
-    }
-
-    @Mutable
-    @Final
-    @Shadow(remap = false)
-    private final List<GTRecipeType.ICustomRecipeLogic> customRecipeLogicRunners;
-
-    @Shadow(remap = false)
-    public GTRecipeLookup getLookup() {
-        return null;
     }
 }
