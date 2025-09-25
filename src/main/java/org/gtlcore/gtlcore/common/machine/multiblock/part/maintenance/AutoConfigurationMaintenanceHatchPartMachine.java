@@ -43,6 +43,7 @@ public class AutoConfigurationMaintenanceHatchPartMachine extends TieredPartMach
     private static final float MIN_DURATION_MULTIPLIER = 0.2f;
     private static final float DURATION_ACTION_AMOUNT = 0.01f;
     @Persisted
+    @Getter
     private float durationMultiplier = 1f;
 
     public AutoConfigurationMaintenanceHatchPartMachine(IMachineBlockEntity metaTileEntityId) {

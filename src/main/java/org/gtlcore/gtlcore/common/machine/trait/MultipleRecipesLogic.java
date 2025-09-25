@@ -2,6 +2,7 @@ package org.gtlcore.gtlcore.common.machine.trait;
 
 import org.gtlcore.gtlcore.api.machine.multiblock.ParallelMachine;
 import org.gtlcore.gtlcore.api.machine.trait.ILockRecipe;
+import org.gtlcore.gtlcore.api.machine.trait.IRecipeCapabilityMachine;
 import org.gtlcore.gtlcore.api.recipe.IGTRecipe;
 
 import com.gregtechceu.gtceu.api.capability.recipe.*;
@@ -34,14 +35,25 @@ public class MultipleRecipesLogic extends RecipeLogic implements ILockRecipe {
 
     private static final int MAX_THREADS = 64;
 
+    private double reductionRatio;
+
     public MultipleRecipesLogic(ParallelMachine machine) {
         this(machine, null);
     }
 
     public MultipleRecipesLogic(ParallelMachine machine, BiPredicate<CompoundTag, IRecipeLogicMachine> dataCheck) {
+        this(machine, dataCheck, 1.0, 1.0);
+    }
+
+    public MultipleRecipesLogic(ParallelMachine machine, BiPredicate<CompoundTag, IRecipeLogicMachine> dataCheck, double reductionEUt, double reductionDuration) {
         super((IRecipeLogicMachine) machine);
         this.parallel = machine;
         this.dataCheck = dataCheck;
+        this.reductionRatio = reductionEUt * reductionDuration;
+    }
+
+    public void setReduction(double reductionEUt, double reductionDuration) {
+        this.reductionRatio = reductionEUt * reductionDuration;
     }
 
     @Override
@@ -60,6 +72,17 @@ public class MultipleRecipesLogic extends RecipeLogic implements ILockRecipe {
         }
     }
 
+    protected double getTotalEuOfRecipe(GTRecipe recipe) {
+        return RecipeHelper.getInputEUt(recipe) * recipe.duration;
+    }
+
+    protected double getEuMultiplier() {
+        var maintenanceMachine = ((IRecipeCapabilityMachine) parallel).getMaintenanceMachine();
+        return maintenanceMachine != null ?
+                maintenanceMachine.getDurationMultiplier() * this.reductionRatio :
+                this.reductionRatio;
+    }
+
     private GTRecipe getRecipe() {
         if (!machine.hasProxies()) return null;
         long maxEUt = getMachine().getOverclockVoltage();
@@ -70,6 +93,8 @@ public class MultipleRecipesLogic extends RecipeLogic implements ILockRecipe {
         output.outputs.put(FluidRecipeCapability.CAP, new ObjectArrayList<>());
         long totalEu = 0;
         long remain = (long) this.parallel.getMaxParallel() * MAX_THREADS;
+        double euMultiplier = getEuMultiplier();
+
         while (remain > 0 && iterator.hasNext()) {
             GTRecipe match = iterator.next();
             if (match == null) continue;
@@ -80,7 +105,7 @@ public class MultipleRecipesLogic extends RecipeLogic implements ILockRecipe {
             match = getRecipeOutputChance(machine, match);
             remain -= p;
             if (handleRecipeInput(machine, match)) {
-                totalEu += RecipeHelper.getInputEUt(match) * match.duration;
+                totalEu += (long) (getTotalEuOfRecipe(match) * euMultiplier);
                 var item = match.outputs.get(ItemRecipeCapability.CAP);
                 if (item != null) output.outputs.get(ItemRecipeCapability.CAP).addAll(item);
                 var fluid = match.outputs.get(FluidRecipeCapability.CAP);

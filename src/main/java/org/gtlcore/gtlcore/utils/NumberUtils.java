@@ -10,11 +10,27 @@ import java.text.DecimalFormat;
 
 public class NumberUtils {
 
+    private static final double LN_095 = Math.log(0.95);
+
+    private static final double[] TABLE = new double[128];
+
     public static final String[] UNITS = { "", "K", "M", "G", "T", "P", "E", "Z", "Y", "B", "N", "D" };
 
     public static final int[] NEAREST = { 1, 2, 4, 4, 4, 8, 8, 8, 8, 8, 8, 16, 16, 16, 16, 16 };
 
     public static final BigInteger BIG_INTEGER_MAX_LONG = BigInteger.valueOf(Long.MAX_VALUE);
+
+    static {
+        double p = 1.0;
+        for (int i = 0; i < TABLE.length; i++) {
+            TABLE[i] = p;
+            p *= 0.95;
+        }
+    }
+
+    public static double pow95(int n) {
+        return (n < TABLE.length) ? TABLE[n] : Math.exp(n * LN_095);
+    }
 
     public static String formatLong(long number) {
         DecimalFormat df = new DecimalFormat("#.##");

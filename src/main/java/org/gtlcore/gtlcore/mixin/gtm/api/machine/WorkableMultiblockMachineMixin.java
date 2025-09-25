@@ -69,6 +69,7 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
     @Getter
     private @Nullable IParallelHatch parallelHatch = null;
     private IMufflerMachine mufflerMachine = null;
+    @Getter
     private IMaintenanceMachine maintenanceMachine = null;
     private IDataAccessHatch dataAccessHatch = null;
     @Getter

@@ -5,6 +5,7 @@ import com.gregtechceu.gtceu.api.capability.recipe.*;
 import com.gregtechceu.gtceu.api.gui.GuiTextures;
 import com.gregtechceu.gtceu.api.gui.fancy.ConfiguratorPanel;
 import com.gregtechceu.gtceu.api.gui.fancy.IFancyConfiguratorButton;
+import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMaintenanceMachine;
 import com.gregtechceu.gtceu.api.machine.multiblock.WorkableElectricMultiblockMachine;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 
@@ -90,6 +91,10 @@ public interface IRecipeCapabilityMachine {
     }
 
     default IParallelHatch getParallelHatch() {
+        return null;
+    }
+
+    default IMaintenanceMachine getMaintenanceMachine() {
         return null;
     }
 

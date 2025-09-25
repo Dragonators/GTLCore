@@ -8,6 +8,8 @@ import org.gtlcore.gtlcore.common.block.BlockMap;
 import org.gtlcore.gtlcore.common.data.*;
 import org.gtlcore.gtlcore.common.machine.multiblock.electric.*;
 import org.gtlcore.gtlcore.common.machine.multiblock.steam.LargeSteamParallelMultiblockMachine;
+import org.gtlcore.gtlcore.common.machine.trait.MultipleRecipesLogic;
+import org.gtlcore.gtlcore.utils.NumberUtils;
 import org.gtlcore.gtlcore.utils.Registries;
 
 import com.gregtechceu.gtceu.GTCEu;
@@ -20,6 +22,7 @@ import com.gregtechceu.gtceu.api.machine.MultiblockMachineDefinition;
 import com.gregtechceu.gtceu.api.machine.multiblock.CoilWorkableElectricMultiblockMachine;
 import com.gregtechceu.gtceu.api.machine.multiblock.PartAbility;
 import com.gregtechceu.gtceu.api.machine.multiblock.WorkableElectricMultiblockMachine;
+import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic;
 import com.gregtechceu.gtceu.api.pattern.FactoryBlockPattern;
 import com.gregtechceu.gtceu.api.pattern.MultiblockShapeInfo;
 import com.gregtechceu.gtceu.api.pattern.Predicates;
@@ -39,6 +42,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.DirectionalBlock;
 import net.minecraft.world.level.material.Fluids;
+
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
@@ -970,13 +975,37 @@ public class MultiBlockMachineA {
             .workableCasingRenderer(GTLCore.id("block/manipulator"), GTCEu.id("block/multiblock/fusion_reactor"))
             .register();
 
-    public final static MultiblockMachineDefinition SUPER_BLAST_SMELTER = REGISTRATE.multiblock("super_blast_smelter", CoilWorkableElectricMultipleRecipesMachine::new)
+    public final static MultiblockMachineDefinition SUPER_BLAST_SMELTER = REGISTRATE.multiblock("super_blast_smelter", holder -> new CoilWorkableElectricMultipleRecipesMachine(holder, 1, 0.2) {
+
+        @Override
+        protected @NotNull RecipeLogic createRecipeLogic(Object @NotNull... args) {
+            return new MultipleRecipesLogic(this, EBF_CHECK) {
+
+                @Override
+                protected double getTotalEuOfRecipe(GTRecipe recipe) {
+                    double eu = super.getTotalEuOfRecipe(recipe);
+
+                    if (recipe.data.contains("ebf_temp")) {
+                        final var coilMachine = (CoilWorkableElectricMultiblockMachine) getMachine();
+                        int requiredTemp = recipe.data.getInt("ebf_temp");
+                        int blastFurnaceTemperature = coilMachine.getCoilType().getCoilTemperature() + 100 * Math.max(0, coilMachine.getTier() - 2);
+                        eu *= Math.max(0.5, (double) requiredTemp / blastFurnaceTemperature) * Math.min(1, NumberUtils.pow95(Math.max(0, (blastFurnaceTemperature - requiredTemp) / 900)));
+                    }
+
+                    return eu;
+                }
+            };
+        }
+    })
             .rotationState(RotationState.NON_Y_AXIS)
             .allowExtendedFacing(false)
             .appearanceBlock(GCyMBlocks.CASING_HIGH_TEMPERATURE_SMELTING)
             .recipeType(GTRecipeTypes.BLAST_RECIPES)
             .recipeType(GTRecipeTypes.ALLOY_SMELTER_RECIPES)
             .recipeType(GCyMRecipeTypes.ALLOY_BLAST_RECIPES)
+            .tooltips(Component.translatable("gtceu.machine.duration_multiplier.tooltip", 0.2))
+            .tooltips(Component.translatable("gtceu.machine.electric_blast_furnace.tooltip.a"))
+            .tooltips(Component.translatable("gtceu.machine.electric_blast_furnace.tooltip.0"))
             .tooltips(Component.translatable("gtceu.machine.electric_blast_furnace.tooltip.2"))
             .tooltips(Component.translatable("gtceu.multiblock.laser.tooltip"))
             .tooltips(Component.translatable("gtceu.machine.multiple_recipes.tooltip"))
@@ -1305,7 +1334,6 @@ public class MultiBlockMachineA {
             .tooltips(Component.translatable("gtceu.machine.available_recipe_map_2.tooltip",
                     Component.translatable("gtceu.vacuum_freezer"), Component.translatable("gtceu.plasma_condenser")))
             .tooltipBuilder(GTLMachines.GTL_ADD)
-            .recipeModifiers(GTRecipeModifiers.PARALLEL_HATCH, GTRecipeModifiers.ELECTRIC_OVERCLOCK.apply(OverclockingLogic.PERFECT_OVERCLOCK_SUBTICK))
             .appearanceBlock(GTBlocks.CASING_ALUMINIUM_FROSTPROOF)
             .pattern(definition -> FactoryBlockPattern.start()
                     .aisle("                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ", "                                                                ")
@@ -1413,7 +1441,6 @@ public class MultiBlockMachineA {
             .tooltips(Component.translatable("gtceu.machine.available_recipe_map_3.tooltip",
                     Component.translatable("gtceu.distillation_tower"), Component.translatable("gtceu.evaporation"), Component.translatable("gtceu.distillery")))
             .tooltipBuilder(GTLMachines.GTL_ADD)
-            .recipeModifiers(GTRecipeModifiers.PARALLEL_HATCH, GTRecipeModifiers.ELECTRIC_OVERCLOCK.apply(OverclockingLogic.PERFECT_OVERCLOCK_SUBTICK))
             .appearanceBlock(GTBlocks.CASING_STAINLESS_CLEAN)
             .pattern(definition -> FactoryBlockPattern.start()
                     .aisle("            aaaaaaa            ", "            aaaaaaa            ", "            bbbbbbb            ", "            bbbbbbb            ", "            bbbbbbb            ", "            bbbbbbb            ", "            bbbbbbb            ", "            bbbbbbb            ", "            ccccccc            ", "                               ", "                               ", "                               ", "                               ", "                               ", "                               ", "                               ", "                               ", "                               ", "                               ", "                               ", "                               ", "                               ", "                               ", "                               ", "                               ", "                               ", "                               ", "                               ", "                               ", "                               ", "                               ", "                               ", "                               ", "                               ", "                               ", "                               ", "                               ", "                               ", "                               ", "                               ", "                               ", "                               ", "                               ", "                               ", "                               ", "                               ", "                               ", "                               ", "                               ", "                               ", "                               ", "                               ")
