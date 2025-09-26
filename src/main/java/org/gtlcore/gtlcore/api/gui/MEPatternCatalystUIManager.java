@@ -1,5 +1,7 @@
 package org.gtlcore.gtlcore.api.gui;
 
+import org.gtlcore.gtlcore.mixin.ldlib.WidgetSlotItemTransferAccessor;
+
 import com.gregtechceu.gtceu.api.gui.GuiTextures;
 
 import com.lowdragmc.lowdraglib.gui.widget.*;
@@ -8,10 +10,14 @@ import com.lowdragmc.lowdraglib.misc.FluidTransferList;
 import com.lowdragmc.lowdraglib.side.fluid.IFluidTransfer;
 import com.lowdragmc.lowdraglib.side.item.IItemTransfer;
 
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import org.jetbrains.annotations.NotNull;
+
+import javax.annotation.Nonnull;
 
 public class MEPatternCatalystUIManager extends WidgetGroup {
 
@@ -33,17 +39,24 @@ public class MEPatternCatalystUIManager extends WidgetGroup {
 
     private int lastIndex = -1;
 
+    private final boolean alwaysStackable;
+
     private final IItemTransfer[] itemTransfers;
 
     private final FluidTransferList[] fluidTankTransfers;
 
     public MEPatternCatalystUIManager(int dockX, IItemTransfer[] itemTransfers, FluidTransferList[] fluidTankTransfers) {
+        this(dockX, itemTransfers, fluidTankTransfers, true);
+    }
+
+    public MEPatternCatalystUIManager(int dockX, IItemTransfer[] itemTransfers, FluidTransferList[] fluidTankTransfers, boolean alwaysStackable) {
         // 初始高度给个最小值，后面会根据内容 resize
         super(dockX, 16, 16, 16);
         this.setBackground(GuiTextures.BACKGROUND);
         this.setVisible(false).setActive(false);
         this.itemTransfers = itemTransfers;
         this.fluidTankTransfers = fluidTankTransfers;
+        this.alwaysStackable = alwaysStackable;
     }
 
     /**
@@ -69,7 +82,7 @@ public class MEPatternCatalystUIManager extends WidgetGroup {
         int maxWidth = 0;
 
         if (itemSlots > 0) {
-            Widget itemContainer = createInventoryContainer(itemInventory, itemSlots);
+            Widget itemContainer = createInventoryContainer(itemInventory, itemSlots, this.alwaysStackable);
             itemContainer.setSelfPosition(0, currentY);
             this.addWidget(itemContainer);
             currentY += itemContainer.getSize().height;
@@ -92,7 +105,7 @@ public class MEPatternCatalystUIManager extends WidgetGroup {
         lastIndex = index;
     }
 
-    private static @NotNull Widget createInventoryContainer(IItemTransfer inventory, int slots) {
+    private static @NotNull Widget createInventoryContainer(IItemTransfer inventory, int slots, boolean alwaysStackable) {
         final int cols = calculateOptimalColumns(slots);
         final int rows = (slots + cols - 1) / cols;
         final int containerW = PAD_IN * 2 + cols * SLOT_SIZE;
@@ -109,7 +122,7 @@ public class MEPatternCatalystUIManager extends WidgetGroup {
             for (int x = 0; x < cols && index < slots; ++x) {
                 int sx = PAD_IN + x * SLOT_SIZE;
                 int sy = PAD_IN + y * SLOT_SIZE;
-                container.addWidget(createSlotWidget(inventory, index++, sx, sy));
+                container.addWidget(createSlotWidget(inventory, index++, sx, sy, alwaysStackable));
             }
         }
 
@@ -166,8 +179,30 @@ public class MEPatternCatalystUIManager extends WidgetGroup {
         return bestCols;
     }
 
-    private static @NotNull Widget createSlotWidget(IItemTransfer inventory, int slotIndex, int sx, int sy) {
-        return new SlotWidget(inventory, slotIndex, sx, sy, true, true)
+    private static @NotNull Widget createSlotWidget(IItemTransfer inventory, int slotIndex, int sx, int sy, boolean alwaysStackable) {
+        return (alwaysStackable ? new SlotWidget(inventory, slotIndex, sx, sy, true, true) {
+
+            @Override
+            protected Slot createSlot(IItemTransfer itemHandler, int index) {
+                return new WidgetSlotItemTransfer(itemHandler, index, 0, 0) {
+
+                    private final int slotIndex = ((WidgetSlotItemTransferAccessor) (Object) this).getIndex();
+
+                    @Override
+                    public int getMaxStackSize(@Nonnull ItemStack stack) {
+                        ItemStack maxAdd = stack.copy();
+                        int maxInput = this.getItemHandler().getSlotLimit(slotIndex); // 使用 SlotLimit 而不是
+                        // stack.getMaxStackSize()
+                        maxAdd.setCount(maxInput);
+                        ItemStack currentStack = this.getItemHandler().getStackInSlot(slotIndex);
+                        this.getItemHandler().setStackInSlot(slotIndex, ItemStack.EMPTY);
+                        ItemStack remainder = this.getItemHandler().insertItem(slotIndex, maxAdd, true);
+                        this.getItemHandler().setStackInSlot(slotIndex, currentStack);
+                        return maxInput - remainder.getCount();
+                    }
+                };
+            }
+        } : new SlotWidget(inventory, slotIndex, sx, sy, true, true))
                 .setBackgroundTexture(GuiTextures.SLOT)
                 .setIngredientIO(IngredientIO.INPUT);
     }
