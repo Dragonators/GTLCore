@@ -1,4 +1,4 @@
-package org.gtlcore.gtlcore.integration.ae2;
+package org.gtlcore.gtlcore.integration.ae2.handler;
 
 import org.gtlcore.gtlcore.api.machine.trait.NotifiableCircuitItemStackHandler;
 

@@ -1,8 +1,8 @@
 package org.gtlcore.gtlcore.mixin.ae2.crafting;
 
 import org.gtlcore.gtlcore.integration.ae2.AEUtils;
-import org.gtlcore.gtlcore.integration.ae2.ICraftingCalculation;
-import org.gtlcore.gtlcore.integration.ae2.ICraftingTreeNode;
+import org.gtlcore.gtlcore.integration.ae2.crafting.ICraftingCalculation;
+import org.gtlcore.gtlcore.integration.ae2.crafting.ICraftingTreeNode;
 
 import appeng.api.networking.crafting.ICraftingPlan;
 import appeng.api.stacks.KeyCounter;

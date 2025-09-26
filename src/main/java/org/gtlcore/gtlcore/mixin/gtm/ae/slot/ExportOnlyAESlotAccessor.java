@@ -14,13 +14,6 @@ public interface ExportOnlyAESlotAccessor {
     @Nullable
     GenericStack getConfig();
 
-    @Accessor(value = "stock", remap = false)
-    @Nullable
-    GenericStack getStock();
-
-    @Accessor(value = "stock", remap = false)
-    void setStock(GenericStack stock);
-
     @Accessor(value = "onContentsChanged", remap = false)
     Runnable getOnContentsChanged();
 }

@@ -150,6 +150,16 @@ public class AEUtils {
         }
     }
 
+    public static CompoundTag writeTag(@Nullable GenericStack stack) {
+        if (stack == null) {
+            return new CompoundTag();
+        } else {
+            CompoundTag tag = stack.what().toTagGeneric().copy();
+            tag.putLong("#", stack.amount());
+            return tag;
+        }
+    }
+
     // ========================================
     // ME IO Machine Utils
     // ========================================

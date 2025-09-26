@@ -1,4 +1,4 @@
-package org.gtlcore.gtlcore.integration.ae2;
+package org.gtlcore.gtlcore.integration.ae2.crafting;
 
 import appeng.api.stacks.KeyCounter;
 import appeng.crafting.CraftBranchFailure;
