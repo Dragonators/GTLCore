@@ -42,7 +42,7 @@ public abstract class EncodingHelperMixin {
     private static GenericStack findBestIngredient(Map<AEKey, Integer> ingredientPriorities, List<GenericStack> possibleIngredients) {
         var list = possibleIngredients.stream()
                 .map(gi -> Pair.of(gi, ingredientPriorities.getOrDefault(gi.what(), Integer.MIN_VALUE)))
-                .sorted(Comparator.comparingInt(Pair::getRight)).map(Pair::getLeft).toList();
+                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder())).map(Pair::getLeft).toList();
         return list.stream().filter(gi -> gi.what() instanceof AEItemKey aeItemKey &&
                 aeItemKey.getItem().kjs$getId().contains("universal_circuit"))
                 .findFirst().orElseGet(() -> list.stream().findFirst().orElseThrow());
@@ -84,7 +84,7 @@ public abstract class EncodingHelperMixin {
                 // according to their suitability for encoding a pattern
                 var bestNetworkIngredient = prioritizedNetworkInv.entrySet().stream()
                         .filter(ni -> ni.getKey() instanceof AEItemKey itemKey && itemKey.matches(ingredient))
-                        .sorted(Comparator.comparingInt(Map.Entry::getValue))
+                        .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
                         .map(entry -> entry.getKey() instanceof AEItemKey itemKey ? itemKey.toStack() : null).toList();
 
                 var bestIngredient = bestNetworkIngredient.stream()

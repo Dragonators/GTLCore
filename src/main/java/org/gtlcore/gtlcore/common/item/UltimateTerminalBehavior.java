@@ -1,6 +1,7 @@
 package org.gtlcore.gtlcore.common.item;
 
 import org.gtlcore.gtlcore.api.gui.BlockMapSelectorWidget;
+import org.gtlcore.gtlcore.api.gui.ExtendLabelWidget;
 
 import com.gregtechceu.gtceu.api.block.MetaMachineBlock;
 import com.gregtechceu.gtceu.api.gui.GuiTextures;
@@ -29,7 +30,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.block.*;
-import net.minecraftforge.common.util.Lazy;
 
 import com.hepdd.gtmthings.api.gui.widget.TerminalInputWidget;
 import it.unimi.dsi.fastutil.objects.*;
@@ -39,15 +39,11 @@ import lombok.Setter;
 import java.util.*;
 
 import static net.minecraft.network.chat.Component.translatable;
+import static org.gtlcore.gtlcore.api.gui.BlockMapSelectorWidget.*;
 import static org.gtlcore.gtlcore.api.pattern.AdvancedBlockPattern.getAdvancedBlockPattern;
 import static org.gtlcore.gtlcore.common.block.BlockMap.*;
 
 public class UltimateTerminalBehavior implements IItemUIFactory {
-
-    static final String SC = translatable("gui.gtlcore.stellar_thermal_container").getString();
-    static final String SEPM = translatable("gui.gtlcore.space_elevator_module").getString();
-    static final String CAL = translatable("gui.gtlcore.component_assembly_casing").getString();
-    static final String COIL = translatable("gui.gtlcore.coil").getString();
 
     public UltimateTerminalBehavior() {}
 
@@ -75,8 +71,8 @@ public class UltimateTerminalBehavior implements IItemUIFactory {
 
     private AutoBuildSetting getAutoBuildSetting(ItemStack mainHandItem) {
         var autoBuildSetting = new AutoBuildSetting();
-        var tag = mainHandItem.getTag();
-        if (tag != null && !tag.isEmpty()) {
+        var tag = mainHandItem.getOrCreateTag();
+        if (!tag.isEmpty()) {
             autoBuildSetting.setTier(tag.getInt("Tier"));
             autoBuildSetting.setRepeatCount(tag.getInt("RepeatCount"));
             autoBuildSetting.setNoHatchMode(tag.getBoolean("NoHatchMode"));
@@ -93,13 +89,13 @@ public class UltimateTerminalBehavior implements IItemUIFactory {
 
     @Override
     public ModularUI createUI(HeldItemUIFactory.HeldItemHolder heldItemHolder, Player player) {
-        return (new ModularUI(176, 166, heldItemHolder, player)).widget(this.createWidget(player));
+        return (new ModularUI(166, 166, heldItemHolder, player)).widget(this.createWidget(player));
     }
 
     private Widget createWidget(Player player) {
         final var handItem = player.getMainHandItem();
-        WidgetGroup group = new WidgetGroup(0, 0, 190, 136);
-        var contain = new DraggableScrollableWidgetGroup(4, 4, 182, 128)
+        WidgetGroup group = new WidgetGroup(0, 0, 200, 136);
+        var contain = new DraggableScrollableWidgetGroup(4, 4, 192, 128)
                 .setBackground(GuiTextures.DISPLAY).setYScrollBarWidth(2)
                 .setYBarStyle(null, ColorPattern.T_WHITE.rectTexture().setRadius(1.0F));
         contain.addWidget(new ExtendLabelWidget(65, 8, translatable("gui.gtlcore.ultimate_terminal_settings")))
@@ -125,107 +121,82 @@ public class UltimateTerminalBehavior implements IItemUIFactory {
                         (c, b) -> setIsFlip(!getIsFlip(handItem), handItem)).setPressed(getIsFlip(handItem))
                         .setTexture(new GuiTextureGroup(GuiTextures.BUTTON, new TextTexture("OFF")),
                                 new GuiTextureGroup(GuiTextures.BUTTON, new TextTexture("ON"))));
-        var tier = new BlockMapSelectorWidget(80, 23, 56, 16, List.of());
-        var type = new SelectorWidget(140, 23, 36, 16, List.of(SC, SEPM, CAL, COIL), -1);
-        type.setValue(getBlock(handItem)).setOnChanged(selectedValue -> {
-            String s = "";
-            if (selectedValue.equals(SC)) s = "sc";
-            else if (selectedValue.equals(SEPM)) s = "sepm";
-            else if (selectedValue.equals(CAL)) s = "cal";
-            else if (selectedValue.equals(COIL)) s = "coil";
-            var tag = handItem.getOrCreateTag();
-            tag.putString("blocks", s);
-            var blocks = tierBlockMap.getOrDefault(s, Lazy.of(() -> new Block[0])).get();
-            if (blocks.length > 0) {
-                tier.setBlocks(new ObjectArrayList<>(blocks));
-                tier.isShow();
+        var blockLabel = new ExtendLabelWidget(47, 26, getBlockComponent(handItem));
+        var blockMap = new BlockMapSelectorWidget(group.getSizeHeight() + 4, contain.getSizeWidth(), (s, i) -> {
+            if (s != null && i != null) {
+                CompoundTag tag = handItem.getOrCreateTag();
+                tag.putString("blocks", s);
+                tag.putInt("Tier", i);
+                handItem.setTag(tag);
+                blockLabel.setComponent(Component.literal("(").append(getBlock(s))
+                        .append(Component.literal(" : "))
+                        .append(tierBlockMap.get(s).get()[i].getName())
+                        .append(Component.literal(")")));
             }
-        }).setBackground(GuiTextures.BACKGROUND_INVERSE).setButtonBackground(GuiTextures.BUTTON).textTexture.setRollSpeed(.5f);
-        tier.setOnChanged(s -> setTier(tier.getIndex(s), handItem));
-        var block = handItem.getOrCreateTag().getString("blocks");
-        if (!block.isEmpty()) tier.setIndex(getTier(handItem), List.of(tierBlockMap.get(block).get()));
-        contain.addWidget(tier).addWidget(type);
-        group.addWidget(contain).setBackground(GuiTextures.BACKGROUND_INVERSE);
+        });
+        blockMap.setInit(handItem);
+        var open = new SwitchWidget(14, 26, 30, 16, (c, f) -> blockMap.showType(f))
+                .setHoverTooltips(Component.translatable("gui.gtlcore.open.config.map"));
+        contain.addWidget(open).addWidget(blockLabel);
+        group.addWidget(contain).addWidget(blockMap).setBackground(GuiTextures.BACKGROUND_INVERSE);
         return group;
     }
 
-    private static String getBlock(ItemStack itemStack) {
-        CompoundTag tag = itemStack.getTag();
-        if (tag != null && !tag.isEmpty()) {
-            switch (tag.getString("blocks")) {
-                case "sc" -> {
-                    return SC;
-                }
-                case "sepm" -> {
-                    return SEPM;
-                }
-                case "cal" -> {
-                    return CAL;
-                }
-                case "coil" -> {
-                    return COIL;
-                }
+    private static Component getBlockComponent(ItemStack itemStack) {
+        var tag = itemStack.getOrCreateTag();
+        if (!tag.isEmpty()) {
+            var block = tag.getString("blocks");
+            if (!block.isEmpty()) {
+                int tier = tag.getInt("Tier");
+                return Component.literal("(").append(getBlock(block))
+                        .append(Component.literal(" : "))
+                        .append(tierBlockMap.get(block).get()[tier].getName())
+                        .append(Component.literal(")"));
             }
         }
-        return "";
-    }
-
-    private static int getTier(ItemStack itemStack) {
-        CompoundTag tag = itemStack.getTag();
-        return tag != null && !tag.isEmpty() ? tag.getInt("Tier") : 0;
-    }
-
-    private static void setTier(int tier, ItemStack itemStack) {
-        CompoundTag tag = itemStack.getTag();
-        if (tag == null) tag = new CompoundTag();
-        tag.putInt("Tier", tier);
-        itemStack.setTag(tag);
+        return Component.literal("");
     }
 
     private static int getRepeatCount(ItemStack itemStack) {
-        CompoundTag tag = itemStack.getTag();
-        return tag != null && !tag.isEmpty() ? tag.getInt("RepeatCount") : 0;
+        CompoundTag tag = itemStack.getOrCreateTag();
+        return !tag.isEmpty() ? tag.getInt("RepeatCount") : 0;
     }
 
     private static void setRepeatCount(int repeatCount, ItemStack itemStack) {
-        CompoundTag tag = itemStack.getTag();
-        if (tag == null) tag = new CompoundTag();
+        CompoundTag tag = itemStack.getOrCreateTag();
         tag.putInt("RepeatCount", repeatCount);
         itemStack.setTag(tag);
     }
 
     private static boolean getIsBuildHatches(ItemStack itemStack) {
-        CompoundTag tag = itemStack.getTag();
-        return tag == null || tag.isEmpty() || tag.getBoolean("NoHatchMode");
+        CompoundTag tag = itemStack.getOrCreateTag();
+        return tag.isEmpty() || tag.getBoolean("NoHatchMode");
     }
 
     private static void setIsBuildHatches(boolean isBuildHatches, ItemStack itemStack) {
-        CompoundTag tag = itemStack.getTag();
-        if (tag == null) tag = new CompoundTag();
+        CompoundTag tag = itemStack.getOrCreateTag();
         tag.putBoolean("NoHatchMode", isBuildHatches);
         itemStack.setTag(tag);
     }
 
     private static boolean getReplaceMode(ItemStack itemStack) {
-        CompoundTag tag = itemStack.getTag();
-        return tag != null && !tag.isEmpty() && tag.getBoolean("ReplaceMode");
+        CompoundTag tag = itemStack.getOrCreateTag();
+        return !tag.isEmpty() && tag.getBoolean("ReplaceMode");
     }
 
     private static void setReplaceMode(boolean isReplace, ItemStack itemStack) {
-        CompoundTag tag = itemStack.getTag();
-        if (tag == null) tag = new CompoundTag();
+        CompoundTag tag = itemStack.getOrCreateTag();
         tag.putBoolean("ReplaceMode", isReplace);
         itemStack.setTag(tag);
     }
 
     private static boolean getIsFlip(ItemStack itemStack) {
-        CompoundTag tag = itemStack.getTag();
-        return tag != null && !tag.isEmpty() && tag.getBoolean("IsFlipped");
+        CompoundTag tag = itemStack.getOrCreateTag();
+        return !tag.isEmpty() && tag.getBoolean("IsFlipped");
     }
 
     private static void setIsFlip(boolean isFlip, ItemStack itemStack) {
-        CompoundTag tag = itemStack.getTag();
-        if (tag == null) tag = new CompoundTag();
+        CompoundTag tag = itemStack.getOrCreateTag();
         tag.putBoolean("IsFlipped", isFlip);
         itemStack.setTag(tag);
     }
@@ -283,14 +254,6 @@ public class UltimateTerminalBehavior implements IItemUIFactory {
                     if (d.createMetaMachine((IMachineBlockEntity) d.getBlockEntityType().create(BlockPos.ZERO, block.defaultBlockState())) instanceof MultiblockPartMachine) Set.add(block);
                 });
             }
-        }
-    }
-
-    private static class ExtendLabelWidget extends LabelWidget {
-
-        public ExtendLabelWidget(int xPosition, int yPosition, Component component) {
-            super(xPosition, yPosition, component);
-            this.setText(component.getString());
         }
     }
 }
