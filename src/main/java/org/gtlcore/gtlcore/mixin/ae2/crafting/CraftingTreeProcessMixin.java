@@ -1,8 +1,8 @@
 package org.gtlcore.gtlcore.mixin.ae2.crafting;
 
-import org.gtlcore.gtlcore.integration.ae2.ICraftingCalculation;
-import org.gtlcore.gtlcore.integration.ae2.ICraftingTreeNode;
-import org.gtlcore.gtlcore.integration.ae2.ICraftingTreeProcess;
+import org.gtlcore.gtlcore.integration.ae2.crafting.ICraftingCalculation;
+import org.gtlcore.gtlcore.integration.ae2.crafting.ICraftingTreeNode;
+import org.gtlcore.gtlcore.integration.ae2.crafting.ICraftingTreeProcess;
 
 import appeng.api.config.Actionable;
 import appeng.api.crafting.IPatternDetails;

@@ -1,8 +1,8 @@
 package org.gtlcore.gtlcore.common.machine.multiblock.part.ae;
 
 import org.gtlcore.gtlcore.api.machine.MEExtendedOutputFancyConfigurator;
-import org.gtlcore.gtlcore.integration.ae2.AEAccumulator;
-import org.gtlcore.gtlcore.integration.ae2.AEWriteService;
+import org.gtlcore.gtlcore.integration.ae2.async.AEAccumulator;
+import org.gtlcore.gtlcore.integration.ae2.async.AEWriteService;
 
 import com.gregtechceu.gtceu.api.gui.fancy.TabsWidget;
 import com.gregtechceu.gtceu.api.gui.widget.IntInputWidget;

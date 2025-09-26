@@ -1,4 +1,4 @@
-package org.gtlcore.gtlcore.integration.ae2;
+package org.gtlcore.gtlcore.integration.ae2.crafting;
 
 import appeng.api.crafting.IPatternDetails;
 import appeng.api.stacks.AEKey;
