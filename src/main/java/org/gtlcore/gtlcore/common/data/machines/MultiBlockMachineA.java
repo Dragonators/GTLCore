@@ -311,6 +311,7 @@ public class MultiBlockMachineA {
             .recipeType(GTLRecipeTypes.RANDOM_ORE_RECIPES)
             .tooltips(Component.translatable("gtceu.machine.large_void_miner.tooltip.0"))
             .tooltips(Component.translatable("gtceu.machine.large_void_miner.tooltip.1"))
+            .tooltips(Component.translatable("tooltip.gtlcore.structure.source", "GCY"))
             .tooltips(Component.translatable("gtceu.machine.available_recipe_map_2.tooltip",
                     Component.translatable("gtceu.large_void_miner"), Component.translatable("gtceu.random_ore")))
             .tooltipBuilder(GTLMachines.GTL_ADD)
@@ -346,6 +347,7 @@ public class MultiBlockMachineA {
             .tooltips(Component.translatable("gtceu.machine.chemical_plant.tooltip.0"))
             .tooltips(Component.translatable("gtceu.machine.perfect_oc"))
             .tooltips(Component.translatable("gtceu.multiblock.parallelizable.tooltip"))
+            .tooltips(Component.translatable("tooltip.gtlcore.structure.source", "GCY"))
             .tooltips(Component.translatable("gtceu.machine.available_recipe_map_1.tooltip",
                     Component.translatable("gtceu.large_chemical_reactor")))
             .tooltipBuilder(GTLMachines.GTL_ADD)
@@ -431,6 +433,7 @@ public class MultiBlockMachineA {
             .recipeType(GTLRecipeTypes.MASS_FABRICATOR_RECIPES)
             .tooltips(Component.translatable("gtceu.machine.perfect_oc"))
             .tooltips(Component.translatable("gtceu.multiblock.parallelizable.tooltip"))
+            .tooltips(Component.translatable("tooltip.gtlcore.structure.source", "GCY"))
             .tooltips(Component.translatable("gtceu.machine.available_recipe_map_1.tooltip",
                     Component.translatable("gtceu.mass_fabricator")))
             .tooltipBuilder(GTLMachines.GTL_ADD)
@@ -511,6 +514,7 @@ public class MultiBlockMachineA {
             .recipeType(GTRecipeTypes.ASSEMBLER_RECIPES)
             .tooltips(Component.translatable("gtceu.machine.perfect_oc"))
             .tooltips(Component.translatable("gtceu.multiblock.parallelizable.tooltip"))
+            .tooltips(Component.translatable("tooltip.gtlcore.structure.source", "GTNH"))
             .tooltips(Component.translatable("gtceu.machine.available_recipe_map_2.tooltip",
                     Component.translatable("gtceu.precision_assembler"), Component.translatable("gtceu.assembler")))
             .tooltipBuilder(GTLMachines.GTL_ADD)
@@ -726,6 +730,7 @@ public class MultiBlockMachineA {
             .recipeType(GTLRecipeTypes.SUPER_PARTICLE_COLLIDER_RECIPES)
             .tooltips(Component.translatable("gtceu.multiblock.laser.tooltip"))
             .tooltips(Component.translatable("gtceu.multiblock.parallelizable.tooltip"))
+            .tooltips(Component.translatable("tooltip.gtlcore.structure.source", "TST"))
             .tooltips(Component.translatable("gtceu.machine.available_recipe_map_1.tooltip",
                     Component.translatable("gtceu.super_particle_collider")))
             .tooltipBuilder(GTLMachines.GTL_ADD)
@@ -803,6 +808,7 @@ public class MultiBlockMachineA {
             .tooltips(Component.translatable("gtceu.machine.engraving_laser_plant.tooltip.0"))
             .tooltips(Component.translatable("gtceu.machine.perfect_oc"))
             .tooltips(Component.translatable("gtceu.multiblock.parallelizable.tooltip"))
+            .tooltips(Component.translatable("tooltip.gtlcore.structure.source", "TST"))
             .tooltips(Component.translatable("gtceu.machine.available_recipe_map_2.tooltip",
                     Component.translatable("gtceu.precision_laser_engraver"), Component.translatable("gtceu.laser_engraver")))
             .tooltipBuilder(GTLMachines.GTL_ADD)
@@ -854,6 +860,7 @@ public class MultiBlockMachineA {
             .tooltips(Component.translatable("gtceu.machine.perfect_oc"))
             .tooltips(Component.translatable("gtceu.machine.electric_blast_furnace.tooltip.2"))
             .tooltips(Component.translatable("gtceu.multiblock.parallelizable.tooltip"))
+            .tooltips(Component.translatable("tooltip.gtlcore.structure.source", "GT++"))
             .tooltips(Component.translatable("gtceu.machine.available_recipe_map_1.tooltip",
                     Component.translatable("gtceu.alloy_blast_smelter")))
             .tooltipBuilder(GTLMachines.GTL_ADD)
@@ -939,6 +946,7 @@ public class MultiBlockMachineA {
             .recipeType(GTLRecipeTypes.QFT_RECIPES)
             .tooltips(Component.translatable("gtceu.multiblock.laser.tooltip"))
             .tooltips(Component.translatable("gtceu.multiblock.parallelizable.tooltip"))
+            .tooltips(Component.translatable("tooltip.gtlcore.structure.source", "GT++"))
             .tooltips(Component.translatable("gtceu.machine.available_recipe_map_1.tooltip",
                     Component.translatable("gtceu.qft")))
             .tooltipBuilder(GTLMachines.GTL_ADD)
@@ -1126,6 +1134,7 @@ public class MultiBlockMachineA {
             .tooltips(Component.translatable("gtceu.machine.integrated_ore_processor.tooltip.6"))
             .tooltips(Component.translatable("gtceu.machine.integrated_ore_processor.tooltip.7"))
             .tooltips(Component.translatable("gtceu.multiblock.parallelizable.tooltip"))
+            .tooltips(Component.translatable("tooltip.gtlcore.structure.source", "GTNH"))
             .tooltips(Component.translatable("gtceu.machine.available_recipe_map_1.tooltip",
                     Component.translatable("gtceu.integrated_ore_processor")))
             .tooltipBuilder(GTLMachines.GTL_ADD)
@@ -1185,6 +1194,7 @@ public class MultiBlockMachineA {
             .rotationState(RotationState.ALL)
             .recipeType(GTRecipeTypes.CRACKING_RECIPES)
             .tooltips(Component.translatable("gtceu.multiblock.parallelizable.tooltip"))
+            .tooltips(Component.translatable("tooltip.gtlcore.structure.source", "GTNH"))
             .tooltips(Component.translatable("gtceu.machine.available_recipe_map_1.tooltip",
                     Component.translatable("gtceu.cracker")))
             .tooltipBuilder(GTLMachines.GTL_ADD)
@@ -1229,6 +1239,7 @@ public class MultiBlockMachineA {
             .tooltips(Component.translatable("gtceu.multiblock.laser.tooltip"))
             .tooltips(Component.translatable("gtceu.machine.perfect_oc"))
             .tooltips(Component.translatable("gtceu.multiblock.parallelizable.tooltip"))
+            .tooltips(Component.translatable("tooltip.gtlcore.structure.source", "GTNH"))
             .tooltips(Component.translatable("gtceu.machine.available_recipe_map_3.tooltip",
                     Component.translatable("gtceu.assembler"), Component.translatable("gtceu.precision_assembler"), Component.translatable("gtceu.circuit_assembler")))
             .tooltipBuilder(GTLMachines.GTL_ADD)
@@ -1547,6 +1558,7 @@ public class MultiBlockMachineA {
             .tooltips(Component.translatable("gtceu.multiblock.laser.tooltip"))
             .tooltips(Component.translatable("gtceu.machine.perfect_oc"))
             .tooltips(Component.translatable("gtceu.multiblock.parallelizable.tooltip"))
+            .tooltips(Component.translatable("tooltip.gtlcore.structure.source", "TST"))
             .tooltips(Component.translatable("gtceu.machine.available_recipe_map_2.tooltip",
                     Component.translatable("gtceu.autoclave"), Component.translatable("gtceu.chemical_bath")))
             .tooltipBuilder(GTLMachines.GTL_ADD)
@@ -2133,6 +2145,7 @@ public class MultiBlockMachineA {
             .rotationState(RotationState.ALL)
             .recipeType(GTRecipeTypes.PRIMITIVE_BLAST_FURNACE_RECIPES)
             .tooltips(Component.translatable("gtceu.machine.dimensionally_transcendent_dirt_forge.tooltip.0"))
+            .tooltips(Component.translatable("tooltip.gtlcore.structure.source", "GTNH"))
             .tooltips(Component.translatable("gtceu.machine.available_recipe_map_1.tooltip",
                     Component.translatable("gtceu.primitive_blast_furnace")))
             .tooltipBuilder(GTLMachines.GTL_ADD)
@@ -2170,6 +2183,7 @@ public class MultiBlockMachineA {
             .tooltips(Component.translatable("gtceu.multiblock.laser.tooltip"))
             .tooltips(Component.translatable("gtceu.machine.multiple_recipes.tooltip"))
             .tooltips(Component.translatable("gtceu.multiblock.parallelizable.tooltip"))
+            .tooltips(Component.translatable("tooltip.gtlcore.structure.source", "TST"))
             .tooltips(Component.translatable("gtceu.machine.available_recipe_map_4.tooltip",
                     Component.translatable("gtceu.cutter"), Component.translatable("gtceu.lathe"), Component.translatable("gtceu.macerator"), Component.translatable("gtceu.centrifuge")))
             .tooltipBuilder(GTLMachines.GTL_ADD)
@@ -2330,6 +2344,7 @@ public class MultiBlockMachineA {
             .tooltips(Component.translatable("gtceu.multiblock.laser.tooltip"))
             .tooltips(Component.translatable("gtceu.machine.multiple_recipes.tooltip"))
             .tooltips(Component.translatable("gtceu.multiblock.parallelizable.tooltip"))
+            .tooltips(Component.translatable("tooltip.gtlcore.structure.source", "TST"))
             .tooltips(Component.translatable("gtceu.machine.available_recipe_map_2.tooltip",
                     Component.translatable("gtceu.extruder"), Component.translatable("gtceu.compressor")))
             .tooltipBuilder(GTLMachines.GTL_ADD)
@@ -2423,6 +2438,7 @@ public class MultiBlockMachineA {
             .tooltips(Component.translatable("gtceu.machine.chemical_distort.tooltip.0"))
             .tooltips(Component.translatable("gtceu.machine.chemical_distort.tooltip.1"))
             .tooltips(Component.translatable("gtceu.multiblock.only.laser.tooltip"))
+            .tooltips(Component.translatable("tooltip.gtlcore.structure.source", "TST"))
             .tooltips(Component.translatable("gtceu.machine.available_recipe_map_1.tooltip",
                     Component.translatable("gtceu.distort")))
             .tooltipBuilder(GTLMachines.GTL_ADD)
@@ -2595,6 +2611,7 @@ public class MultiBlockMachineA {
             .tooltips(Component.translatable("gtceu.multiblock.coil_parallel"))
             .tooltips(Component.translatable("gtceu.multiblock.laser.tooltip"))
             .tooltips(Component.translatable("gtceu.machine.multiple_recipes.tooltip"))
+            .tooltips(Component.translatable("tooltip.gtlcore.structure.source", "TST"))
             .tooltips(Component.translatable("gtceu.machine.available_recipe_map_1.tooltip",
                     Component.translatable("gtceu.wiremill")))
             .tooltipBuilder(GTLMachines.GTL_ADD)
@@ -2656,6 +2673,7 @@ public class MultiBlockMachineA {
             .tooltips(Component.translatable("gtceu.multiblock.coil_parallel"))
             .tooltips(Component.translatable("gtceu.multiblock.laser.tooltip"))
             .tooltips(Component.translatable("gtceu.machine.multiple_recipes.tooltip"))
+            .tooltips(Component.translatable("tooltip.gtlcore.structure.source", "TST"))
             .tooltips(Component.translatable("gtceu.machine.available_recipe_map_3.tooltip",
                     Component.translatable("gtceu.bender"), Component.translatable("gtceu.forge_hammer"), Component.translatable("gtceu.forming_press")))
             .tooltipBuilder(GTLMachines.GTL_ADD)
@@ -2712,6 +2730,7 @@ public class MultiBlockMachineA {
             .tooltips(Component.translatable("gtceu.multiblock.coil_parallel"))
             .tooltips(Component.translatable("gtceu.multiblock.laser.tooltip"))
             .tooltips(Component.translatable("gtceu.machine.multiple_recipes.tooltip"))
+            .tooltips(Component.translatable("tooltip.gtlcore.structure.source", "TST"))
             .tooltips(Component.translatable("gtceu.machine.available_recipe_map_2.tooltip",
                     Component.translatable("gtceu.extractor"), Component.translatable("gtceu.fluid_solidifier")))
             .tooltipBuilder(GTLMachines.GTL_ADD)
@@ -2818,6 +2837,7 @@ public class MultiBlockMachineA {
             .recipeType(GTLRecipeTypes.ELEMENT_COPYING_RECIPES)
             .tooltips(Component.translatable("gtceu.multiblock.laser.tooltip"))
             .tooltips(Component.translatable("gtceu.multiblock.parallelizable.tooltip"))
+            .tooltips(Component.translatable("tooltip.gtlcore.structure.source", "GCY"))
             .tooltips(Component.translatable("gtceu.machine.available_recipe_map_1.tooltip",
                     Component.translatable("gtceu.element_copying")))
             .tooltipBuilder(GTLMachines.GTL_ADD)
@@ -2913,6 +2933,7 @@ public class MultiBlockMachineA {
             .tooltips(Component.translatable("gtceu.machine.flotation_cell_regulator.tooltip.0"))
             .tooltips(Component.translatable("gtceu.machine.perfect_oc"))
             .tooltips(Component.translatable("gtceu.multiblock.parallelizable.tooltip"))
+            .tooltips(Component.translatable("tooltip.gtlcore.structure.source", "GT++"))
             .tooltips(Component.translatable("gtceu.machine.available_recipe_map_1.tooltip",
                     Component.translatable("gtceu.flotating_beneficiation")))
             .tooltipBuilder(GTLMachines.GTL_ADD)
@@ -2957,6 +2978,7 @@ public class MultiBlockMachineA {
             .tooltips(Component.translatable("gtceu.machine.electric_blast_furnace.tooltip.2"))
             .tooltips(Component.translatable("gtceu.machine.vacuum_drying_furnace.tooltip.1"))
             .tooltips(Component.translatable("gtceu.multiblock.coil_parallel"))
+            .tooltips(Component.translatable("tooltip.gtlcore.structure.source", "GT++"))
             .tooltips(Component.translatable("gtceu.machine.available_recipe_map_2.tooltip",
                     Component.translatable("gtceu.vacuum_drying"), Component.translatable("gtceu.dehydrator")))
             .tooltipBuilder(GTLMachines.GTL_ADD)
@@ -3008,6 +3030,7 @@ public class MultiBlockMachineA {
             .tooltips(Component.translatable("gtceu.multiblock.coil_parallel"))
             .tooltips(Component.translatable("gtceu.multiblock.laser.tooltip"))
             .tooltips(Component.translatable("gtceu.machine.multiple_recipes.tooltip"))
+            .tooltips(Component.translatable("tooltip.gtlcore.structure.source", "TST"))
             .tooltips(Component.translatable("gtceu.machine.available_recipe_map_1.tooltip",
                     Component.translatable("gtceu.fluid_heater")))
             .tooltipBuilder(GTLMachines.GTL_ADD)
@@ -3048,6 +3071,7 @@ public class MultiBlockMachineA {
             .tooltips(Component.translatable("gtceu.machine.eut_multiplier.tooltip", 0.8))
             .tooltips(Component.translatable("gtceu.machine.duration_multiplier.tooltip", 0.6))
             .tooltips(Component.translatable("gtceu.multiblock.parallelizable.tooltip"))
+            .tooltips(Component.translatable("tooltip.gtlcore.structure.source", "GCY"))
             .tooltips(Component.translatable("gtceu.machine.available_recipe_map_1.tooltip",
                     Component.translatable("gtceu.electric_implosion_compressor")))
             .tooltipBuilder(GTLMachines.GTL_ADD)
@@ -3083,6 +3107,7 @@ public class MultiBlockMachineA {
             .allowExtendedFacing(false)
             .recipeType(GTLRecipeTypes.STELLAR_FORGE_RECIPES)
             .tooltips(Component.translatable("gtceu.machine.perfect_oc"))
+            .tooltips(Component.translatable("tooltip.gtlcore.structure.source", "GCY"))
             .tooltips(Component.translatable("gtceu.machine.available_recipe_map_1.tooltip",
                     Component.translatable("gtceu.stellar_forge")))
             .tooltipBuilder(GTLMachines.GTL_ADD)
@@ -3121,6 +3146,7 @@ public class MultiBlockMachineA {
             .recipeType(GTLRecipeTypes.COMPONENT_ASSEMBLY_LINE_RECIPES)
             .tooltips(Component.translatable("gtceu.multiblock.laser.tooltip"))
             .tooltips(Component.translatable("gtceu.multiblock.parallelizable.tooltip"))
+            .tooltips(Component.translatable("tooltip.gtlcore.structure.source", "GTNH"))
             .tooltips(Component.translatable("gtceu.machine.available_recipe_map_1.tooltip",
                     Component.translatable("gtceu.component_assembly_line")))
             .tooltipBuilder(GTLMachines.GTL_ADD)
@@ -3195,6 +3221,7 @@ public class MultiBlockMachineA {
             .tooltips(Component.translatable("gtceu.machine.advanced_integrated_ore_processor.tooltip.0"))
             .tooltips(Component.translatable("gtceu.multiblock.only.laser.tooltip"))
             .tooltips(Component.translatable("gtceu.machine.multiple_recipes.tooltip"))
+            .tooltips(Component.translatable("tooltip.gtlcore.structure.source", "TST"))
             .tooltips(Component.translatable("gtceu.machine.available_recipe_map_1.tooltip",
                     Component.translatable("gtceu.integrated_ore_processor")))
             .tooltipBuilder(GTLMachines.GTL_ADD)
@@ -3256,6 +3283,7 @@ public class MultiBlockMachineA {
             .recipeType(GTRecipeTypes.LARGE_BOILER_RECIPES)
             .tooltips(Component.translatable("gtceu.multiblock.large_boiler.max_temperature", 4096000 + 274.15, 4096000))
             .tooltips(Component.translatable("gtceu.multiblock.large_boiler.heat_time_tooltip", 4096000 / 32 / 20))
+            .tooltips(Component.translatable("tooltip.gtlcore.structure.source", "GTNH"))
             .tooltips(Component.translatable("gtceu.machine.available_recipe_map_1.tooltip",
                     Component.translatable("gtceu.large_boiler")))
             .tooltipBuilder(GTLMachines.GTL_ADD)
@@ -3279,6 +3307,7 @@ public class MultiBlockMachineA {
             .rotationState(RotationState.ALL)
             .recipeType(GTRecipeTypes.FURNACE_RECIPES)
             .tooltips(Component.translatable("gtceu.machine.dimensionally_transcendent_dirt_forge.tooltip.0"))
+            .tooltips(Component.translatable("tooltip.gtlcore.structure.source", "GTNH"))
             .tooltips(Component.translatable("gtceu.machine.available_recipe_map_1.tooltip",
                     Component.translatable("compass.node.gtceu.steam/steam_furnace")))
             .tooltipBuilder(GTLMachines.GTL_ADD)
@@ -3341,6 +3370,7 @@ public class MultiBlockMachineA {
             .tooltips(Component.translatable("gtceu.machine.nano_core.tooltip.2"))
             .tooltips(Component.translatable("gtceu.multiblock.only.laser.tooltip"))
             .tooltips(Component.translatable("gtceu.machine.perfect_oc"))
+            .tooltips(Component.translatable("tooltip.gtlcore.structure.source", "TST"))
             .tooltips(Component.translatable("gtceu.machine.available_recipe_map_1.tooltip",
                     Component.translatable("gtceu.nano_forge")))
             .tooltipBuilder(GTLMachines.GTL_ADD)

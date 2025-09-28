@@ -344,5 +344,6 @@
   "tooltip.gtlcore.supported_dimensions": "支持主世界,下界,末地",
   "tooltip.gtlcore.supports_dimensions": "支持主世界,下界,末地",
   "tooltip.gtlcore.this_module": "该模块",
-  "tooltip.gtlcore.turbine_rotor_only": "只能放入涡轮转子"
+  "tooltip.gtlcore.turbine_rotor_only": "只能放入涡轮转子",
+  "tooltip.gtlcore.structure.source": "§6结构来源: %s"
 }

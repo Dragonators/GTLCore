@@ -74,6 +74,7 @@ public class MultiBlockMachineB {
             .langValue("Dissolving Tank")
             .tooltips(Component.translatable("gtceu.multiblock.dissolving_tank.tooltip.0"))
             .tooltips(Component.translatable("gtceu.multiblock.parallelizable.tooltip"))
+            .tooltips(Component.translatable("tooltip.gtlcore.structure.source", "GTNH"))
             .tooltips(Component.translatable("gtceu.machine.available_recipe_map_1.tooltip",
                     Component.translatable("gtceu.dissolution_treatment")))
             .tooltipBuilder(GTLMachines.GTL_ADD)
@@ -103,6 +104,7 @@ public class MultiBlockMachineB {
     public final static MultiblockMachineDefinition DIGESTION_TANK = REGISTRATE.multiblock("digestion_tank", CoilWorkableElectricMultiblockMachine::new)
             .langValue("Digestion Tank")
             .tooltips(Component.translatable("gtceu.multiblock.parallelizable.tooltip"))
+            .tooltips(Component.translatable("tooltip.gtlcore.structure.source", "GTNH"))
             .tooltips(Component.translatable("gtceu.machine.available_recipe_map_1.tooltip",
                     Component.translatable("gtceu.digestion_treatment")))
             .tooltipBuilder(GTLMachines.GTL_ADD)

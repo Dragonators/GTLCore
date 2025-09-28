@@ -106,6 +106,7 @@ public class GeneratorMachine {
                 .tooltips(Component.translatable("tooltip.gtlcore.can_use_transformer_hatch"))
                 .tooltips(Component.translatable("gtceu.universal.tooltip.base_production_eut", FormattingUtil.formatNumbers(GTValues.V[tier] * value)))
                 .tooltips(Component.translatable("gtceu.multiblock.turbine.efficiency_tooltip", GTValues.VNF[tier]))
+                .tooltips(Component.translatable("tooltip.gtlcore.structure.source", "GTNH"))
                 .tooltipBuilder(GTLMachines.GTL_ADD)
                 .recipeModifier(MegaTurbineMachine::recipeModifier)
                 .appearanceBlock(casing)
@@ -168,6 +169,7 @@ public class GeneratorMachine {
             .tooltips(Component.translatable("gtceu.machine.dyson_sphere.tooltip.4"))
             .tooltips(Component.translatable("gtceu.machine.dyson_sphere.tooltip.5"))
             .tooltips(Component.translatable("gtceu.machine.dyson_sphere.tooltip.6"))
+            .tooltips(Component.translatable("tooltip.gtlcore.structure.source", "GTNH"))
             .tooltips(Component.translatable("gtceu.machine.available_recipe_map_1.tooltip",
                     Component.translatable("gtceu.dyson_sphere")))
             .tooltipBuilder(GTLMachines.GTL_ADD)
@@ -246,6 +248,7 @@ public class GeneratorMachine {
             .tooltips(Component.translatable("gtceu.multiblock.laser.tooltip"))
             .tooltips(Component.translatable("gtceu.machine.available_recipe_map_1.tooltip",
                     Component.translatable("gtceu.large_naquadah_reactor")))
+            .tooltips(Component.translatable("tooltip.gtlcore.structure.source", "GTNH"))
             .tooltipBuilder(GTLMachines.GTL_ADD)
             .generator(true)
             .recipeModifier((machine, recipe, params, result) -> GTLRecipeModifiers.standardOverclocking((WorkableElectricMultiblockMachine) machine, recipe))
