@@ -507,6 +507,7 @@
   "block.gtceu.zpm_neutron_accelerator": "§cZPM Neutron Accelerator§r",
   "block.gtceu.zpm_world_data_scanner": "§cElite World Data Scanner III§r",
   "config.gtceu.option.hand.output": "Hand Output",
+  "config.jade.plugin_gtceu.me_molecular_assembler_io": "ME Molecular Assembler IO",
   "gtceu.advanced_hyper_reactor": "Advanced Hyper Reaction",
   "gtceu.aggregation_device": "Aggregation Device",
   "gtceu.annihilate_generator": "Annihilation Generator",

@@ -306,5 +306,6 @@
   "tooltip.gtlcore.supported_dimensions": "Supports Overworld, Nether, End",
   "tooltip.gtlcore.supports_dimensions": "Supports Overworld, Nether, End",
   "tooltip.gtlcore.this_module": "This module",
-  "tooltip.gtlcore.turbine_rotor_only": "Only turbine rotors can be placed"
+  "tooltip.gtlcore.turbine_rotor_only": "Only turbine rotors can be placed",
+  "tooltip.gtlcore.structure.source": "§6Structure Source: %s"
 }
