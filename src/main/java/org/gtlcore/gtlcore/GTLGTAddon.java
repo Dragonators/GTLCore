@@ -76,6 +76,7 @@ public class GTLGTAddon implements IGTAddon {
         CircuitRecipes.init(provider);
         MixerRecipes.init(provider);
         SkyTearsAndGregHeart.init(provider);
+        DimensionallyMixerRecipes.init(provider);
     }
 
     @Override

@@ -1,0 +1,42 @@
+{
+  "type": "avaritia:shaped_extreme_craft",
+  "category": "misc",
+  "pattern": [
+    "  AAAAA  ",
+    " ABCCCBA ",
+    "ABDEEEDBA",
+    "ABDEEEDBA",
+    " AFGGGFA ",
+    "  AFFFA  ",
+    "  AAAAA  ",
+    "  AAAAA  ",
+    " AAAAAAA "
+  ],
+  "key": {
+    "C": {
+      "item": "sgjourney:reaction_chamber"
+    },
+    "D": {
+      "item": "sgjourney:universe_stargate_chevron"
+    },
+    "E": {
+      "item": "expatternprovider:fishbig"
+    },
+    "B": {
+      "item": "kubejs:annihilate_core"
+    },
+    "F": {
+      "item": "gtceu:magmatter_block"
+    },
+    "G": {
+      "item": "sgjourney:crystal_base"
+    },
+    "A": {
+      "item": "gtceu:chaos_block"
+    }
+  },
+  "result": {
+    "item": "sgjourney:pegasus_dhd"
+  },
+  "show_notification": true
+}

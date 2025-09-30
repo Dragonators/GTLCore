@@ -807,14 +807,6 @@ public class AdvancedMultiBlockMachine {
                                 item.getServer().kjs$runCommandSilent("summon minecraft:item " + item.getX() + " " + item.getY() + " " + item.getZ() + " {PickupDelay:10,Motion:[0.0,0.2,0.0],Item:{id:\"gtceu:magmatter_block\",Count:" + (item.getItem().getCount() / 64) + "b}}");
                                 item.kill();
                             }
-                            if (entity instanceof ItemEntity item && Objects.equals(item.getItem().kjs$getId(), "expatternprovider:fishbig") && item.getItem().getCount() >= 64) {
-                                item.getServer().kjs$runCommandSilent("summon minecraft:item " + item.getX() + " " + item.getY() + " " + item.getZ() + " {PickupDelay:10,Motion:[0.0,0.2,0.0],Item:{id:\"gtlcore:ultimate_tea\",Count:" + (item.getItem().getCount() / 64) + "b}}");
-                                item.kill();
-                            }
-                            if (entity instanceof ItemEntity item && Objects.equals(item.getItem().kjs$getId(), "gtlcore:ultimate_tea") && item.getItem().getCount() >= 16) {
-                                item.getServer().kjs$runCommandSilent("summon minecraft:item " + item.getX() + " " + item.getY() + " " + item.getZ() + " {PickupDelay:10,Motion:[0.0,0.2,0.0],Item:{id:\"kubejs:heartofthesmogus\",Count:" + (item.getItem().getCount() / 16) + "b}}");
-                                item.kill();
-                            }
                         }
                     }
                 }
@@ -935,12 +927,6 @@ public class AdvancedMultiBlockMachine {
                         }
                         if (MachineIO.inputItem((WorkableMultiblockMachine) machine, Registries.getItemStack("kubejs:repeating_command_block_core")) && Objects.equals(block, "kubejs:chain_command_block_broken")) {
                             level.setBlockAndUpdate(pos, Blocks.REPEATING_COMMAND_BLOCK.defaultBlockState());
-                        }
-                        if (MachineIO.inputItem((WorkableMultiblockMachine) machine, new ItemStack(GTLItems.ULTIMATE_TEA, 8)) && Objects.equals(block, "expatternprovider:fishbig")) {
-                            level.setBlockAndUpdate(pos, GTMachines.CREATIVE_FLUID.defaultBlockState());
-                        }
-                        if (MachineIO.inputItem((WorkableMultiblockMachine) machine, Registries.getItemStack("kubejs:heartofthesmogus", 64)) && Objects.equals(block, "expatternprovider:fishbig")) {
-                            level.setBlockAndUpdate(pos, GTMachines.CREATIVE_ITEM.defaultBlockState());
                         }
                     }
                 }

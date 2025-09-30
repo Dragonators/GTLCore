@@ -18,7 +18,8 @@
     "gtm.gui.ProspectingTextureMixin",
     "ldlib.CustomBakedModelFixed",
     "mc.GuiGraphicsMixin",
-    "meRequester.NumberFieldMixin"
+    "meRequester.NumberFieldMixin",
+    "stargatejourney.InterfaceScreenMixin"
   ],
   "mixins": [
     "adastra.ModUtilsMixin",
@@ -168,6 +169,24 @@
     "ldlib.AsyncThreadDataMixin",
     "ldlib.ItemStackTransferMixin",
     "ldlib.WidgetSlotItemTransferAccessor",
+    "mc.RecipeManagerMixin",
+    "stargatejourney.dhd.AbstractDHDEntityMixin",
+    "stargatejourney.stargate.AbstractStargateEntityMixin",
+    "stargatejourney.BiomeModifiersMixin",
+    "stargatejourney.dhd.ClassicDHDBlockMixin",
+    "stargatejourney.stargate.ClassicStargateBaseBlockMixin",
+    "stargatejourney.FluidInitMixin",
+    "stargatejourney.ForgeEventsMixin",
+    "stargatejourney.HeavyNaquadahLiquidizerEntityMixin",
+    "stargatejourney.dhd.MilkyWayDHDBlockMixin",
+    "stargatejourney.dhd.PegasusDHDBlockMixin",
+    "stargatejourney.RecipeTypeInitMixin",
+    "stargatejourney.stargate.StargateConnectionMixin",
+    "stargatejourney.stargate.StargateNetworkMixin",
+    "stargatejourney.stargate.StargateStructureMixin",
+    "stargatejourney.TabInitMixin",
+    "stargatejourney.ToolMaterialInitMixin",
+    "stargatejourney.VillagerInitMixin",
     "travelanchors.EventListenerMixin"
   ],
   "injectors": {

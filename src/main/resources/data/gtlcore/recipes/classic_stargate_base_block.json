@@ -1,0 +1,69 @@
+{
+  "type": "avaritia:shaped_extreme_craft",
+  "category": "misc",
+  "pattern": [
+    "ABBCDCBBA",
+    "BEFGHGFEB",
+    "BEIGJGIEB",
+    "CKLMMMLKC",
+    "DKNMOMNKD",
+    "CKLMMMLKC",
+    "BEIGPGIEB",
+    "BEFGHGFEB",
+    "ABBCDCBBA"
+  ],
+  "key": {
+    "A": {
+      "item": "expatternprovider:fishbig"
+    },
+    "B": {
+      "item": "gtlcore:max_field_generator"
+    },
+    "C": {
+      "item": "gtlcore:ultimate_tea"
+    },
+    "D": {
+      "item": "gtceu:eternity_nanoswarm"
+    },
+    "E": {
+      "item": "gtceu:gravitation_shockburst"
+    },
+    "F": {
+      "item": "kubejs:cosmic_singularity"
+    },
+    "G": {
+      "item": "kubejs:fishbig_fabric"
+    },
+    "H": {
+      "item": "kubejs:hyperdimensional_drone"
+    },
+    "I": {
+      "item": "kubejs:create_ultimate_battery"
+    },
+    "J": {
+      "item": "gtlcore:item_infinity_cell"
+    },
+    "K": {
+      "item": "gtlcore:miracle_crystal"
+    },
+    "L": {
+      "item": "gtceu:eye_of_harmony"
+    },
+    "M": {
+      "item": "sgjourney:classic_stargate_chevron_block"
+    },
+    "N": {
+      "item": "gtceu:door_of_create"
+    },
+    "O": {
+      "item": "sgjourney:crystal_base"
+    },
+    "P": {
+      "item": "gtlcore:fluid_infinity_cell"
+    }
+  },
+  "result": {
+    "item": "sgjourney:classic_stargate_base_block"
+  },
+  "show_notification": true
+}

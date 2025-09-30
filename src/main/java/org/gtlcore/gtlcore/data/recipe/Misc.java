@@ -1,6 +1,7 @@
 package org.gtlcore.gtlcore.data.recipe;
 
 import org.gtlcore.gtlcore.GTLCore;
+import org.gtlcore.gtlcore.api.machine.multiblock.GTLCleanroomType;
 import org.gtlcore.gtlcore.common.data.GTLItems;
 import org.gtlcore.gtlcore.common.data.GTLMachines;
 import org.gtlcore.gtlcore.common.data.machines.AdditionalMultiBlockMachine;
@@ -20,9 +21,11 @@ import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
+import net.povstalec.sgjourney.common.init.BlockInit;
 
 import appeng.api.util.AEColor;
 import appeng.core.definitions.AEBlocks;
+import committee.nova.mods.avaritia.init.registry.ModItems;
 
 import java.util.function.Consumer;
 
@@ -33,9 +36,15 @@ import static com.gregtechceu.gtceu.api.data.tag.TagPrefix.*;
 import static com.gregtechceu.gtceu.common.data.GTItems.*;
 import static com.gregtechceu.gtceu.common.data.GTMaterials.*;
 import static com.gregtechceu.gtceu.common.data.GTRecipeTypes.*;
+import static net.povstalec.sgjourney.common.init.ItemInit.*;
+import static org.gtlcore.gtlcore.common.data.GTLBlocks.*;
+import static org.gtlcore.gtlcore.common.data.GTLItems.*;
 import static org.gtlcore.gtlcore.common.data.GTLMaterials.*;
 import static org.gtlcore.gtlcore.common.data.GTLRecipeTypes.*;
+import static org.gtlcore.gtlcore.common.data.machines.AdvancedMultiBlockMachine.*;
+import static org.gtlcore.gtlcore.common.data.machines.MultiBlockMachineA.STAR_ULTIMATE_MATERIAL_FORGE_FACTORY;
 import static org.gtlcore.gtlcore.common.data.machines.MultiBlockMachineB.PRIMITIVE_VOID_ORE;
+import static org.gtlcore.gtlcore.utils.Registries.getItemStack;
 
 public class Misc {
 
@@ -73,6 +82,14 @@ public class Misc {
 
         VanillaRecipeHelper.addShapelessRecipe(provider, "simulation_machine",
                 AdvancedMultiBlockMachine.SIMULATION_MACHINE.asStack(), "A", Blocks.STONE);
+
+        VanillaRecipeHelper.addShapedRecipe(provider, true, GTLCore.id("creative_chest"),
+                GTMachines.CREATIVE_ITEM.asStack(),
+                " A ", " B ", "C D",
+                'A', ModItems.neutron_ring.get(),
+                'B', BlockInit.UNIVERSE_STARGATE.get().asItem(),
+                'C', ModItems.infinity_ring.get(),
+                'D', ModItems.infinity_umbrella.get());
 
         WOOD_DISTILLATION_RECIPES.recipeBuilder("wood_distillation_recipes")
                 .inputItems(ItemTags.LOGS, 16)
@@ -276,6 +293,96 @@ public class Misc {
                 .EUt(VA[9]).duration(200)
                 .stationResearch((b) -> b.researchStack(EX_PATTERN_PROVIDER.asItem().getDefaultInstance())
                         .dataStack(GTItems.TOOL_DATA_MODULE.asStack()).EUt(VA[9]).CWUt(128))
+                .save(provider);
+
+        PRECISION_ASSEMBLER_RECIPES.recipeBuilder(GTLCore.id("reaction_chamber"))
+                .inputItems(getItemStack("kubejs:relativistic_spinorial_memory_system", 64))
+                .inputItems(getItemStack("gtceu:uv_solar_panel", 2))
+                .inputItems(getItemStack("kubejs:ctc_computational_unit", 12))
+                .inputItems(getItemStack("kubejs:infinity_antimatter_fuel_rod", 64))
+                .inputFluids(CosmicElement.getFluid(57600000))
+                .inputFluids(Radox.getFluid(1000000))
+                .inputFluids(SuperMutatedLivingSolder.getFluid(1000000))
+                .inputFluids(UUMatter.getFluid(1000000))
+                .outputItems(getItemStack("sgjourney:reaction_chamber"))
+                .EUt(V[MAX])
+                .duration(5000)
+                .cleanroom(GTLCleanroomType.LAW_CLEANROOM)
+                .save(provider);
+
+        ASSEMBLY_LINE_RECIPES.recipeBuilder(GTLCore.id("universe_stargate_chevron"))
+                .inputItems(DIMENSION_CONNECTION_CASING, 64)
+                .inputItems(DIMENSIONALLY_TRANSCENDENT_CASING, 64)
+                .inputItems(INFINITY_GLASS, 64)
+                .inputItems(getItemStack("gtceu:magmatter_block", 64))
+                .inputItems(getItemStack("gtceu:long_magmatter_rod", 16))
+                .inputItems(getItemStack("sgjourney:reaction_chamber", 8))
+                .inputItems(getItemStack("gtceu:magnetohydrodynamicallyconstrainedstarmatter_plate", 8))
+                .inputItems(getItemStack("gtceu:magnetohydrodynamicallyconstrainedstarmatter_frame", 16))
+                .inputItems(getItemStack("gtceu:exquisite_ruby_gem", 64))
+                .inputItems(getItemStack("gtceu:exquisite_jasper_gem", 64))
+                .inputItems(getItemStack("gtceu:exquisite_sapphire_gem", 64))
+                .inputItems(getItemStack("gtceu:exquisite_magneto_resonatic_gem", 64))
+                .inputItems(EMITTER_MAX, 64)
+                .inputItems(ELECTRIC_PISTON_MAX, 64)
+                .inputItems(FIELD_GENERATOR_MAX, 16)
+                .inputItems(CustomTags.MAX_CIRCUITS, 32)
+                .inputFluids(HeavyQuarkDegenerateMatter.getFluid(1024000))
+                .inputFluids(ExcitedDtsc.getFluid(512000))
+                .inputFluids(ExcitedDtec.getFluid(512000))
+                .inputFluids(TranscendentMetal.getFluid(256000))
+                .outputItems(getItemStack("sgjourney:universe_stargate_chevron"))
+                .EUt(V[MAX])
+                .duration(5000)
+                .stationResearch(b -> b.researchStack(getItemStack("gtceu:magnetohydrodynamicallyconstrainedstarmatter_plate"))
+                        .dataStack(GTItems.TOOL_DATA_MODULE.asStack())
+                        .EUt(VA[MAX])
+                        .CWUt(262144))
+                .save(provider);
+
+        SUPRACHRONAL_ASSEMBLY_LINE_RECIPES.recipeBuilder(GTLCore.id("heartofthesmogus"))
+                .inputItems(getItemStack("expatternprovider:fishbig", 8))
+                .inputItems(DIMENSIONALLY_TRANSCENDENT_PLASMA_FORGE, 16)
+                .inputItems(STAR_ULTIMATE_MATERIAL_FORGE_FACTORY, 16)
+                .inputItems(CREATE_COMPUTATION, 8)
+                .inputItems(EYE_OF_HARMONY, 8)
+                .inputItems(CREATE_AGGREGATION, 8)
+                .inputItems(DOOR_OF_CREATE, 8)
+                .inputItems(getItemStack("sgjourney:universe_stargate_chevron", 32))
+                .inputFluids(MagnetohydrodynamicallyConstrainedStarMatter.getFluid(1000000000))
+                .inputFluids(Miracle.getFluid(1000000000))
+                .inputFluids(SpaceTime.getFluid(1000000000))
+                .inputFluids(Eternity.getFluid(1000000000))
+                .outputItems(getItemStack("kubejs:heartofthesmogus"))
+                .EUt(V[MAX])
+                .duration(8000)
+                .stationResearch(b -> b.researchStack(getItemStack("expatternprovider:fishbig"))
+                        .dataStack(GTItems.TOOL_DATA_MODULE.asStack())
+                        .EUt(VA[MAX])
+                        .CWUt(262144))
+                .save(provider);
+
+        ASSEMBLER_MODULE_RECIPES.recipeBuilder("crystal_base")
+                .inputItems(getItemStack("kubejs:create_ultimate_battery", 16))
+                .inputItems(getItemStack("kubejs:topological_manipulator_unit", 64))
+                .inputItems(getItemStack("kubejs:dark_matter", 32))
+                .inputItems(getItemStack("gtceu:eternity_nanoswarm", 64))
+                .inputItems(getItemStack("gtceu:cosmic_plate", 32))
+                .inputItems(getItemStack("expatternprovider:fishbig", 64))
+                .inputItems(getItemStack("kubejs:supracausal_mainframe", 32))
+                .inputItems(getItemStack("gtceu:double_cosmicneutronium_plate", 32))
+                .inputItems(getItemStack("gtceu:crystalmatrix_hex_wire", 64))
+                .inputItems(getItemStack("gtceu:crystalmatrix_hex_wire", 64))
+                .inputItems(getItemStack("gtceu:crystalmatrix_hex_wire", 64))
+                .inputItems(getItemStack("gtceu:crystalmatrix_hex_wire", 64))
+                .inputFluids(GradePurifiedWater16.getFluid(14400000000000L))
+                .inputFluids(CosmicSuperconductor.getFluid(5760000000000L))
+                .inputFluids(Miracle.getFluid(655360000000L))
+                .inputFluids(Magmatter.getFluid(1000000000000L))
+                .outputItems(CRYSTAL_BASE.get())
+                .addData("SEPMTier", 5)
+                .EUt(V[MAX])
+                .duration(1152000)
                 .save(provider);
     }
 }

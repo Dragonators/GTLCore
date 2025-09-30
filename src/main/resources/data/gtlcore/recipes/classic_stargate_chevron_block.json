@@ -1,0 +1,39 @@
+{
+  "type": "avaritia:shaped_extreme_craft",
+  "category": "misc",
+  "pattern": [
+    "    A    ",
+    "   ABA   ",
+    "  ABCBA  ",
+    " ABDEDBA ",
+    "ABCEFECBA",
+    " ABDEDBA ",
+    "  ABCBA  ",
+    "   ABA   ",
+    "    A    "
+  ],
+  "key": {
+    "A": {
+      "item": "gtceu:magmatter_block"
+    },
+    "B": {
+      "item": "expatternprovider:fishbig"
+    },
+    "C": {
+      "item": "gtlcore:ultimate_tea"
+    },
+    "D": {
+      "item": "gtceu:gravitation_shockburst"
+    },
+    "E": {
+      "item": "sgjourney:universe_stargate_chevron"
+    },
+    "F": {
+      "item": "sgjourney:classic_stargate_ring_block"
+    }
+  },
+  "result": {
+    "item": "sgjourney:classic_stargate_chevron_block"
+  },
+  "show_notification": true
+}
