@@ -141,6 +141,7 @@
     "gtm.recipe.CraftingComponentMixin",
     "gtm.recipe.FuelRecipesMixin",
     "gtm.recipe.GCyMRecipesMixin",
+    "gtm.recipe.GTRecipeJSMixin",
     "gtm.recipe.MachineRecipeLoaderMixin",
     "gtm.recipe.MaterialRecipeHandlerMixin",
     "gtm.recipe.MetaTileEntityMachineRecipeLoaderMixin",
