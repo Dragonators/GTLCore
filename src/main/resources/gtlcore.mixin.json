@@ -168,7 +168,6 @@
     "gtmt.trait.CatalystItemStackHandlerMixin",
     "ldlib.AsyncThreadDataMixin",
     "ldlib.ItemStackTransferMixin",
-    "ldlib.WidgetSlotItemTransferAccessor",
     "mc.RecipeManagerMixin",
     "stargatejourney.dhd.AbstractDHDEntityMixin",
     "stargatejourney.stargate.AbstractStargateEntityMixin",

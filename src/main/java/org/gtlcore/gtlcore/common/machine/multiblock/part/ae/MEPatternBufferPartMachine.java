@@ -83,8 +83,6 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import javax.annotation.Nonnull;
-
 public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInteractedMachine, ICraftingProvider, PatternContainer, IMEPatternPartMachine {
 
     protected static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(
@@ -212,13 +210,7 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
         this.patternInventory.setFilter(AEUtils.PROCESS_FILTER);
         Arrays.setAll(internalInventory, InternalSlot::new);
         Arrays.setAll(catalystItems, i -> {
-            var transfer = new ItemStackTransfer(9) {
-
-                @Override
-                protected int getStackLimit(int slot, @Nonnull ItemStack stack) {
-                    return getSlotLimit(slot);
-                }
-            };
+            var transfer = new ItemStackTransfer(9);
             transfer.setFilter(stack -> !(stack.getItem() instanceof ProcessingPatternItem));
             return transfer;
         });
