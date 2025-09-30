@@ -167,7 +167,6 @@
     "gtmt.trait.CatalystItemStackHandlerMixin",
     "ldlib.AsyncThreadDataMixin",
     "ldlib.ItemStackTransferMixin",
-    "ldlib.WidgetSlotItemTransferAccessor",
     "travelanchors.EventListenerMixin"
   ],
   "injectors": {
