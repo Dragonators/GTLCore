@@ -322,6 +322,48 @@ public final class Int128 extends Number implements Comparable<Int128> {
         return this;
     }
 
+    public Int128 divideNew(long divisor) {
+        if (divisor == 0) {
+            throw new ArithmeticException("Division by zero");
+        }
+
+        // 创建副本进行计算
+        Int128 result = new Int128(this.high, this.low);
+        boolean neg = (result.isNegative() != (divisor < 0));
+
+        if (result.isNegative()) result.negate();
+        long absDivisor = divisor < 0 ? -divisor : divisor;
+
+        long rem = 0;
+        long resultHigh = 0;
+        long resultLow = 0;
+
+        if (result.high != 0) {
+            resultHigh = Long.divideUnsigned(result.high, absDivisor);
+            rem = Long.remainderUnsigned(result.high, absDivisor);
+        }
+
+        if (rem != 0) {
+            long combined = (rem << 32) | (result.low >>> 32);
+            long q1 = Long.divideUnsigned(combined, absDivisor);
+            rem = Long.remainderUnsigned(combined, absDivisor);
+
+            combined = (rem << 32) | (result.low & 0xFFFFFFFFL);
+            long q0 = Long.divideUnsigned(combined, absDivisor);
+
+            resultLow = (q1 << 32) | q0;
+        } else {
+            resultLow = Long.divideUnsigned(result.low, absDivisor);
+        }
+
+        result.high = resultHigh;
+        result.low = resultLow;
+
+        if (neg) result.negate();
+
+        return result;
+    }
+
     // =================== 位运算 ===================
 
     public Int128 shiftLeft(int n) {
