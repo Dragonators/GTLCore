@@ -126,8 +126,11 @@ public class MegaTurbineMachine extends WorkableElectricMultiblockMachine implem
     @Override
     public long getOverclockVoltage() {
         var rotorHolder = getRotorHolder();
-        if (rotorHolder != null && rotorHolder.hasRotor())
-            return (long) baseEuOutput * rotorHolder.getTotalPower() / 100;
+        if (rotorHolder != null && rotorHolder.hasRotor()) {
+            long eu = (long) baseEuOutput * rotorHolder.getTotalPower() / 100;
+            if (eu < 0) RecipeResult.of(this, RecipeResult.fail(Component.translatable("gtceu.recipe.fail.rotor_holder.tier")));
+            return eu;
+        }
         return 0;
     }
 
