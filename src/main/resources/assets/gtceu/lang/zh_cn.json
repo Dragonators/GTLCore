@@ -919,6 +919,7 @@
   "gtceu.recipe.fail.rotor.isEmpty": "缺少涡轮转子",
   "gtceu.recipe.fail.too.much.neutron": "中子动能过多",
   "gtceu.recipe.fail.voltage.tier": "电压等级未达到配方要求",
+  "gtceu.recipe.fail.rotor_holder.tier": "转子支架等级太低",
   "gtceu.recipe.frheat": "每秒升温：%s K",
   "gtceu.recipe.grindball": "研磨球材质：%s",
   "gtceu.recipe.nano_forge_tier": "纳米锻炉等级：%s",

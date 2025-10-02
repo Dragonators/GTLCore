@@ -108,7 +108,7 @@ public class UltimateTerminalBehavior implements IItemUIFactory {
                 .addWidget(new ExtendLabelWidget(14, 106, translatable("gui.gtlcore.mirror_mode"))
                         .setHoverTooltips(translatable("tooltip.gtlcore.mirror_mode")))
                 .addWidget(new TerminalInputWidget(140, 45, 36, 12,
-                        () -> getRepeatCount(handItem), (v) -> setRepeatCount(v, handItem)).setMax(100).setMin(0))
+                        () -> getRepeatCount(handItem), (v) -> setRepeatCount(v, handItem)).setMax(648).setMin(0))
                 .addWidget(new SwitchWidget(140, 63, 36, 14,
                         (c, b) -> setIsBuildHatches(!getIsBuildHatches(handItem), handItem)).setPressed(getIsBuildHatches(handItem))
                         .setTexture(new GuiTextureGroup(GuiTextures.BUTTON, new TextTexture("OFF")),

@@ -920,6 +920,7 @@
   "gtceu.recipe.fail.rotor.isEmpty": "Missing turbine rotor",
   "gtceu.recipe.fail.too.much.neutron": "Neutron kinetic energy too high",
   "gtceu.recipe.fail.voltage.tier": "Voltage tier does not meet recipe requirements",
+  "gtceu.recipe.fail.rotor_holder.tier": "The Rotor Holder tier is too low",
   "gtceu.recipe.frheat": "Temperature increase per second: %s K",
   "gtceu.recipe.grindball": "Grinding ball material: %s",
   "gtceu.recipe.nano_forge_tier": "Nano forge tier: %s",
