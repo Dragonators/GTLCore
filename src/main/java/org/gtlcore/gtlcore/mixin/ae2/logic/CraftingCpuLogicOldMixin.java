@@ -67,11 +67,10 @@ public abstract class CraftingCpuLogicOldMixin {
             boolean needExtract = true;
 
             for (var provider : craftingService.getProviders(details)) {
-                final boolean isMEPatternProvider = isProcessing && provider instanceof IMEPatternPartMachine;
-                final boolean isMECraftProvider = provider instanceof IMECraftIOPart;
+                final boolean autoExpand = isProcessing && (provider instanceof IMEPatternPartMachine || provider instanceof IMECraftIOPart);
 
                 if (needExtract) {
-                    craftingContainer = isProcessing ? ((isMEPatternProvider || isMECraftProvider) ? AEUtils.extractForProcessingPattern((AEProcessingPattern) details, inventory, expectedOutputs, taskProgress.getValue()) : AEUtils.extractForProcessingPattern((AEProcessingPattern) details, inventory, expectedOutputs)) : (isMECraftProvider ? Ae2CompatMH.extractForCraftPattern4Args(details, inventory, level, expectedOutputs, taskProgress.getValue()) : Ae2CompatMH.extractForCraftPattern4Args(details, inventory, level, expectedOutputs));
+                    craftingContainer = isProcessing ? (autoExpand ? AEUtils.extractForProcessingPattern((AEProcessingPattern) details, inventory, expectedOutputs, taskProgress.getValue()) : AEUtils.extractForProcessingPattern((AEProcessingPattern) details, inventory, expectedOutputs)) : Ae2CompatMH.extractForCraftPattern4Args(details, inventory, level, expectedOutputs);
 
                     needExtract = false;
                     if (craftingContainer == null) {
@@ -86,7 +85,7 @@ public abstract class CraftingCpuLogicOldMixin {
                     break;
                 }
 
-                if (isMECraftProvider ? ((IMECraftIOPart) provider).pushPattern(details, taskProgress.getValue()) : provider.pushPattern(details, craftingContainer)) {
+                if (provider.pushPattern(details, craftingContainer)) {
                     energyService.extractAEPower(patternPower, Actionable.MODULATE, PowerMultiplier.CONFIG);
                     pushedPatterns++;
 
@@ -97,8 +96,8 @@ public abstract class CraftingCpuLogicOldMixin {
 
                     cluster.markDirty();
 
-                    // 1) MEPatternBuffer || MECraftProvider
-                    if (isMEPatternProvider || isMECraftProvider) {
+                    // 1) AutoExpand
+                    if (autoExpand) {
                         taskProgress.setValue(0);
                         it.remove();
                         continue taskLoop;

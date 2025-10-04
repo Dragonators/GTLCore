@@ -51,7 +51,8 @@ import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.AEKey;
 import appeng.api.stacks.GenericStack;
 import appeng.api.stacks.KeyCounter;
-import appeng.crafting.pattern.AECraftingPattern;
+import appeng.blockentity.crafting.IMolecularAssemblerSupportedPattern;
+import appeng.crafting.pattern.AEProcessingPattern;
 import appeng.crafting.pattern.EncodedPatternItem;
 import appeng.helpers.patternprovider.PatternContainer;
 import com.google.common.collect.BiMap;
@@ -159,15 +160,15 @@ public class MEMolecularAssemblerIOPartMachine extends MEIOPartMachine implement
     }
 
     @Override
-    public boolean pushPattern(IPatternDetails details, long multiply) {
-        if (!getMainNode().isActive() || !patternSlotMap.containsKey(details)) {
+    public boolean pushPattern(IPatternDetails iPatternDetails, KeyCounter[] keyCounters) {
+        if (!getMainNode().isActive() || !patternSlotMap.containsKey(iPatternDetails) || !(iPatternDetails instanceof AEProcessingPattern processingPattern)) {
             return false;
         }
 
-        final GenericStack output = details.getOutputs()[0];
+        final GenericStack output = processingPattern.getOutputs()[0];
         if (!(output.what() instanceof AEItemKey)) return false;
 
-        int slot = patternSlotMap.get(details);
+        int slot = patternSlotMap.get(processingPattern);
         if (toolsSlotMap.containsKey(slot)) {
             var requiredTools = new ObjectOpenHashSet<>(toolsSlotMap.get(slot));
 
@@ -178,16 +179,25 @@ public class MEMolecularAssemblerIOPartMachine extends MEIOPartMachine implement
             }
 
             if (!requiredTools.isEmpty()) {
-                for (IPatternDetails.IInput input : details.getInputs()) {
-                    final var stack = input.getPossibleInputs()[0];
-                    buffer.addTo(stack.what(), stack.amount() * multiply);
-                }
+                AEUtils.pushInputsToMEPatternBufferInventory(keyCounters, this.buffer::addTo);
                 notifySelfIO();
                 return true;
             }
         }
 
-        outputItems.addTo(output, multiply);
+        final GenericStack requireStack = processingPattern.getInputs()[0].getPossibleInputs()[0];
+        long multiplier = 0;
+        for (var inputList : keyCounters) {
+            for (var input : inputList) {
+                if (requireStack.what().equals(input.getKey())) {
+                    multiplier = input.getLongValue() / (requireStack.amount() * processingPattern.getInputs()[0].getMultiplier());
+                    break;
+                }
+            }
+        }
+        if (multiplier == 0) return false;
+
+        outputItems.addTo(output, multiplier);
         maHandler.notifyListeners();
         return true;
     }
@@ -201,7 +211,7 @@ public class MEMolecularAssemblerIOPartMachine extends MEIOPartMachine implement
 
         if (!mutableItemTransferList.isEmpty()) {
             for (int i = 0; i < mutableItemTransferList.getSlots(); i++) {
-                var pattern = getPatternDetails(mutableItemTransferList.getStackInSlot(i), i);
+                var pattern = getPatternDetailsAsProcessing(mutableItemTransferList.getStackInSlot(i), i);
                 if (pattern != null) patternSlotMap.forcePut(pattern, i);
             }
             shouldOpen = true;
@@ -229,17 +239,19 @@ public class MEMolecularAssemblerIOPartMachine extends MEIOPartMachine implement
         shouldOpen = false;
     }
 
-    private @Nullable IPatternDetails getPatternDetails(ItemStack stack, int slotIndex) {
+    private @Nullable IPatternDetails getPatternDetailsAsProcessing(ItemStack stack, int slotIndex) {
         if (!stack.isEmpty()) {
             if (stack.getItem() instanceof EncodedPatternItem encodedPatternItem) {
                 final var decodePattern = encodedPatternItem.decode(stack, getLevel(), false);
-                if (decodePattern instanceof AECraftingPattern craftingPattern) {
-                    final var pair = AEUtils.createCraftOrProcessingPattern(craftingPattern, getLevel());
+                if (decodePattern instanceof IMolecularAssemblerSupportedPattern molecularAssemblerSupportedPattern) {
+                    final var pair = AEUtils.createProcessingFromCraftPattern(molecularAssemblerSupportedPattern, getLevel());
                     final var remainingStacks = pair.getRight();
+                    final var pattern = pair.getLeft();
+                    if (!(pattern instanceof AEProcessingPattern)) return null;
                     if (remainingStacks != null && !remainingStacks.isEmpty()) toolsSlotMap.put(slotIndex, remainingStacks);
                     else toolsSlotMap.remove(slotIndex);
-                    return pair.getLeft();
-                } else return decodePattern;
+                    return pattern;
+                } else return null;
             }
         }
         return null;
@@ -317,7 +329,7 @@ public class MEMolecularAssemblerIOPartMachine extends MEIOPartMachine implement
         if (isRemote()) return;
 
         var newPattern = mutableItemTransferList.getStackInSlot(index);
-        var newPatternDetails = getPatternDetails(newPattern, index);
+        var newPatternDetails = getPatternDetailsAsProcessing(newPattern, index);
 
         if (newPatternDetails != null) patternSlotMap.forcePut(newPatternDetails, index);
         else patternSlotMap.inverse().remove(index);
@@ -408,12 +420,6 @@ public class MEMolecularAssemblerIOPartMachine extends MEIOPartMachine implement
     @Override
     public List<IPatternDetails> getAvailablePatterns() {
         return new ObjectArrayList<>(patternSlotMap.keySet());
-    }
-
-    @Override
-    public boolean pushPattern(IPatternDetails iPatternDetails, KeyCounter[] keyCounters) {
-        // Only Use pushPattern(IPatternDetails details, long multiply)
-        return false;
     }
 
     @Override

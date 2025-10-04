@@ -49,7 +49,7 @@ public abstract class CatalystItemStackHandlerMixin extends NotifiableItemStackH
             Ingredient ingredient = (Ingredient) content.getContent();
             if (content.chance <= 0) {
                 for (ItemStack item : ingredient.getItems()) {
-                    if (gTLCore$itemCatalystInventory.containsKey(item)) catalysts.add(ingredient);
+                    if (gTLCore$itemCatalystInventory.getInt(item) >= item.getCount()) catalysts.add(ingredient);
                 }
             } else {
                 for (ItemStack item : ingredient.getItems()) {

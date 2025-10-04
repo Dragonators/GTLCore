@@ -604,7 +604,7 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
 
     @Override
     public boolean pushPattern(IPatternDetails patternDetails, KeyCounter[] inputHolder) {
-        if (!getMainNode().isActive() || !patternSlotMap.containsKey(patternDetails) || !checkInput(inputHolder)) {
+        if (!getMainNode().isActive() || !patternSlotMap.containsKey(patternDetails)) {
             return false;
         }
 
@@ -619,18 +619,6 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
     @Override
     public boolean isBusy() {
         return false;
-    }
-
-    private boolean checkInput(KeyCounter[] inputHolder) {
-        for (KeyCounter input : inputHolder) {
-            for (AEKey key : input.keySet()) {
-                var typeId = key.getType().getId();
-                if (!typeId.equals(AEKeyType.items().getId()) && !typeId.equals(AEKeyType.fluids().getId())) {
-                    return false;
-                }
-            }
-        }
-        return true;
     }
 
     // ========================================

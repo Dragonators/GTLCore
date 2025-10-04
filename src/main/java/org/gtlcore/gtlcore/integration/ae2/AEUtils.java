@@ -27,6 +27,7 @@ import appeng.api.networking.security.IActionSource;
 import appeng.api.stacks.*;
 import appeng.api.storage.MEStorage;
 import appeng.api.storage.StorageHelper;
+import appeng.blockentity.crafting.IMolecularAssemblerSupportedPattern;
 import appeng.crafting.inv.ICraftingInventory;
 import appeng.crafting.pattern.*;
 import it.unimi.dsi.fastutil.objects.*;
@@ -225,7 +226,7 @@ public class AEUtils {
         if (item instanceof CraftingPatternItem craftingPatternItem) {
             var pattern = craftingPatternItem.decode(stack, level, false);
             if (pattern != null) {
-                return !pattern.canSubstitute() && !hasContainerItems(pattern);
+                return !hasContainerItems(pattern);
             }
         } else {
             return item instanceof SmithingTablePatternItem || item instanceof StonecuttingPatternItem;
@@ -233,7 +234,6 @@ public class AEUtils {
         return false;
     }
 
-    // must !canSubstitute
     private static boolean hasContainerItems(AECraftingPattern pattern) {
         IPatternDetails.IInput[] inputs = pattern.getInputs();
 
@@ -250,38 +250,28 @@ public class AEUtils {
         return false;
     }
 
-    // must !canSubstitute
-    public static Pair<IPatternDetails, @Nullable ObjectSet<Item>> createCraftOrProcessingPattern(AECraftingPattern craftingPattern, Level level) {
-        IPatternDetails.IInput[] inputs = craftingPattern.getInputs();
-        boolean hasUnDamageable = false;
+    public static Pair<IPatternDetails, @Nullable ObjectSet<Item>> createProcessingFromCraftPattern(IMolecularAssemblerSupportedPattern molecularAssemblerSupportedPattern, Level level) {
+        IPatternDetails.IInput[] inputs = molecularAssemblerSupportedPattern.getInputs();
 
-        for (var input : inputs) {
-            AEKey key = input.getPossibleInputs()[0].what();
-            AEKey remainingKey = input.getRemainingKey(key);
-            if (remainingKey != null) {
-                if (remainingKey instanceof AEItemKey itemKey && !itemKey.toStack().isDamageableItem()) {
-                    hasUnDamageable = true;
-                    break;
-                }
+        ObjectArrayList<GenericStack> normalInputs = new ObjectArrayList<>();
+        ObjectSet<Item> remainingInputs = new ObjectArraySet<>();
+        for (IPatternDetails.IInput input : inputs) {
+            final var stack = input.getPossibleInputs()[0];
+            final var remaining = input.getRemainingKey(stack.what());
+            if (remaining != null) {
+                assert remaining instanceof AEItemKey;
+                if (((AEItemKey) remaining).toStack().isDamageableItem()) {
+                    return ImmutablePair.of(null, null);
+
+                } else remainingInputs.add(((AEItemKey) remaining).getItem());
+            } else {
+                normalInputs.add(new GenericStack(stack.what(), stack.amount() * input.getMultiplier()));
             }
         }
 
-        if (!hasUnDamageable) return ImmutablePair.of(craftingPattern, null);
-        else {
-            ObjectArrayList<GenericStack> normalInputs = new ObjectArrayList<>();
-            ObjectSet<Item> remainingInputs = new ObjectArraySet<>();
-            for (IPatternDetails.IInput input : inputs) {
-                final var remaining = input.getRemainingKey(input.getPossibleInputs()[0].what());
-                if (remaining != null) {
-                    remainingInputs.add(((AEItemKey) remaining).getItem());
-                } else {
-                    normalInputs.add(input.getPossibleInputs()[0]);
-                }
-            }
-            ItemStack pattern = PatternDetailsHelper.encodeProcessingPattern(normalInputs.toArray(new GenericStack[0]), craftingPattern.getOutputs());
+        ItemStack pattern = PatternDetailsHelper.encodeProcessingPattern(normalInputs.toArray(new GenericStack[0]), molecularAssemblerSupportedPattern.getOutputs());
 
-            return ImmutablePair.of(PatternDetailsHelper.decodePattern(pattern, level), remainingInputs);
-        }
+        return ImmutablePair.of(PatternDetailsHelper.decodePattern(pattern, level), remainingInputs);
     }
 
     // ========================================
