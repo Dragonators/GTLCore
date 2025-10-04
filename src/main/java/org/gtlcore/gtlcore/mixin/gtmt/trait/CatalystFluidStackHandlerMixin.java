@@ -48,7 +48,7 @@ public abstract class CatalystFluidStackHandlerMixin extends NotifiableFluidTank
             FluidIngredient fluidIngredient = (FluidIngredient) content.getContent();
             if (content.chance <= 0) {
                 for (FluidStack fluidStack : fluidIngredient.getStacks()) {
-                    if (gTLCore$fluidCatalystInventory.containsKey(fluidStack)) catalysts.add(fluidIngredient);
+                    if (gTLCore$fluidCatalystInventory.getLong(fluidStack) >= fluidStack.getAmount()) catalysts.add(fluidIngredient);
                 }
             } else {
                 for (FluidStack fluidStack : fluidIngredient.getStacks()) {

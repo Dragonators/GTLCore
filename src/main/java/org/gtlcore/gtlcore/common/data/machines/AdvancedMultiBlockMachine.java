@@ -130,6 +130,7 @@ public class AdvancedMultiBlockMachine {
             .tooltips(Component.translatable("gtceu.machine.eye_of_harmony.tooltip.4"))
             .tooltips(Component.translatable("gtceu.machine.eye_of_harmony.tooltip.5"))
             .tooltips(Component.translatable("gtceu.machine.eye_of_harmony.tooltip.6"))
+            .tooltips(Component.translatable("gtceu.machine.eye_of_harmony.tooltip.7"))
             .tooltips(Component.translatable("tooltip.gtlcore.structure.source", "GTNH"))
             .tooltips(Component.translatable("gtceu.machine.available_recipe_map_1.tooltip",
                     Component.translatable("gtceu.cosmos_simulation")))

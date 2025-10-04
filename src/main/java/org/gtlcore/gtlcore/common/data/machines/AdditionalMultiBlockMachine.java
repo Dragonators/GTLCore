@@ -313,8 +313,7 @@ public class AdditionalMultiBlockMachine {
                     Component.translatable("gtceu.machine.molecular_assembler_matrix.tooltip.3"),
                     Component.translatable("gtceu.machine.molecular_assembler_matrix.tooltip.4"),
                     Component.translatable("gtceu.machine.molecular_assembler_matrix.tooltip.5"),
-                    Component.translatable("gtceu.machine.molecular_assembler_matrix.tooltip.6"),
-                    Component.translatable("gtceu.machine.molecular_assembler_matrix.tooltip.7"))
+                    Component.translatable("gtceu.machine.molecular_assembler_matrix.tooltip.6"))
             .tooltipBuilder(GTLMachines.GTL_ADD)
             .recipeModifiers((machine, recipe, params, result) -> GTRecipeModifiers.accurateParallel(machine, recipe, (int) Math.pow(4, (((WorkableElectricMultiblockMachine) machine).getTier() - 4)), false).getFirst(), GTRecipeModifiers.ELECTRIC_OVERCLOCK.apply(OverclockingLogic.NON_PERFECT_OVERCLOCK_SUBTICK))
             .appearanceBlock(GCyMBlocks.CASING_LARGE_SCALE_ASSEMBLING)
