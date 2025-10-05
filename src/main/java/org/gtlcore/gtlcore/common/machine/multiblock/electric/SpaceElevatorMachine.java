@@ -1,8 +1,11 @@
 package org.gtlcore.gtlcore.common.machine.multiblock.electric;
 
+import org.gtlcore.gtlcore.api.machine.multiblock.ISpaceElevatorModule;
+import org.gtlcore.gtlcore.api.recipe.RecipeResult;
+
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.MetaMachine;
-import com.gregtechceu.gtceu.api.machine.multiblock.WorkableElectricMultiblockMachine;
+import com.gregtechceu.gtceu.api.machine.feature.IMachineLife;
 
 import com.lowdragmc.lowdraglib.gui.util.ClickData;
 import com.lowdragmc.lowdraglib.gui.widget.ComponentPanelWidget;
@@ -15,18 +18,84 @@ import net.minecraft.world.phys.AABB;
 
 import earth.terrarium.adastra.common.menus.base.PlanetsMenuProvider;
 import earth.terrarium.botarium.common.menu.MenuHooks;
+import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
-public class SpaceElevatorMachine extends TierCasingMachine {
+public class SpaceElevatorMachine extends TierCasingMachine implements IMachineLife {
 
     public SpaceElevatorMachine(IMachineBlockEntity holder) {
         super(holder, "SEPMTier");
     }
 
+    private final Set<ISpaceElevatorModule> proxyModules = new ReferenceOpenHashSet<>();
+
     private int mam = 0;
+
+    public void addModule(ISpaceElevatorModule module) {
+        this.proxyModules.add(module);
+    }
+
+    public void removeModule(ISpaceElevatorModule module) {
+        this.proxyModules.remove(module);
+    }
+
+    protected @NotNull Set<ISpaceElevatorModule> getModules() {
+        return Collections.unmodifiableSet(this.proxyModules);
+    }
+
+    protected void safeClearModules() {
+        for (ISpaceElevatorModule module : this.getModules()) {
+            module.removeFromElevator(this);
+        }
+        this.proxyModules.clear();
+    }
+
+    @Override
+    public void onStructureInvalid() {
+        super.onStructureInvalid();
+        safeClearModules();
+    }
+
+    @Override
+    public void onMachineRemoved() {
+        safeClearModules();
+    }
+
+    @Override
+    public void onStructureFormed() {
+        super.onStructureFormed();
+        safeClearModules();
+        scanForModules();
+    }
+
+    private void scanForModules() {
+        final Level level = getLevel();
+        final BlockPos powerCore = getPowerCore(getPos(), level);
+        if (powerCore != null) {
+            BlockPos[] modulePositions = new BlockPos[] {
+                    powerCore.offset(8, 2, 3),
+                    powerCore.offset(8, 2, -3),
+                    powerCore.offset(-8, 2, 3),
+                    powerCore.offset(-8, 2, -3),
+                    powerCore.offset(3, 2, 8),
+                    powerCore.offset(-3, 2, 8),
+                    powerCore.offset(3, 2, -8),
+                    powerCore.offset(-3, 2, -8)
+            };
+
+            for (BlockPos pos : modulePositions) {
+                MetaMachine machine = MetaMachine.getMachine(Objects.requireNonNull(level), pos);
+                if (machine instanceof ISpaceElevatorModule module && module.isFormed()) {
+                    module.connectToElevator(this);
+                }
+            }
+        }
+    }
 
     private BlockPos getPowerCore(BlockPos pos, Level level) {
         BlockPos[] coordinates = new BlockPos[] { pos.offset(3, -2, 0),
@@ -43,30 +112,9 @@ public class SpaceElevatorMachine extends TierCasingMachine {
 
     private int getMAM() {
         if (getOffsetTimer() % 20 == 0) {
-            final Level level = getLevel();
-            final BlockPos blockPos = getPowerCore(getPos(), level);
-            if (blockPos != null) {
-                BlockPos[] coordinatess = new BlockPos[] { blockPos.offset(8, 2, 3),
-                        blockPos.offset(8, 2, -3),
-                        blockPos.offset(-8, 2, 3),
-                        blockPos.offset(-8, 2, -3),
-                        blockPos.offset(3, 2, 8),
-                        blockPos.offset(-3, 2, 8),
-                        blockPos.offset(3, 2, -8),
-                        blockPos.offset(-3, 2, -8) };
-                mam = 0;
-                for (BlockPos blockPoss : coordinatess) {
-                    MetaMachine metaMachine = MetaMachine.getMachine(level, blockPoss);
-                    if (metaMachine instanceof WorkableElectricMultiblockMachine mbmachine &&
-                            mbmachine.isFormed()) {
-                        String bid = mbmachine.getBlockState().getBlock().kjs$getId();
-                        if (bid.equals("gtceu:assembler_module") || bid.equals("gtceu:resource_collection")) {
-                            mam++;
-                        }
-                    }
-                }
-                return mam;
-            }
+            mam = (int) proxyModules.stream()
+                    .filter(ISpaceElevatorModule::isFormed)
+                    .count();
         }
         return mam;
     }
@@ -76,6 +124,7 @@ public class SpaceElevatorMachine extends TierCasingMachine {
         boolean value = super.onWorking();
         if (getOffsetTimer() % 20 == 0) {
             if (getRecipeLogic().getProgress() > 240) {
+                RecipeResult.of(this, RecipeResult.SUCCESS);
                 getRecipeLogic().setProgress(120);
             }
         }
