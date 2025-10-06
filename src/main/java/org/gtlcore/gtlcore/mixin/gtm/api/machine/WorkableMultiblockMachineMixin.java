@@ -112,6 +112,11 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
         MEOutPutDual = false;
     }
 
+    @Inject(method = "setActiveRecipeType", at = @At("TAIL"), remap = false)
+    public void afterSetActiveRecipeType(int activeRecipeType, CallbackInfo ci) {
+        if (!isRemote()) recipeLogic.updateTickSubscription();
+    }
+
     /**
      * @author .
      * @reason .

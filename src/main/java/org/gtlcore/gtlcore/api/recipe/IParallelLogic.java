@@ -159,6 +159,7 @@ public interface IParallelLogic {
                 fluidCountMap.addTo(fluidInput, fluidInput.getAmount());
             }
         }
+
         if (fluidCountMap.isEmpty()) return parallelAmount;
 
         Object2LongOpenHashMap<FluidStack> ingredientStacks = new Object2LongOpenHashMap<>();
@@ -194,22 +195,23 @@ public interface IParallelLogic {
                                                               Object2LongMap<S> ingredientStacks) {
         if (ingredientStacks.isEmpty()) return 0;
 
-        long needed;
-        long available;
-        for (var it = Object2LongMaps.fastIterator(countableMap); it.hasNext(); parallelLimit = Math.min(parallelLimit, available / needed)) {
-            var entry = it.next();
-            needed = entry.getLongValue();
-            available = 0;
-            for (var input : Object2LongMaps.fastIterable(ingredientStacks)) {
-                if (entry.getKey().test(input.getKey())) {
+        for (var entry : Object2LongMaps.fastIterable(countableMap)) {
+            I ingredient = entry.getKey();
+            long needed = entry.getLongValue();
+            long available = 0;
+
+            for (var it = Object2LongMaps.fastIterator(ingredientStacks); it.hasNext();) {
+                var input = it.next();
+                if (ingredient.test(input.getKey())) {
                     available = input.getLongValue();
+                    it.remove();
                     break;
                 }
             }
-            if (available < needed) {
-                parallelLimit = 0;
-                break;
-            }
+
+            if (available < needed) return 0;
+
+            parallelLimit = Math.min(parallelLimit, available / needed);
         }
         return parallelLimit;
     }
