@@ -1,19 +1,17 @@
 package org.gtlcore.gtlcore.common.machine.multiblock.part.ae;
 
-import org.gtlcore.gtlcore.api.machine.MEExtendedOutputFancyConfigurator;
 import org.gtlcore.gtlcore.integration.ae2.async.AEAccumulator;
 import org.gtlcore.gtlcore.integration.ae2.async.AEWriteService;
 
-import com.gregtechceu.gtceu.api.gui.fancy.TabsWidget;
 import com.gregtechceu.gtceu.api.gui.widget.IntInputWidget;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.recipe.ingredient.FluidIngredient;
 
 import com.lowdragmc.lowdraglib.gui.modular.ModularUI;
+import com.lowdragmc.lowdraglib.gui.widget.Widget;
+import com.lowdragmc.lowdraglib.gui.widget.WidgetGroup;
 import com.lowdragmc.lowdraglib.side.fluid.FluidStack;
-import com.lowdragmc.lowdraglib.utils.Position;
 
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
@@ -24,6 +22,7 @@ import appeng.api.networking.ticking.TickRateModulation;
 import appeng.api.networking.ticking.TickingRequest;
 import appeng.api.stacks.AEKey;
 import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
+import org.jetbrains.annotations.NotNull;
 
 import java.lang.ref.WeakReference;
 import java.util.List;
@@ -76,17 +75,10 @@ public class MEExtendedAsyncOutputPartMachine extends MEExtendedOutputPartMachin
     }
 
     @Override
-    public void attachSideTabs(TabsWidget sideTabs) {
-        super.attachSideTabs(sideTabs);
-        sideTabs.attachSubTab(new MEExtendedOutputFancyConfigurator(() -> new IntInputWidget(new Position(10, 10), this::getPriority, this::setPriority)
-                .setMin(10)
-                .setMax(100000)) {
-
-            @Override
-            public List<Component> getTabTooltips() {
-                return List.of(Component.translatable("tooltip.gtlcore.change_priority"));
-            }
-        });
+    public @NotNull Widget createUIWidget() {
+        WidgetGroup group = (WidgetGroup) super.createUIWidget();
+        group.addWidget(new IntInputWidget(90, 0, 80, 10, this::getPriority, this::setPriority).setMin(10).setMax(100000));
+        return group;
     }
 
     @Override
