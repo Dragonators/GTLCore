@@ -55,7 +55,16 @@ public interface IMERecipeHandler<T extends Predicate<S>, S> extends IFilteredHa
      * @param slots 要查询的slot列表
      * @return 内容到数量的映射
      */
-    Object2LongMap<S> getCustomSlotsStackMap(List<Integer> slots);
+    Object2LongMap<S> getCustomSlotsStackMap(Collection<Integer> slots);
+
+    /**
+     * 获取指定slot中所有与handler对应内容 -> amount的映射
+     * 计算并行使用，amount不缩限
+     *
+     * @param slots 要查询的slot列表
+     * @return 第一个active槽位内容到数量的映射 Or Empty(对于不同泛型的Handler保持一致性)
+     */
+    Object2LongMap<S> getFirstAvailableSlotFromCustomStackMap(Collection<Integer> slots);
 
     /**
      * 获取单个slot中所有与handler对应内容 -> amount的映射

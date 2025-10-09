@@ -13,6 +13,7 @@ import it.unimi.dsi.fastutil.objects.Object2LongMap;
 import it.unimi.dsi.fastutil.objects.Object2LongMaps;
 import lombok.Setter;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
@@ -58,9 +59,17 @@ public class MEPatternBufferProxyRecipeHandler<T extends Predicate<S>, S> extend
     }
 
     @Override
-    public Object2LongMap<S> getCustomSlotsStackMap(List<Integer> slots) {
+    public Object2LongMap<S> getCustomSlotsStackMap(Collection<Integer> slots) {
         if (handler != null) {
             return handler.getCustomSlotsStackMap(slots);
+        }
+        return Object2LongMaps.emptyMap();
+    }
+
+    @Override
+    public Object2LongMap<S> getFirstAvailableSlotFromCustomStackMap(Collection<Integer> slots) {
+        if (handler != null) {
+            return handler.getFirstAvailableSlotFromCustomStackMap(slots);
         }
         return Object2LongMaps.emptyMap();
     }

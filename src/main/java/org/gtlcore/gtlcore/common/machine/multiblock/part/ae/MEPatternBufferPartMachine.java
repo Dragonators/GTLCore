@@ -8,6 +8,7 @@ import org.gtlcore.gtlcore.integration.ae2.AEUtils;
 import org.gtlcore.gtlcore.integration.ae2.handler.PatternCircuitHandler;
 import org.gtlcore.gtlcore.integration.ae2.handler.SlotCacheManager;
 import org.gtlcore.gtlcore.integration.ae2.widget.AEPatternViewExtendSlotWidget;
+import org.gtlcore.gtlcore.utils.DisjointSetMap;
 import org.gtlcore.gtlcore.utils.GTLUtil;
 
 import com.gregtechceu.gtceu.api.capability.recipe.*;
@@ -682,8 +683,8 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
     // ========================================
 
     @Override
-    public @NotNull List<@NotNull GTRecipe> getCachedGTRecipe() {
-        List<GTRecipe> recipes = new ObjectArrayList<>();
+    public @NotNull ObjectSet<@NotNull GTRecipe> getCachedGTRecipe() {
+        ObjectSet<GTRecipe> recipes = new ObjectOpenHashSet<>();
         for (var it = Int2ObjectMaps.fastIterator(recipeCacheMap); it.hasNext();) {
             var entry = it.next();
             GTRecipe recipe = entry.getValue();
@@ -703,11 +704,11 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
     }
 
     @Override
-    public void restoreSlotMap(BiMap<GTRecipe, Integer> slotMap, Consumer<Integer> removeSlotFromMap) {
+    public void restoreSlotMap(DisjointSetMap<GTRecipe, Integer> recipe2SlotsMap, Consumer<Integer> removeSlotFromMap) {
         this.removeSlotFromMap = removeSlotFromMap;
-        slotMap.clear();
+        recipe2SlotsMap.clear();
         for (var entry : Int2ObjectMaps.fastIterable(recipeCacheMap)) {
-            slotMap.forcePut(entry.getValue(), entry.getIntKey());
+            recipe2SlotsMap.put(entry.getValue(), entry.getIntKey());
         }
     }
 
