@@ -231,8 +231,7 @@ public class GTLRecipeModifiers {
 
     private static FluidAmounts countFluidInMERecipeHandlePart(MEPatternRecipeHandlePart merhp, GTRecipe recipe, Fluid fluid1, Fluid fluid2) {
         long a = 0, b = 0;
-        int slotIndex = merhp.getSlotMap().get(recipe);
-        for (var it = Object2LongMaps.fastIterator(merhp.getMEContent(FluidRecipeCapability.CAP, List.of(slotIndex))); it.hasNext();) {
+        for (var it = Object2LongMaps.fastIterator(merhp.getMEContent(FluidRecipeCapability.CAP, merhp.getRecipe2SlotsMap().get(recipe))); it.hasNext();) {
             var entry = it.next();
             if (fluid1 == entry.getKey().getFluid()) a += entry.getLongValue();
             if (fluid2 == entry.getKey().getFluid()) b += entry.getLongValue();

@@ -43,6 +43,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Collection;
 import java.util.List;
 
 import static org.gtlcore.gtlcore.integration.ae2.AEUtils.loadInventory;
@@ -220,7 +221,12 @@ public abstract class MEExtendedOutputPartMachineBase extends MEIOPartMachine im
         }
 
         @Override
-        public Object2LongMap<ItemStack> getCustomSlotsStackMap(List<Integer> list) {
+        public Object2LongMap<ItemStack> getCustomSlotsStackMap(Collection<Integer> list) {
+            return Object2LongMaps.emptyMap();
+        }
+
+        @Override
+        public Object2LongMap<ItemStack> getFirstAvailableSlotFromCustomStackMap(Collection<Integer> slots) {
             return Object2LongMaps.emptyMap();
         }
 
@@ -276,7 +282,12 @@ public abstract class MEExtendedOutputPartMachineBase extends MEIOPartMachine im
         }
 
         @Override
-        public Object2LongMap<FluidStack> getCustomSlotsStackMap(List<Integer> list) {
+        public Object2LongMap<FluidStack> getCustomSlotsStackMap(Collection<Integer> list) {
+            return Object2LongMaps.emptyMap();
+        }
+
+        @Override
+        public Object2LongMap<FluidStack> getFirstAvailableSlotFromCustomStackMap(Collection<Integer> slots) {
             return Object2LongMaps.emptyMap();
         }
 

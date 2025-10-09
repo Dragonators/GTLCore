@@ -2,12 +2,11 @@ package org.gtlcore.gtlcore.api.machine.trait;
 
 import org.gtlcore.gtlcore.api.capability.IMERecipeHandler;
 import org.gtlcore.gtlcore.api.machine.trait.MEPart.IMEPatternPartMachine;
+import org.gtlcore.gtlcore.utils.DisjointSetMap;
 
 import com.gregtechceu.gtceu.api.capability.recipe.RecipeCapability;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 
-import com.google.common.collect.BiMap;
-import com.google.common.collect.HashBiMap;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.objects.*;
 import lombok.Getter;
@@ -19,7 +18,7 @@ import java.util.function.Predicate;
 public class MEPatternRecipeHandlePart extends MEIORecipeHandlePart {
 
     @Getter
-    private final BiMap<GTRecipe, Integer> slotMap = HashBiMap.create();
+    private final DisjointSetMap<GTRecipe, Integer> recipe2SlotsMap = new DisjointSetMap<>();
 
     @Getter
     private final IMEPatternPartMachine patternMachine;
@@ -42,14 +41,20 @@ public class MEPatternRecipeHandlePart extends MEIORecipeHandlePart {
 
     @NotNull
     @SuppressWarnings("unchecked")
-    public <T extends Predicate<S>, S> Object2LongMap<S> getMEContent(RecipeCapability<T> cap, List<Integer> slots) {
+    public <T extends Predicate<S>, S> Object2LongMap<S> getMEContent(RecipeCapability<T> cap, Collection<Integer> slots) {
         return ((IMERecipeHandlerTrait<T, S>) (this.getMECapability(cap))).getCustomSlotsStackMap(slots);
+    }
+
+    @NotNull
+    @SuppressWarnings("unchecked")
+    public <T extends Predicate<S>, S> Object2LongMap<S> getFirstAvailableMEContentOrEmpty(RecipeCapability<T> cap, Collection<Integer> slots) {
+        return ((IMERecipeHandlerTrait<T, S>) (this.getMECapability(cap))).getFirstAvailableSlotFromCustomStackMap(slots);
     }
 
     public void restoreMachineCache(Map<GTRecipe, IRecipeHandlePart> map) {
         if (this.patternMachine != null) {
-            this.patternMachine.restoreSlotMap(this.slotMap, slot -> slotMap.inverse().remove(slot));
-            for (var key : slotMap.keySet()) {
+            this.patternMachine.restoreSlotMap(this.recipe2SlotsMap, recipe2SlotsMap::removeValue);
+            for (var key : recipe2SlotsMap.keySet()) {
                 map.put(key, this);
             }
         }
@@ -64,7 +69,7 @@ public class MEPatternRecipeHandlePart extends MEIORecipeHandlePart {
 
         // Array for 1-2 handler
         IMERecipeHandler<?, ?>[] handlers = new IMERecipeHandler[contents.size()];
-        List[] contentArrays = new List[contents.size()];
+        var contentArrays = new List[contents.size()];
         int handlerCount = 0;
 
         // 单次遍历收集handlers和contents
@@ -122,17 +127,24 @@ public class MEPatternRecipeHandlePart extends MEIORecipeHandlePart {
     public boolean meHandleCacheRecipe(GTRecipe recipe,
                                        Reference2ObjectMap<RecipeCapability<?>, List<Object>> contents,
                                        boolean simulate) {
-        int trySlot = this.slotMap.getOrDefault(recipe, -1);
-        if (!getMeHandlerMap().isEmpty() && trySlot >= 0) {
-            for (var it = Reference2ObjectMaps.fastIterator(contents); it.hasNext();) {
-                var entry = it.next();
-                var cap = entry.getKey();
-                var content = entry.getValue();
-                var meHandler = getMECapability(cap);
-                meHandler.initMEHandleContents(recipe, content, simulate);
-                if (!meHandler.meHandleRecipe(recipe, simulate, trySlot)) return false;
+        @NotNull
+        ObjectSet<@NotNull Integer> trySlots = this.recipe2SlotsMap.get(recipe);
+        if (!getMeHandlerMap().isEmpty() && !trySlots.isEmpty()) {
+            for (int trySlot : trySlots) {
+                boolean allSuccess = true;
+                for (var it = Reference2ObjectMaps.fastIterator(contents); it.hasNext();) {
+                    var entry = it.next();
+                    var cap = entry.getKey();
+                    var content = entry.getValue();
+                    var meHandler = getMECapability(cap);
+                    meHandler.initMEHandleContents(recipe, content, simulate);
+                    if (!meHandler.meHandleRecipe(recipe, simulate, trySlot)) {
+                        allSuccess = false;
+                        break;
+                    }
+                }
+                if (allSuccess) return true;
             }
-            return true;
         }
         return false;
     }

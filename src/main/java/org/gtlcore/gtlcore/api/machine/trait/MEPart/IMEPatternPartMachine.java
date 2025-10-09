@@ -1,8 +1,10 @@
 package org.gtlcore.gtlcore.api.machine.trait.MEPart;
 
+import org.gtlcore.gtlcore.utils.DisjointSetMap;
+
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 
-import com.google.common.collect.BiMap;
+import it.unimi.dsi.fastutil.objects.ObjectSet;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -12,11 +14,11 @@ public interface IMEPatternPartMachine extends IMETraitIOPartMachine {
 
     // every element should not be Null
     @NotNull
-    List<@NotNull GTRecipe> getCachedGTRecipe();
+    ObjectSet<@NotNull GTRecipe> getCachedGTRecipe();
 
     void setSlotCacheRecipe(int index, GTRecipe recipe);
 
-    void restoreSlotMap(BiMap<GTRecipe, Integer> slotMap, Consumer<Integer> removeMapOnSlot);
+    void restoreSlotMap(DisjointSetMap<GTRecipe, Integer> recipe2SlotsMap, Consumer<Integer> removeMapOnSlot);
 
     boolean hasCacheInSlot(int slot);
 }

@@ -94,6 +94,14 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
         } else return false;
     }
 
+    private List<Integer> getActiveSlots() {
+        final var slots = getMachine().getInternalInventory();
+        return IntStream.range(0, slots.length)
+                .filter(i -> slots[i].isActive())
+                .boxed()
+                .collect(Collectors.toList());
+    }
+
     private List<Integer> getActiveSlots(MEPatternBufferPartMachine.InternalSlot[] slots, RecipeCapability<?> recipeCapability) {
         return IntStream.range(0, slots.length)
                 .filter(i -> slots[i].isActive(recipeCapability))
@@ -166,9 +174,9 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
         }
 
         @Override
-        public Object2LongMap<ItemStack> getCustomSlotsStackMap(List<Integer> list) {
+        public Object2LongMap<ItemStack> getCustomSlotsStackMap(Collection<Integer> slots) {
             Object2LongOpenHashMap<ItemStack> map = new Object2LongOpenHashMap<>();
-            for (int i : list) {
+            for (int i : slots) {
                 var slot = getMachine().getInternalInventory()[i];
                 for (var it = Object2LongMaps.fastIterator(slot.getItemStackInputMap()); it.hasNext();) {
                     var entry = it.next();
@@ -176,6 +184,21 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
                 }
             }
             return map;
+        }
+
+        @Override
+        public Object2LongMap<ItemStack> getFirstAvailableSlotFromCustomStackMap(Collection<Integer> slots) {
+            final var inventory = getMachine().getInternalInventory();
+            for (int slot : slots) {
+                if (!inventory[slot].isActive()) continue;
+                Object2LongOpenHashMap<ItemStack> map = new Object2LongOpenHashMap<>();
+                for (var it = Object2LongMaps.fastIterator(inventory[slot].getItemStackInputMap()); it.hasNext();) {
+                    var entry = it.next();
+                    map.addTo(entry.getKey(), entry.getLongValue());
+                }
+                return map;
+            }
+            return Object2LongMaps.emptyMap();
         }
 
         @Override
@@ -267,9 +290,9 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
         }
 
         @Override
-        public Object2LongMap<FluidStack> getCustomSlotsStackMap(List<Integer> list) {
+        public Object2LongMap<FluidStack> getCustomSlotsStackMap(Collection<Integer> slots) {
             Object2LongOpenHashMap<FluidStack> map = new Object2LongOpenHashMap<>();
-            for (int i : list) {
+            for (int i : slots) {
                 var slot = getMachine().getInternalInventory()[i];
                 for (var it = Object2LongMaps.fastIterator(slot.getFluidStackInputMap()); it.hasNext();) {
                     var entry = it.next();
@@ -277,6 +300,21 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
                 }
             }
             return map;
+        }
+
+        @Override
+        public Object2LongMap<FluidStack> getFirstAvailableSlotFromCustomStackMap(Collection<Integer> slots) {
+            final var inventory = getMachine().getInternalInventory();
+            for (int slot : slots) {
+                if (!inventory[slot].isActive()) continue;
+                Object2LongOpenHashMap<FluidStack> map = new Object2LongOpenHashMap<>();
+                for (var it = Object2LongMaps.fastIterator(inventory[slot].getFluidStackInputMap()); it.hasNext();) {
+                    var entry = it.next();
+                    map.addTo(entry.getKey(), entry.getLongValue());
+                }
+                return map;
+            }
+            return Object2LongMaps.emptyMap();
         }
 
         @Override
