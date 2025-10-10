@@ -2,7 +2,7 @@ package org.gtlcore.gtlcore.common.machine.multiblock.part.ae;
 
 import org.gtlcore.gtlcore.api.machine.trait.*;
 import org.gtlcore.gtlcore.api.machine.trait.MEPart.IMEPatternPartMachine;
-import org.gtlcore.gtlcore.utils.DisjointSetMap;
+import org.gtlcore.gtlcore.utils.Object2ObjectBiMultiMap;
 
 import com.gregtechceu.gtceu.api.capability.recipe.FluidRecipeCapability;
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
@@ -39,7 +39,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 
 import com.mojang.datafixers.util.Pair;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMaps;
+import it.unimi.dsi.fastutil.ints.Int2ReferenceMaps;
 import it.unimi.dsi.fastutil.objects.ObjectSet;
 import it.unimi.dsi.fastutil.objects.ObjectSets;
 import lombok.Getter;
@@ -216,12 +216,15 @@ public class MEPatternBufferProxyPartMachine extends MultiblockPartMachine imple
     }
 
     @Override
-    public void restoreSlotMap(DisjointSetMap<GTRecipe, Integer> recipe2SlotsMap, Consumer<Integer> removeSlotFromMap) {
+    public void restoreSlotMap(Object2ObjectBiMultiMap<GTRecipe, Integer> recipes2SlotsMap, Consumer<Integer> removeSlotFromMap) {
         if (this.buffer == null) return;
         this.removeSlotFromMap = removeSlotFromMap;
-        recipe2SlotsMap.clear();
-        for (var entry : Int2ObjectMaps.fastIterable(this.buffer.recipeCacheMap)) {
-            recipe2SlotsMap.put(entry.getValue(), entry.getIntKey());
+        recipes2SlotsMap.clear();
+        for (var entry : Int2ReferenceMaps.fastIterable(this.buffer.recipeMultipleCacheMap)) {
+            int slot = entry.getIntKey();
+            for (GTRecipe recipe : entry.getValue()) {
+                recipes2SlotsMap.put(recipe, slot);
+            }
         }
     }
 
