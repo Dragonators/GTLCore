@@ -1,6 +1,6 @@
 package org.gtlcore.gtlcore.api.machine.trait.MEPart;
 
-import org.gtlcore.gtlcore.utils.DisjointSetMap;
+import org.gtlcore.gtlcore.utils.Object2ObjectBiMultiMap;
 
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 
@@ -18,7 +18,7 @@ public interface IMEPatternPartMachine extends IMETraitIOPartMachine {
 
     void setSlotCacheRecipe(int index, GTRecipe recipe);
 
-    void restoreSlotMap(DisjointSetMap<GTRecipe, Integer> recipe2SlotsMap, Consumer<Integer> removeMapOnSlot);
+    void restoreSlotMap(Object2ObjectBiMultiMap<GTRecipe, Integer> recipes2SlotsMap, Consumer<Integer> removeMapOnSlot);
 
     boolean hasCacheInSlot(int slot);
 }

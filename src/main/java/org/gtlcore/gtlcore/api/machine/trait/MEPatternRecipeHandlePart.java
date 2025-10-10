@@ -2,7 +2,7 @@ package org.gtlcore.gtlcore.api.machine.trait;
 
 import org.gtlcore.gtlcore.api.capability.IMERecipeHandler;
 import org.gtlcore.gtlcore.api.machine.trait.MEPart.IMEPatternPartMachine;
-import org.gtlcore.gtlcore.utils.DisjointSetMap;
+import org.gtlcore.gtlcore.utils.Object2ObjectBiMultiMap;
 
 import com.gregtechceu.gtceu.api.capability.recipe.RecipeCapability;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
@@ -18,7 +18,7 @@ import java.util.function.Predicate;
 public class MEPatternRecipeHandlePart extends MEIORecipeHandlePart {
 
     @Getter
-    private final DisjointSetMap<GTRecipe, Integer> recipe2SlotsMap = new DisjointSetMap<>();
+    private final Object2ObjectBiMultiMap<GTRecipe, Integer> recipes2SlotsMap = new Object2ObjectBiMultiMap<>();
 
     @Getter
     private final IMEPatternPartMachine patternMachine;
@@ -53,8 +53,8 @@ public class MEPatternRecipeHandlePart extends MEIORecipeHandlePart {
 
     public void restoreMachineCache(Map<GTRecipe, IRecipeHandlePart> map) {
         if (this.patternMachine != null) {
-            this.patternMachine.restoreSlotMap(this.recipe2SlotsMap, recipe2SlotsMap::removeValue);
-            for (var key : recipe2SlotsMap.keySet()) {
+            this.patternMachine.restoreSlotMap(this.recipes2SlotsMap, recipes2SlotsMap::removeByValue);
+            for (var key : recipes2SlotsMap.keySet()) {
                 map.put(key, this);
             }
         }
@@ -128,7 +128,7 @@ public class MEPatternRecipeHandlePart extends MEIORecipeHandlePart {
                                        Reference2ObjectMap<RecipeCapability<?>, List<Object>> contents,
                                        boolean simulate) {
         @NotNull
-        ObjectSet<@NotNull Integer> trySlots = this.recipe2SlotsMap.get(recipe);
+        ObjectSet<@NotNull Integer> trySlots = this.recipes2SlotsMap.getValues(recipe);
         if (!getMeHandlerMap().isEmpty() && !trySlots.isEmpty()) {
             for (int trySlot : trySlots) {
                 boolean allSuccess = true;

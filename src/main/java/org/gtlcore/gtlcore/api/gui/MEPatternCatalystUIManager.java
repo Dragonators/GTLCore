@@ -1,17 +1,23 @@
 package org.gtlcore.gtlcore.api.gui;
 
 import com.gregtechceu.gtceu.api.gui.GuiTextures;
+import com.gregtechceu.gtceu.api.gui.widget.IntInputWidget;
 
 import com.lowdragmc.lowdraglib.gui.widget.*;
 import com.lowdragmc.lowdraglib.jei.IngredientIO;
 import com.lowdragmc.lowdraglib.misc.FluidTransferList;
 import com.lowdragmc.lowdraglib.side.fluid.IFluidTransfer;
 import com.lowdragmc.lowdraglib.side.item.IItemTransfer;
+import com.lowdragmc.lowdraglib.utils.Position;
 
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import org.jetbrains.annotations.NotNull;
+
+import java.util.function.Consumer;
+import java.util.function.IntConsumer;
+import java.util.function.Supplier;
 
 public class MEPatternCatalystUIManager extends WidgetGroup {
 
@@ -34,16 +40,19 @@ public class MEPatternCatalystUIManager extends WidgetGroup {
     private int lastIndex = -1;
 
     private final IItemTransfer[] itemTransfers;
-
     private final FluidTransferList[] fluidTankTransfers;
+    private final byte[] cacheRecipeCount;
+    private final IntConsumer onCacheCountChange;
 
-    public MEPatternCatalystUIManager(int dockX, IItemTransfer[] itemTransfers, FluidTransferList[] fluidTankTransfers) {
+    public MEPatternCatalystUIManager(int dockX, IItemTransfer[] itemTransfers, FluidTransferList[] fluidTankTransfers, byte[] cacheRecipeCount, IntConsumer onCacheCountChange) {
         // 初始高度给个最小值，后面会根据内容 resize
         super(dockX, 16, 16, 16);
         this.setBackground(GuiTextures.BACKGROUND);
         this.setVisible(false).setActive(false);
         this.itemTransfers = itemTransfers;
         this.fluidTankTransfers = fluidTankTransfers;
+        this.cacheRecipeCount = cacheRecipeCount;
+        this.onCacheCountChange = onCacheCountChange;
     }
 
     /**
@@ -65,8 +74,19 @@ public class MEPatternCatalystUIManager extends WidgetGroup {
         final int itemSlots = (itemInventory != null) ? itemInventory.getSlots() : 0;
         final int fluidTanks = (tanks != null) ? tanks.transfers.length : 0;
 
-        int currentY = 0;
+        int currentY = 3;
         int maxWidth = 0;
+
+        Widget cacheCountWidget = createCacheCountInputWidget(() -> (int) cacheRecipeCount[index], value -> {
+            if (cacheRecipeCount[index] != value.byteValue()) {
+                cacheRecipeCount[index] = value.byteValue();
+                onCacheCountChange.accept(index);
+            }
+        });
+        cacheCountWidget.setSelfPosition(0, currentY);
+        this.addWidget(cacheCountWidget);
+        currentY += cacheCountWidget.getSize().height + 4;
+        maxWidth = Math.max(maxWidth, cacheCountWidget.getSize().width + PAD_OUT);
 
         if (itemSlots > 0) {
             Widget itemContainer = createInventoryContainer(itemInventory, itemSlots);
@@ -84,12 +104,21 @@ public class MEPatternCatalystUIManager extends WidgetGroup {
             maxWidth = Math.max(maxWidth, fluidContainer.getSize().width);
         }
 
-        if (maxWidth <= 0) maxWidth = 16;
+        if (maxWidth == 0) maxWidth = 16;
         if (currentY <= 0) currentY = 16;
 
         this.setSize(maxWidth, currentY);
         this.setVisible(true).setActive(true);
         lastIndex = index;
+    }
+
+    private static @NotNull Widget createCacheCountInputWidget(Supplier<Integer> supplier, Consumer<Integer> consumer) {
+        WidgetGroup group = new WidgetGroup(new Position(0, 0));
+        group.addWidget(new LabelWidget(PAD_OUT, 2, "实际配方数量"));
+        group.addWidget(new IntInputWidget(new Position(PAD_OUT, PAD_OUT + 4), supplier, consumer)
+                .setMin(1)
+                .setMax((int) Byte.MAX_VALUE));
+        return group;
     }
 
     private static @NotNull Widget createInventoryContainer(IItemTransfer inventory, int slots) {
@@ -101,7 +130,7 @@ public class MEPatternCatalystUIManager extends WidgetGroup {
         final int groupH = PAD_OUT * 2 + containerH;
 
         WidgetGroup group = new WidgetGroup(0, 0, groupW, groupH);
-        group.addWidget(new LabelWidget(8, 2, "物品催化剂槽"));
+        group.addWidget(new LabelWidget(PAD_OUT, 2, "物品催化剂槽"));
         WidgetGroup container = new WidgetGroup(PAD_OUT, PAD_OUT + 4, containerW, containerH);
 
         int index = 0;
@@ -127,7 +156,7 @@ public class MEPatternCatalystUIManager extends WidgetGroup {
         final int groupH = PAD_OUT * 2 + containerH;
 
         WidgetGroup group = new WidgetGroup(0, 0, groupW, groupH);
-        group.addWidget(new LabelWidget(8, 2, "流体催化剂槽"));
+        group.addWidget(new LabelWidget(PAD_OUT, 2, "流体催化剂槽"));
         WidgetGroup container = new WidgetGroup(PAD_OUT, PAD_OUT + 4, containerW, containerH);
 
         int index = 0;
