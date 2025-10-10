@@ -822,7 +822,7 @@ public class AdvancedMultiBlockMachine {
             .workableCasingRenderer(GTLCore.id("block/dimension_connection_casing"), GTCEu.id("block/multiblock/door_of_create"))
             .register();
 
-    public final static MultiblockMachineDefinition BEDROCK_DRILLING_RIG = REGISTRATE.multiblock("bedrock_drilling_rig", WorkableElectricMultiblockMachine::new)
+    public final static MultiblockMachineDefinition BEDROCK_DRILLING_RIG = REGISTRATE.multiblock("bedrock_drilling_rig", BedrockDrillingRig::new)
             .rotationState(RotationState.NONE)
             .allowExtendedFacing(false)
             .allowFlip(false)
@@ -860,16 +860,6 @@ public class AdvancedMultiBlockMachine {
                     .where("g", Predicates.blocks(Registries.getBlock("kubejs:machine_casing_grinding_head")))
                     .where(" ", Predicates.any())
                     .build())
-            .beforeWorking((machine, recipe) -> {
-                Level level = machine.self().getLevel();
-                if (level != null) {
-                    if (Math.random() < 0.1) {
-                        level.setBlockAndUpdate(machine.self().getPos().offset(0, -9, 0), Blocks.AIR.defaultBlockState());
-                    }
-                    return Objects.equals(level.getBlockState(machine.self().getPos().offset(0, -9, 0)).getBlock().kjs$getId(), "minecraft:bedrock");
-                }
-                return false;
-            })
             .workableCasingRenderer(GTLCore.id("block/casings/echo_casing"), GTCEu.id("block/multiblock/cleanroom"))
             .register();
 
