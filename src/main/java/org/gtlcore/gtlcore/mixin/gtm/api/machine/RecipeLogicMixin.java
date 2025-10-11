@@ -2,12 +2,14 @@ package org.gtlcore.gtlcore.mixin.gtm.api.machine;
 
 import org.gtlcore.gtlcore.api.machine.trait.ILockRecipe;
 import org.gtlcore.gtlcore.api.machine.trait.IRecipeStatus;
+import org.gtlcore.gtlcore.api.recipe.IGTRecipe;
 import org.gtlcore.gtlcore.api.recipe.RecipeResult;
 
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
 import com.gregtechceu.gtceu.api.capability.recipe.IRecipeCapabilityHolder;
 import com.gregtechceu.gtceu.api.capability.recipe.RecipeCapability;
 import com.gregtechceu.gtceu.api.machine.feature.IRecipeLogicMachine;
+import com.gregtechceu.gtceu.api.machine.feature.ITieredMachine;
 import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.logic.OCParams;
@@ -47,14 +49,12 @@ public abstract class RecipeLogicMixin implements ILockRecipe, IRecipeStatus {
     @Setter
     private RecipeResult workingStatus;
 
-    @Mutable
-    @Final
     @Shadow(remap = false)
-    public final IRecipeLogicMachine machine;
-    @Mutable
     @Final
+    public IRecipeLogicMachine machine;
     @Shadow(remap = false)
-    protected final Map<RecipeCapability<?>, Object2IntMap<?>> chanceCaches;
+    @Final
+    protected Map<RecipeCapability<?>, Object2IntMap<?>> chanceCaches;
     @Shadow(remap = false)
     public List<GTRecipe> lastFailedMatches;
     @Shadow(remap = false)
@@ -77,9 +77,6 @@ public abstract class RecipeLogicMixin implements ILockRecipe, IRecipeStatus {
     private RecipeLogic.Status status;
     @Shadow(remap = false)
     protected long totalContinuousRunningTime;
-
-    @Shadow(remap = false)
-    protected abstract Iterator<GTRecipe> searchRecipe();
 
     @Shadow(remap = false)
     public abstract void markLastRecipeDirty();
@@ -105,11 +102,6 @@ public abstract class RecipeLogicMixin implements ILockRecipe, IRecipeStatus {
     @Shadow(remap = false)
     protected abstract void doDamping();
 
-    public RecipeLogicMixin(IRecipeLogicMachine machine, Map<RecipeCapability<?>, Object2IntMap<?>> chanceCaches) {
-        this.machine = machine;
-        this.chanceCaches = chanceCaches;
-    }
-
     public void setLock(boolean look) {
         isLock = look;
         lockRecipe = null;
@@ -133,7 +125,7 @@ public abstract class RecipeLogicMixin implements ILockRecipe, IRecipeStatus {
     @Overwrite(remap = false)
     public void handleRecipeWorking() {
         assert this.lastRecipe != null;
-        GTRecipe.ActionResult result = this.handleTickRecipe(this.lastRecipe);
+        var result = this.handleTickRecipe(this.lastRecipe);
         if (result.isSuccess()) {
             this.setStatus(RecipeLogic.Status.WORKING);
             if (!this.machine.onWorking()) {
@@ -183,7 +175,7 @@ public abstract class RecipeLogicMixin implements ILockRecipe, IRecipeStatus {
     @Overwrite(remap = false)
     private void handleSearchingRecipes(Iterator<GTRecipe> matches) {
         while (matches != null && matches.hasNext()) {
-            GTRecipe match = matches.next();
+            var match = matches.next();
             if (match != null) {
                 if (this.checkMatchedRecipeAvailable(match)) {
                     return;
@@ -201,7 +193,7 @@ public abstract class RecipeLogicMixin implements ILockRecipe, IRecipeStatus {
         this.lastRecipe = null;
         if (this.isLock && lockRecipe != null) {
             this.lastOriginRecipe = lockRecipe;
-            GTRecipe modified = machine.fullModifyRecipe(lastOriginRecipe.copy(), this.ocParams, this.ocResult);
+            var modified = machine.fullModifyRecipe(lastOriginRecipe.copy(), this.ocParams, this.ocResult);
             if (modified != null && this.gtlcore$checkLastRecipe(modified)) {
                 setupRecipe(modified);
             }
@@ -210,25 +202,24 @@ public abstract class RecipeLogicMixin implements ILockRecipe, IRecipeStatus {
             this.handleSearchingRecipes(gtlcore$searchRecipe(this.machine, this.machine instanceof ResearchStationMachine ?
                     (r) -> {
                         if (!this.machine.hasProxies()) return false;
-                        else {
-                            var result = r.matchRecipeContents(IO.IN, this.machine, r.inputs, false);
-                            if (!result.isSuccess()) {
-                                RecipeResult.of(this.machine, RecipeResult.FAIL_FIND);
-                                return false;
-                            } else if (r.hasTick()) {
-                                result = r.matchRecipeContents(IO.IN, this.machine, r.tickInputs, true);
-                                if (!result.isSuccess() && result.reason() != null) {
-                                    String s = result.reason().get().toString();
-                                    if (s.contains("cwu")) RecipeResult.of(this.machine, RecipeResult.FAIL_NO_ENOUGH_CWU_IN);
-                                    else if (s.contains("eu")) RecipeResult.of(this.machine, RecipeResult.FAIL_NO_ENOUGH_EU_IN);
-                                }
-                                return result.isSuccess();
-                            } else return true;
+                        if (((IGTRecipe) r).getEuTier() > ((ITieredMachine) machine).getTier()) {
+                            RecipeResult.of(machine, RecipeResult.FAIL_VOLTAGE_TIER);
+                            return false;
                         }
-                    } :
-                    (r) -> matchRecipe(this.machine, r) &&
-                            r.matchTickRecipe(this.machine).isSuccess() &&
-                            r.checkConditions(this.machine.getRecipeLogic()).isSuccess()));
+                        var result = r.matchRecipeContents(IO.IN, this.machine, r.inputs, false);
+                        if (!result.isSuccess()) {
+                            RecipeResult.of(this.machine, RecipeResult.FAIL_FIND);
+                            return false;
+                        } else if (r.hasTick()) {
+                            result = r.matchRecipeContents(IO.IN, this.machine, r.tickInputs, true);
+                            if (!result.isSuccess() && result.reason() != null) {
+                                var s = result.reason().get().toString();
+                                if (s.contains("cwu")) RecipeResult.of(this.machine, RecipeResult.FAIL_NO_ENOUGH_CWU_IN);
+                                else if (s.contains("eu.name")) RecipeResult.of(this.machine, RecipeResult.FAIL_NO_ENOUGH_EU_IN);
+                            }
+                            return result.isSuccess();
+                        } else return true;
+                    } : this::gtlcore$checkLastRecipe));
         }
         this.recipeDirty = false;
     }
@@ -239,7 +230,7 @@ public abstract class RecipeLogicMixin implements ILockRecipe, IRecipeStatus {
      */
     @Overwrite(remap = false)
     public boolean checkMatchedRecipeAvailable(GTRecipe match) {
-        GTRecipe modified = this.machine.fullModifyRecipe(match.copy(), this.ocParams, this.ocResult);
+        var modified = this.machine.fullModifyRecipe(match.copy(), this.ocParams, this.ocResult);
         if (modified != null) {
             if (gtlcore$checkLastRecipe(modified)) {
                 this.setupRecipe(modified);
@@ -264,7 +255,7 @@ public abstract class RecipeLogicMixin implements ILockRecipe, IRecipeStatus {
             handleRecipeOutput(this.machine, this.lastRecipe);
             if (this.machine.alwaysTryModifyRecipe()) {
                 if (this.lastOriginRecipe != null) {
-                    GTRecipe modified = this.machine.fullModifyRecipe(this.lastOriginRecipe.copy(), this.ocParams, this.ocResult);
+                    var modified = this.machine.fullModifyRecipe(this.lastOriginRecipe.copy(), this.ocParams, this.ocResult);
                     if (modified == null) {
                         this.markLastRecipeDirty();
                     } else {
@@ -319,6 +310,7 @@ public abstract class RecipeLogicMixin implements ILockRecipe, IRecipeStatus {
     @Unique
     private boolean gtlcore$checkLastRecipe(GTRecipe lastRecipe) {
         return matchRecipe(this.machine, lastRecipe) &&
-                lastRecipe.matchTickRecipe(this.machine).isSuccess();
+                lastRecipe.matchTickRecipe(this.machine).isSuccess() &&
+                lastRecipe.checkConditions(this.machine.getRecipeLogic()).isSuccess();
     }
 }

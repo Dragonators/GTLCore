@@ -769,7 +769,7 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
         }
 
         public boolean isActive() {
-            return hasPatternArray[slotIndex] && (!itemInventory.isEmpty() || !fluidInventory.isEmpty() || !itemCatalystInventory.isEmpty() || !fluidCatalystInventory.isEmpty());
+            return hasPatternArray[slotIndex] && (!itemInventory.isEmpty() || !fluidInventory.isEmpty());
         }
 
         public boolean isActive(RecipeCapability<?> recipeCapability) {
