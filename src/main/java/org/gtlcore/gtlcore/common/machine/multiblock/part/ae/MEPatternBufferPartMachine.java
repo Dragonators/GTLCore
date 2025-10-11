@@ -45,6 +45,7 @@ import net.minecraft.nbt.*;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.TickTask;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -63,6 +64,7 @@ import appeng.api.networking.IGridNodeListener;
 import appeng.api.networking.crafting.ICraftingProvider;
 import appeng.api.networking.ticking.*;
 import appeng.api.stacks.*;
+import appeng.core.definitions.AEItems;
 import appeng.crafting.pattern.EncodedPatternItem;
 import appeng.crafting.pattern.ProcessingPatternItem;
 import appeng.helpers.patternprovider.PatternContainer;
@@ -83,6 +85,8 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
+
+import static org.gtlcore.gtlcore.api.pattern.AdvancedBlockPattern.foundItem;
 
 public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInteractedMachine, ICraftingProvider, PatternContainer, IMEPatternPartMachine {
 
@@ -180,8 +184,8 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
 
     protected final Int2ReferenceMap<ObjectSet<@NotNull GTRecipe>> recipeMultipleCacheMap = new Int2ReferenceOpenHashMap<>();
     protected final byte[] cacheRecipeCount;
-    @Getter
-    private final BiMap<IPatternDetails, Integer> patternSlotMap;
+    private final BiMap<@NotNull IPatternDetails, Integer> patternSlotMap;
+    private final Int2ObjectMap<IPatternDetails> slot2PatternMap;
     protected Consumer<Integer> removeSlotFromMap = i -> {};
 
     // ========================================
@@ -202,10 +206,11 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
         this.hasPatternArray = new boolean[maxPatternCount];
         this.cacheRecipe = new boolean[maxPatternCount];
         this.internalInventory = new InternalSlot[maxPatternCount];
-        this.patternSlotMap = HashBiMap.create(maxPatternCount);
         this.catalystItems = new ItemStackTransfer[maxPatternCount];
         this.catalystFluids = new FluidTransferList[maxPatternCount];
         this.cacheRecipeCount = new byte[maxPatternCount];
+        this.patternSlotMap = HashBiMap.create();
+        this.slot2PatternMap = new Int2ObjectOpenHashMap<>();
 
         // Initialize inventories
         this.buffer = new Object2LongOpenHashMap<>();
@@ -250,10 +255,11 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
                     var pattern = patternInventory.getStackInSlot(i);
                     var realPattern = getRealPattern(i, pattern);
                     if (realPattern != null) {
-                        this.patternSlotMap.forcePut(realPattern, i);
+                        this.slot2PatternMap.put(i, realPattern);
                         hasPatternArray[i] = true;
                     }
                 }
+                reCalculatePatternSlotMap();
                 needPatternSync = true;
             }));
             for (int i = 0; i < maxPatternCount; i++) {
@@ -296,14 +302,14 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
         var internalInv = internalInventory[index];
         var newPattern = patternInventory.getStackInSlot(index);
         var newPatternDetailsWithOutCircuit = getRealPattern(index, newPattern);
-        var oldPatternDetails = patternSlotMap.inverse().get(index);
+        var oldPatternDetails = slot2PatternMap.get(index);
 
         // Update pattern mapping and tracking
         if (newPatternDetailsWithOutCircuit != null) {
-            patternSlotMap.forcePut(newPatternDetailsWithOutCircuit, index);
+            slot2PatternMap.put(index, newPatternDetailsWithOutCircuit);
             hasPatternArray[index] = true;
         } else {
-            patternSlotMap.inverse().remove(index);
+            slot2PatternMap.remove(index);
             hasPatternArray[index] = false;
         }
 
@@ -315,6 +321,7 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
             AEUtils.reFunds(buffer, getMainNode().getGrid(), actionSource);
         }
 
+        reCalculatePatternSlotMap();
         needPatternSync = true;
     }
 
@@ -354,6 +361,18 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
             }
         }
         internalInventory[slot].onContentsChanged.run();
+    }
+
+    protected void reCalculatePatternSlotMap() {
+        patternSlotMap.clear();
+        for (var entry : Int2ObjectMaps.fastIterable(slot2PatternMap)) {
+            int slot = entry.getIntKey();
+            var pattern = entry.getValue();
+            if (pattern != null) {
+                if (cacheRecipe[slot]) patternSlotMap.forcePut(pattern, slot);
+                else patternSlotMap.putIfAbsent(pattern, slot);
+            }
+        }
     }
 
     protected void removeSlotFromGTRecipeCache(int slot) {
@@ -432,6 +451,53 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
 
         ListTag bufferTag = tag.getList("buffer", Tag.TAG_COMPOUND);
         AEUtils.loadInventory(bufferTag, AEKey::fromTagGeneric, buffer);
+    }
+
+    public void copyFromTag(CompoundTag tag, ServerPlayer serverPlayer) {
+        this.setCustomName(tag.getString("name"));
+        var list = tag.getList("patterns", Tag.TAG_COMPOUND);
+
+        int listIndex = 0;
+        for (int index = 0; index < internalPatternInventory.size() && listIndex < list.size(); index++) {
+            if (!internalPatternInventory.getStackInSlot(index).isEmpty()) {
+                continue;
+            }
+
+            var result = foundItem(serverPlayer, List.of(AEItems.BLANK_PATTERN.stack()), AEItems.BLANK_PATTERN.stack()::is);
+            if (result.getA() == null) break;
+
+            CompoundTag patternData = list.getCompound(listIndex);
+            var patternTag = patternData.getCompound("pattern");
+            var sourceCacheCount = patternData.getByte("cacheCount");
+            if (sourceCacheCount <= 0) break;
+
+            internalPatternInventory.setItemDirect(index, ItemStack.of(patternTag));
+            this.cacheRecipeCount[index] = sourceCacheCount;
+            var handler = result.getB();
+            if (handler != null) handler.extractItem(result.getC(), 1, false);
+
+            listIndex++;
+        }
+    }
+
+    public CompoundTag copyToTag(CompoundTag tags) {
+        var tag = new CompoundTag();
+        tag.putString("name", customName);
+
+        var listPattern = new ListTag();
+        for (int slotIndex : patternSlotMap.values()) {
+            ItemStack stack = internalPatternInventory.getStackInSlot(slotIndex);
+            if (!stack.isEmpty()) {
+                CompoundTag patternData = new CompoundTag();
+                patternData.put("pattern", stack.serializeNBT());
+                patternData.putByte("cacheCount", cacheRecipeCount[slotIndex]);
+                listPattern.add(patternData);
+            }
+        }
+        tag.put("patterns", listPattern);
+
+        tags.put("tag", tag);
+        return tags;
     }
 
     @Override
@@ -636,7 +702,7 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
 
     @Override
     public List<IPatternDetails> getAvailablePatterns() {
-        return patternSlotMap.keySet().stream().filter(Objects::nonNull).toList();
+        return patternSlotMap.keySet().stream().toList();
     }
 
     @Override
