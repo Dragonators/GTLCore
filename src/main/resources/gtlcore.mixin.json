@@ -168,7 +168,8 @@
     "gtmt.trait.CatalystItemStackHandlerMixin",
     "ldlib.AsyncThreadDataMixin",
     "ldlib.ItemStackTransferMixin",
-    "travelanchors.EventListenerMixin"
+    "travelanchors.EventListenerMixin",
+    "mc.LevelChunkMixin"
   ],
   "injectors": {
     "defaultRequire": 1,

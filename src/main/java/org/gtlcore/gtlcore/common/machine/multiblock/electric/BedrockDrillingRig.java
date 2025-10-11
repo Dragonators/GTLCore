@@ -1,77 +1,97 @@
 package org.gtlcore.gtlcore.common.machine.multiblock.electric;
 
+import org.gtlcore.gtlcore.common.util.BlockStateWatcher;
+
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
-import com.gregtechceu.gtceu.api.machine.TickableSubscription;
+import com.gregtechceu.gtceu.api.machine.feature.IMachineLife;
 import com.gregtechceu.gtceu.api.machine.multiblock.WorkableElectricMultiblockMachine;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 
-import net.minecraft.server.TickTask;
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Objects;
+import java.util.concurrent.ThreadLocalRandom;
 
-public class BedrockDrillingRig extends WorkableElectricMultiblockMachine {
+public class BedrockDrillingRig extends WorkableElectricMultiblockMachine implements IMachineLife {
 
-    protected TickableSubscription tickCheckSubs;
+    protected BlockStateWatcher.WatcherHandle watcherHandle;
+    protected BlockPos targetPos;
+    protected boolean hasBedrockAtTarget;
 
     public BedrockDrillingRig(IMachineBlockEntity holder, Object... args) {
         super(holder, args);
-    }
-
-    @Override
-    public void onLoad() {
-        super.onLoad();
-        if (getLevel() instanceof ServerLevel serverLevel) {
-            serverLevel.getServer().tell(new TickTask(0, this::updateTickSubscription));
-        }
+        targetPos = getPos().offset(0, -9, 0);
     }
 
     @Override
     public void onUnload() {
         super.onUnload();
-        if (tickCheckSubs != null) {
-            tickCheckSubs.unsubscribe();
-            tickCheckSubs = null;
-        }
-    }
-
-    protected void updateTickSubscription() {
-        if (isFormed) {
-            tickCheckSubs = subscribeServerTick(tickCheckSubs, this::checkBedrock);
-        } else if (tickCheckSubs != null) {
-            tickCheckSubs.unsubscribe();
-            tickCheckSubs = null;
-        }
+        if (!isRemote()) unregisterBlockWatcher();
     }
 
     @Override
     public void onStructureFormed() {
         super.onStructureFormed();
-        if (getLevel() instanceof ServerLevel serverLevel) {
-            serverLevel.getServer().tell(new TickTask(0, this::updateTickSubscription));
-        }
-    }
-
-    private void checkBedrock() {
-        if (this.getOffsetTimer() % 20L == 0) {
-            var state = Objects.requireNonNull(getLevel()).getBlockState(getPos().offset(0, -9, 0));
-            if (state.getBlock().kjs$getId().equals("minecraft:bedrock")) this.recipeLogic.serverTick();
+        if (getLevel() instanceof ServerLevel level) {
+            registerBlockWatcher(level);
         }
     }
 
     @Override
-    public boolean beforeWorking(@Nullable GTRecipe recipe) {
-        Level level = this.self().getLevel();
-        if (level != null) {
-            if (Math.random() < 0.1) {
-                level.setBlockAndUpdate(this.self().getPos().offset(0, -9, 0), Blocks.AIR.defaultBlockState());
-            }
-            return Objects.equals(level.getBlockState(this.self().getPos().offset(0, -9, 0)).getBlock().kjs$getId(), "minecraft:bedrock");
+    public void onStructureInvalid() {
+        super.onStructureInvalid();
+        if (!isRemote()) unregisterBlockWatcher();
+    }
+
+    @Override
+    public void onMachinePlaced(@Nullable LivingEntity player, ItemStack stack) {
+        targetPos = getPos().offset(0, -9, 0);
+    }
+
+    @Override
+    public void onMachineRemoved() {
+        if (!isRemote()) unregisterBlockWatcher();
+    }
+
+    protected void registerBlockWatcher(ServerLevel level) {
+        unregisterBlockWatcher();
+        watcherHandle = BlockStateWatcher.addWatcher(getLevel(), targetPos, this::onBlockStateChanged);
+
+        BlockState currentState = level.getBlockState(targetPos);
+        hasBedrockAtTarget = currentState.getBlock().kjs$getId().equals("minecraft:bedrock");
+        if (hasBedrockAtTarget) this.recipeLogic.updateTickSubscription();
+    }
+
+    protected void unregisterBlockWatcher() {
+        if (watcherHandle != null) {
+            watcherHandle.remove();
+            watcherHandle = null;
         }
-        return false;
+    }
+
+    protected void onBlockStateChanged(BlockState newState) {
+        hasBedrockAtTarget = newState != null && newState.getBlock().kjs$getId().equals("minecraft:bedrock");
+        if (hasBedrockAtTarget) this.recipeLogic.updateTickSubscription();
+    }
+
+    @Override
+    public boolean beforeWorking(@Nullable GTRecipe recipe) {
+        return hasBedrockAtTarget;
+    }
+
+    @Override
+    public void afterWorking() {
+        super.afterWorking();
+        Level level = getLevel();
+        if (level != null && ThreadLocalRandom.current().nextInt(10) == 0) {
+            level.setBlockAndUpdate(targetPos, Blocks.AIR.defaultBlockState());
+        }
     }
 }
