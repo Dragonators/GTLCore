@@ -94,8 +94,6 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
         if (this.getLevel() instanceof ServerLevel sl) {
             sl.getServer().tell(new TickTask(1, this::upDate));
         }
-        RecipeResult.of(this, null);
-        RecipeResult.ofWorking(this, null);
     }
 
     @Inject(method = "onStructureInvalid", at = @At("TAIL"), remap = false)
@@ -103,6 +101,8 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
         MEOutPutBus = false;
         MEOutPutHatch = false;
         MEOutPutDual = false;
+        RecipeResult.of(this, null);
+        RecipeResult.ofWorking(this, null);
     }
 
     @Inject(method = "onPartUnload", at = @At("TAIL"), remap = false)

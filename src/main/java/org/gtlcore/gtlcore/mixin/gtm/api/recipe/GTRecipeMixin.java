@@ -75,7 +75,7 @@ public abstract class GTRecipeMixin implements IGTRecipe {
     public GTRecipe.ActionResult matchTickRecipe(IRecipeCapabilityHolder holder) {
         if (!this.hasTick()) return GTRecipe.ActionResult.SUCCESS;
         if (holder instanceof WorkableElectricMultiblockMachine machine && this.io == IO.IN) {
-            GTRecipe lastRecipe = machine.getRecipeLogic().getLastOriginRecipe();
+            var lastRecipe = machine.getRecipeLogic().getLastOriginRecipe();
             if (lastRecipe == null || !this.id.equals(lastRecipe.id)) {
                 if (this.getEuTier() > GTUtil.getFloorTierByVoltage(machine.getMaxVoltage())) {
                     RecipeResult.of((IRecipeLogicMachine) holder, RecipeResult.FAIL_VOLTAGE_TIER);
@@ -83,7 +83,7 @@ public abstract class GTRecipeMixin implements IGTRecipe {
                 }
             }
         }
-        GTRecipe.ActionResult result = this.matchRecipe(holder, true);
+        var result = this.matchRecipe(holder, true);
         if (!result.isSuccess() && result.reason() != null) {
             String s = result.reason().get().toString();
             if (s.contains("_in")) {
