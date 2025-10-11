@@ -169,6 +169,7 @@
     "gtmt.trait.CatalystItemStackHandlerMixin",
     "ldlib.AsyncThreadDataMixin",
     "ldlib.ItemStackTransferMixin",
+    "mc.LevelChunkMixin",
     "mc.RecipeManagerMixin",
     "stargatejourney.BiomeModifiersMixin",
     "stargatejourney.FluidInitMixin",
