@@ -1,7 +1,7 @@
 package org.gtlcore.gtlcore.mixin.gtm.api.machine.trait;
 
 import org.gtlcore.gtlcore.api.capability.IInt128EnergyContainer;
-import org.gtlcore.gtlcore.utils.Int128;
+import org.gtlcore.gtlcore.utils.datastructure.Int128;
 
 import com.gregtechceu.gtceu.api.machine.MetaMachine;
 import com.gregtechceu.gtceu.api.machine.trait.NotifiableEnergyContainer;

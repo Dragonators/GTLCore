@@ -183,7 +183,6 @@ public class AEUtils {
 
     public static Object2LongMap<Ingredient> ingredientsMapWithOutCircuit(List<Ingredient> ingredients, Consumer<Integer> consumer) {
         var result = new Object2LongOpenCustomHashMap<>(CacheHashStrategies.IngredientHashStrategy.INSTANCE);
-        consumer.accept(-1);
         for (Ingredient ingredient : ingredients) {
             var items = ingredient.getItems();
             if (items.length == 0 || items[0].isEmpty()) {

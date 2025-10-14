@@ -3,13 +3,13 @@ package org.gtlcore.gtlcore.common.machine.multiblock.part.ae;
 import org.gtlcore.gtlcore.api.gui.MEPatternCatalystUIManager;
 import org.gtlcore.gtlcore.api.machine.trait.*;
 import org.gtlcore.gtlcore.api.machine.trait.MEPart.IMEPatternPartMachine;
+import org.gtlcore.gtlcore.api.machine.trait.MEPart.IMEPatternTrait;
 import org.gtlcore.gtlcore.common.data.GTLMachines;
 import org.gtlcore.gtlcore.integration.ae2.AEUtils;
 import org.gtlcore.gtlcore.integration.ae2.handler.PatternCircuitHandler;
 import org.gtlcore.gtlcore.integration.ae2.handler.SlotCacheManager;
 import org.gtlcore.gtlcore.integration.ae2.widget.AEPatternViewExtendSlotWidget;
 import org.gtlcore.gtlcore.utils.GTLUtil;
-import org.gtlcore.gtlcore.utils.Object2ObjectBiMultiMap;
 
 import com.gregtechceu.gtceu.api.capability.recipe.*;
 import com.gregtechceu.gtceu.api.gui.GuiTextures;
@@ -20,10 +20,10 @@ import com.gregtechceu.gtceu.api.machine.feature.IInteractedMachine;
 import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMultiController;
 import com.gregtechceu.gtceu.api.machine.trait.NotifiableItemStackHandler;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
-import com.gregtechceu.gtceu.api.recipe.GTRecipeType;
 import com.gregtechceu.gtceu.api.recipe.content.Content;
 import com.gregtechceu.gtceu.api.recipe.ingredient.FluidIngredient;
 import com.gregtechceu.gtceu.common.data.GTItems;
+import com.gregtechceu.gtceu.common.data.GTRecipeTypes;
 import com.gregtechceu.gtceu.common.item.IntCircuitBehaviour;
 import com.gregtechceu.gtceu.integration.ae2.gui.widget.AETextInputButtonWidget;
 import com.gregtechceu.gtceu.utils.*;
@@ -73,7 +73,7 @@ import com.google.common.collect.HashBiMap;
 import com.google.common.primitives.Ints;
 import com.hepdd.gtmthings.common.block.machine.trait.CatalystFluidStackHandler;
 import com.hepdd.gtmthings.common.block.machine.trait.CatalystItemStackHandler;
-import com.mojang.datafixers.util.Pair;
+import it.unimi.dsi.fastutil.Pair;
 import it.unimi.dsi.fastutil.ints.*;
 import it.unimi.dsi.fastutil.objects.*;
 import lombok.Getter;
@@ -82,8 +82,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import static org.gtlcore.gtlcore.api.pattern.AdvancedBlockPattern.foundItem;
@@ -182,19 +180,19 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
     // Cache Map
     // ========================================
 
-    protected final Int2ReferenceMap<ObjectSet<@NotNull GTRecipe>> recipeMultipleCacheMap = new Int2ReferenceOpenHashMap<>();
+    protected final Int2ReferenceMap<ObjectSet<@NotNull GTRecipe>> recipeMultipleCacheMap;
     protected final byte[] cacheRecipeCount;
     private final BiMap<@NotNull IPatternDetails, Integer> patternSlotMap;
     private final Int2ObjectMap<IPatternDetails> slot2PatternMap;
-    protected Consumer<Integer> removeSlotFromMap = i -> {};
+    protected IntConsumer removeSlotFromMap = i -> {};
 
     // ========================================
     // Proxy
     // ========================================
 
     @Persisted
-    private final ObjectOpenHashSet<BlockPos> proxies = new ObjectOpenHashSet<>();
-    private final Set<MEPatternBufferProxyPartMachine> proxyMachines = new ReferenceOpenHashSet<>();
+    private final ObjectOpenHashSet<BlockPos> proxies;
+    private final Set<MEPatternBufferProxyPartMachine> proxyMachines;
 
     public MEPatternBufferPartMachine(IMachineBlockEntity holder, int maxPatternCount, IO io) {
         super(holder, io);
@@ -209,8 +207,15 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
         this.catalystItems = new ItemStackTransfer[maxPatternCount];
         this.catalystFluids = new FluidTransferList[maxPatternCount];
         this.cacheRecipeCount = new byte[maxPatternCount];
+
+        // Initialize pattern cache
         this.patternSlotMap = HashBiMap.create();
         this.slot2PatternMap = new Int2ObjectOpenHashMap<>();
+        this.recipeMultipleCacheMap = new Int2ReferenceOpenHashMap<>();
+
+        // Initialize Proxy
+        this.proxies = new ObjectOpenHashSet<>();
+        this.proxyMachines = new ReferenceOpenHashSet<>();
 
         // Initialize inventories
         this.buffer = new Object2LongOpenHashMap<>();
@@ -227,16 +232,18 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
                 .toList()));
         Arrays.fill(cacheRecipeCount, (byte) 1);
 
-        getMainNode().addService(ICraftingProvider.class, this);
-        if (io == IO.BOTH) {
-            getMainNode().addService(IGridTickable.class, new Ticker());
-        }
-
+        // Initialize handlers
         this.sharedCircuitInventory = new NotifiableCircuitItemStackHandler(this);
         this.circuitHandler = new PatternCircuitHandler((NotifiableCircuitItemStackHandler) sharedCircuitInventory);
         this.sharedCatalystInventory = new CatalystItemStackHandler(this, 9, IO.IN, IO.NONE);
         this.sharedCatalystTank = new CatalystFluidStackHandler(this, 9, 16 * FluidHelper.getBucket(), IO.IN, IO.NONE);
-        this.recipeHandler = new MEPatternBufferRecipeHandlerTrait(this, this.buffer, io);
+        this.recipeHandler = new MEPatternBufferRecipeHandlerTrait(this, io);
+
+        // Initialize AE2 Service
+        getMainNode().addService(ICraftingProvider.class, this);
+        if (io == IO.BOTH) {
+            getMainNode().addService(IGridTickable.class, new Ticker());
+        }
     }
 
     // ========================================
@@ -571,7 +578,7 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
     }
 
     // ========================================
-    // DATASTICK INTERACTION
+    // DATA STICK INTERACTION
     // ========================================
 
     @Override
@@ -583,7 +590,7 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
         if (stack.is(GTItems.TOOL_DATA_STICK.asItem())) {
             if (!world.isClientSide) {
                 // Check if it's research data - if so, pass to avoid conflicts
-                Pair<GTRecipeType, String> researchData = ResearchManager.readResearchId(stack);
+                var researchData = ResearchManager.readResearchId(stack);
                 if (researchData != null) {
                     return InteractionResult.PASS;
                 }
@@ -785,51 +792,18 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
     // ========================================
 
     @Override
-    public @NotNull ObjectSet<@NotNull GTRecipe> getCachedGTRecipe() {
-        ObjectSet<GTRecipe> recipes = new ObjectOpenHashSet<>();
-        for (var it = Int2ReferenceMaps.fastIterator(recipeMultipleCacheMap); it.hasNext();) {
-            var entry = it.next();
-            var recipeSet = entry.getValue();
-            int slot = entry.getIntKey();
-            if (recipeSet.isEmpty()) it.remove();
-            else if (cacheRecipe[slot] && internalInventory[slot].isActive()) recipes.addAll(recipeSet);
-        }
-        return recipes;
+    protected @NotNull IMEPatternTrait createMETrait() {
+        return new MEPatternTrait(this);
     }
 
     @Override
-    public void setSlotCacheRecipe(int index, GTRecipe recipe) {
-        if (recipe != null) {
-            var set = recipeMultipleCacheMap.computeIfAbsent(index, integer -> new ObjectArraySet<>());
-            set.add(recipe);
-            cacheRecipe[index] = set.size() >= cacheRecipeCount[index];
-        }
+    public @NotNull IMEPatternTrait getMETrait() {
+        return (IMEPatternTrait) meTrait;
     }
 
     @Override
-    public void restoreSlotMap(Object2ObjectBiMultiMap<GTRecipe, Integer> recipes2SlotsMap, Consumer<Integer> removeSlotFromMap) {
-        this.removeSlotFromMap = removeSlotFromMap;
-        recipes2SlotsMap.clear();
-        for (var entry : Int2ReferenceMaps.fastIterable(recipeMultipleCacheMap)) {
-            int slot = entry.getIntKey();
-            for (GTRecipe recipe : entry.getValue()) {
-                recipes2SlotsMap.put(recipe, slot);
-            }
-        }
-    }
-
-    @Override
-    public boolean hasCacheInSlot(int slot) {
-        return cacheRecipe[slot];
-    }
-
-    @Override
-    public Iterable<IMERecipeHandlerTrait<?, ?>> getMERecipeHandlerTraits() {
-        return recipeHandler.getMERecipeHandlers();
-    }
-
-    public Reference2ObjectMap<RecipeCapability<?>, IMERecipeHandlerTrait<? extends Predicate<?>, ?>> getMERecipeHandlerMap() {
-        return recipeHandler.getMERecipeHandlerMap();
+    public Pair<IMERecipeHandlerTrait<Ingredient, ItemStack>, IMERecipeHandlerTrait<FluidIngredient, FluidStack>> getMERecipeHandlerTraits() {
+        return Pair.of(recipeHandler.meItemHandler, recipeHandler.meFluidHandler);
     }
 
     /**
@@ -879,14 +853,12 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
             return hasPatternArray[slotIndex] && (!itemInventory.isEmpty() || !fluidInventory.isEmpty());
         }
 
-        public boolean isActive(RecipeCapability<?> recipeCapability) {
-            if (recipeCapability == ItemRecipeCapability.CAP) {
-                return hasPatternArray[slotIndex] &&
-                        (!itemInventory.isEmpty() || !sharedCatalystInventory.isEmpty() || !circuitHandler.getCircuitForRecipe(cacheManager.getCircuitStack()).isEmpty() || !itemCatalystInventory.isEmpty());
-            } else {
-                return hasPatternArray[slotIndex] &&
-                        (!fluidInventory.isEmpty() || !sharedCatalystTank.isEmpty() || !fluidCatalystInventory.isEmpty());
-            }
+        public boolean isItemActive(boolean simulate) {
+            return hasPatternArray[slotIndex] && simulate ? (!itemInventory.isEmpty() || !sharedCatalystInventory.isEmpty() || !circuitHandler.getCircuitForRecipe(cacheManager.getCircuitStack()).isEmpty() || !itemCatalystInventory.isEmpty()) : !itemInventory.isEmpty();
+        }
+
+        public boolean isFluidActive(boolean simulate) {
+            return hasPatternArray[slotIndex] && simulate ? !fluidInventory.isEmpty() || !sharedCatalystTank.isEmpty() || !fluidCatalystInventory.isEmpty() : !fluidInventory.isEmpty();
         }
 
         private void add(AEKey what, long amount) {
@@ -1134,6 +1106,54 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
                     return TickRateModulation.SLEEP;
                 } else return TickRateModulation.SLOWER;
             } else return AEUtils.reFunds(buffer, getMainNode().getGrid(), actionSource) ? TickRateModulation.URGENT : TickRateModulation.SLOWER;
+        }
+    }
+
+    protected class MEPatternTrait extends MEIOTrait implements IMEPatternTrait {
+
+        public MEPatternTrait(MEPatternBufferPartMachine machine) {
+            super(machine);
+        }
+
+        @Override
+        public MEPatternBufferPartMachine getMachine() {
+            return (MEPatternBufferPartMachine) machine;
+        }
+
+        @Override
+        public @NotNull ObjectSet<@NotNull GTRecipe> getCachedGTRecipe() {
+            ObjectSet<GTRecipe> recipes = new ObjectOpenHashSet<>();
+            for (var it = Int2ReferenceMaps.fastIterator(recipeMultipleCacheMap); it.hasNext();) {
+                var entry = it.next();
+                var recipeSet = entry.getValue();
+                int slot = entry.getIntKey();
+                if (recipeSet.isEmpty()) it.remove();
+                else if (cacheRecipe[slot] && internalInventory[slot].isActive()) recipes.addAll(recipeSet);
+            }
+            return recipes;
+        }
+
+        @Override
+        public void setSlotCacheRecipe(int index, GTRecipe recipe) {
+            if (recipe != null && recipe.recipeType != GTRecipeTypes.DUMMY_RECIPES) {
+                var set = recipeMultipleCacheMap.computeIfAbsent(index, integer -> new ObjectArraySet<>());
+                if (set.add(recipe)) cacheRecipe[index] = set.size() >= cacheRecipeCount[index];
+            }
+        }
+
+        @Override
+        public @NotNull Int2ReferenceMap<ObjectSet<@NotNull GTRecipe>> getSlot2RecipesCache() {
+            return recipeMultipleCacheMap;
+        }
+
+        @Override
+        public void setOnPatternChange(IntConsumer removeMapOnSlot) {
+            removeSlotFromMap = removeMapOnSlot;
+        }
+
+        @Override
+        public boolean hasCacheInSlot(int slot) {
+            return cacheRecipe[slot];
         }
     }
 }

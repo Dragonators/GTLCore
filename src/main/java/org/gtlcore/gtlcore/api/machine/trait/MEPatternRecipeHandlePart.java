@@ -2,155 +2,125 @@ package org.gtlcore.gtlcore.api.machine.trait;
 
 import org.gtlcore.gtlcore.api.capability.IMERecipeHandler;
 import org.gtlcore.gtlcore.api.machine.trait.MEPart.IMEPatternPartMachine;
-import org.gtlcore.gtlcore.utils.Object2ObjectBiMultiMap;
+import org.gtlcore.gtlcore.api.machine.trait.MEPart.IMEPatternTrait;
+import org.gtlcore.gtlcore.utils.datastructure.GTRecipe2IntBiMultiMap;
 
+import com.gregtechceu.gtceu.api.capability.recipe.FluidRecipeCapability;
+import com.gregtechceu.gtceu.api.capability.recipe.ItemRecipeCapability;
 import com.gregtechceu.gtceu.api.capability.recipe.RecipeCapability;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
+import com.gregtechceu.gtceu.api.recipe.ingredient.FluidIngredient;
 
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import com.lowdragmc.lowdraglib.side.fluid.FluidStack;
+
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.Ingredient;
+
+import it.unimi.dsi.fastutil.ints.Int2ReferenceMaps;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.objects.*;
-import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 
-public class MEPatternRecipeHandlePart extends MEIORecipeHandlePart {
+public class MEPatternRecipeHandlePart extends MEIORecipeHandlePart<IMEPatternTrait> implements IRecipeHandlePart {
 
-    @Getter
-    private final Object2ObjectBiMultiMap<GTRecipe, Integer> recipes2SlotsMap = new Object2ObjectBiMultiMap<>();
+    private final GTRecipe2IntBiMultiMap recipes2SlotsMap = new GTRecipe2IntBiMultiMap();
 
-    @Getter
-    private final IMEPatternPartMachine patternMachine;
-
-    public MEPatternRecipeHandlePart(IMEPatternPartMachine machine) {
-        super(machine);
-        this.patternMachine = machine;
+    public MEPatternRecipeHandlePart(@NotNull IMEPatternTrait meTrait, @NotNull IMERecipeHandler<Ingredient, ItemStack> itemHandler, @NotNull IMERecipeHandler<FluidIngredient, FluidStack> fluidHandler) {
+        super(meTrait, itemHandler, fluidHandler);
     }
 
     public static MEPatternRecipeHandlePart of(IMEPatternPartMachine machine) {
-        MEPatternRecipeHandlePart rhl = new MEPatternRecipeHandlePart(machine);
-        rhl.addMEHandlers(machine.getMERecipeHandlerTraits());
-        return rhl;
+        var meTrait = machine.getMETrait();
+        var pair = machine.getMERecipeHandlerTraits();
+        return new MEPatternRecipeHandlePart(meTrait, pair.left(), pair.right());
     }
 
-    @NotNull
-    public <T extends Predicate<S>, S> Object2LongMap<S> getMEContent(RecipeCapability<T> cap) {
-        return getMEContent(cap, this.getMECapability(cap).getActiveSlots());
+    public IMERecipeHandler<?, ?>[] getMERecipeHandlers() {
+        return this.handlers;
     }
 
-    @NotNull
-    @SuppressWarnings("unchecked")
-    public <T extends Predicate<S>, S> Object2LongMap<S> getMEContent(RecipeCapability<T> cap, Collection<Integer> slots) {
-        return ((IMERecipeHandlerTrait<T, S>) (this.getMECapability(cap))).getCustomSlotsStackMap(slots);
+    public @NotNull ObjectSet<@NotNull GTRecipe> getCachedGTRecipe() {
+        return meTrait.getCachedGTRecipe();
     }
 
-    @NotNull
-    @SuppressWarnings("unchecked")
-    public <T extends Predicate<S>, S> Object2LongMap<S> getFirstAvailableMEContentOrEmpty(RecipeCapability<T> cap, Collection<Integer> slots) {
-        return ((IMERecipeHandlerTrait<T, S>) (this.getMECapability(cap))).getFirstAvailableSlotFromCustomStackMap(slots);
+    public void setLastRecipe2Slot(@NotNull GTRecipe gTRecipe, int slot) {
+        recipes2SlotsMap.put(gTRecipe, slot);
     }
 
-    public void restoreMachineCache(Map<GTRecipe, IRecipeHandlePart> map) {
-        if (this.patternMachine != null) {
-            this.patternMachine.restoreSlotMap(this.recipes2SlotsMap, recipes2SlotsMap::removeByValue);
-            for (var key : recipes2SlotsMap.keySet()) {
-                map.put(key, this);
+    public void restoreMachineCache(BiConsumer<GTRecipe, IRecipeHandlePart> consumer) {
+        recipes2SlotsMap.clear();
+        for (var entry : Int2ReferenceMaps.fastIterable(meTrait.getSlot2RecipesCache())) {
+            int slot = entry.getIntKey();
+            for (GTRecipe recipe : entry.getValue()) {
+                recipes2SlotsMap.put(recipe, slot);
             }
+        }
+        meTrait.setOnPatternChange(recipes2SlotsMap::removeByValue);
+
+        for (var key : recipes2SlotsMap.keySet()) {
+            consumer.accept(key, this);
         }
     }
 
-    public int meHandleRecipe(GTRecipe recipe,
-                              Reference2ObjectMap<RecipeCapability<?>, List<Object>> contents,
-                              boolean simulate) {
-        if (meHandlerMap.isEmpty() || contents.isEmpty()) {
-            return -1;
+    /**
+     * @param cap    ItemCAP or FluidCAP
+     * @param recipe GTRecipe -> slots to collect contents
+     * @return contents in specific slot, especially the one cached for this GTRecipe during the last match, or an empty
+     *         map if no available slot is found
+     */
+    public <I extends Predicate<S>, S> Object2LongMap<S> getMEContent(RecipeCapability<I> cap, GTRecipe recipe) {
+        return this.<I, S>getMECapability(cap).getStackMapFromFirstAvailableSlot(recipes2SlotsMap.getValues(recipe));
+    }
+
+    /**
+     * List<Object> won't be empty
+     * 
+     * @return fail: -1, success and hasCache: -2, success and unCache: slot
+     */
+    public int handleRecipe(GTRecipe recipe,
+                            Reference2ObjectMap<RecipeCapability<?>, List<Object>> contents,
+                            boolean simulate, boolean setSlotCache) {
+        List<Object> itemContent = null;
+        List<Object> fluidContent = null;
+
+        for (var entry : Reference2ObjectMaps.fastIterable(contents)) {
+            var key = entry.getKey();
+            if (key == ItemRecipeCapability.CAP) itemContent = entry.getValue();
+            else if (key == FluidRecipeCapability.CAP) fluidContent = entry.getValue();
+            else throw new AssertionError("Invalid recipe capability entry");
         }
 
-        // Array for 1-2 handler
-        IMERecipeHandler<?, ?>[] handlers = new IMERecipeHandler[contents.size()];
-        var contentArrays = new List[contents.size()];
-        int handlerCount = 0;
+        // Priority 1: Init Contents
+        boolean hasItem = itemContent != null;
+        boolean hasFluid = fluidContent != null;
+        if (hasItem) itemHandler.initMEHandleContents(recipe, itemContent, simulate);
+        if (hasFluid) fluidHandler.initMEHandleContents(recipe, fluidContent, simulate);
 
-        // 单次遍历收集handlers和contents
-        for (var it = Reference2ObjectMaps.fastIterator(contents); it.hasNext();) {
-            var entry = it.next();
-            var handler = getMECapability(entry.getKey());
-            handlers[handlerCount] = handler;
-            contentArrays[handlerCount] = entry.getValue();
-            handlerCount++;
-        }
-
-        // 求取所有meHandler的activeSlots交集
-        var intersectionSlots = new IntOpenHashSet();
-        for (int i = 0; i < handlerCount; i++) {
-            var activeSlots = handlers[i].getActiveSlots();
-
-            if (activeSlots.isEmpty()) return -1;
-
-            if (intersectionSlots.isEmpty()) {
-                intersectionSlots.addAll(activeSlots);
-            } else {
-                intersectionSlots.retainAll(activeSlots);
-            }
-            if (intersectionSlots.isEmpty()) {
-                return -1;
+        // Priority 2: Try all cached slots
+        IntSet cachedSlots = this.recipes2SlotsMap.getValues(recipe);
+        if (!cachedSlots.isEmpty()) {
+            for (int slot : cachedSlots) {
+                if (hasItem && !itemHandler.meHandleRecipe(recipe, simulate, slot)) continue;
+                if (hasFluid && !fluidHandler.meHandleRecipe(recipe, simulate, slot)) continue;
+                return slot; // all success
             }
         }
 
-        // 初始化所有meHandler的handle内容
-        for (int i = 0; i < handlerCount; i++) {
-            handlers[i].initMEHandleContents(recipe, contentArrays[i], simulate);
-        }
+        // Priority 3: Try all active slots
+        for (int slot : itemHandler.getActiveSlots()) {
+            if (cachedSlots.contains(slot)) continue;
+            if (hasItem && !itemHandler.meHandleRecipe(recipe, simulate, slot)) continue;
+            if (hasFluid && !fluidHandler.meHandleRecipe(recipe, simulate, slot)) continue;
 
-        // 遍历交集中的每个slot
-        for (int slot : intersectionSlots) {
-            boolean allSuccess = true;
-
-            // 对所有cap对应的meHandler调用meHandleRecipe方法
-            for (int i = 0; i < handlerCount; i++) {
-                if (!handlers[i].meHandleRecipe(recipe, simulate, slot)) {
-                    allSuccess = false;
-                    break;
-                }
-            }
-
-            if (allSuccess) {
-                if (!this.patternMachine.hasCacheInSlot(slot)) this.patternMachine.setSlotCacheRecipe(slot, recipe);
-                return slot;
-            }
+            // all success, then cache
+            if (!meTrait.hasCacheInSlot(slot) && setSlotCache) meTrait.setSlotCacheRecipe(slot, recipe);
+            return slot;
         }
 
         return -1;
-    }
-
-    public boolean meHandleCacheRecipe(GTRecipe recipe,
-                                       Reference2ObjectMap<RecipeCapability<?>, List<Object>> contents,
-                                       boolean simulate) {
-        @NotNull
-        ObjectSet<@NotNull Integer> trySlots = this.recipes2SlotsMap.getValues(recipe);
-        if (!getMeHandlerMap().isEmpty() && !trySlots.isEmpty()) {
-            for (int trySlot : trySlots) {
-                boolean allSuccess = true;
-                for (var it = Reference2ObjectMaps.fastIterator(contents); it.hasNext();) {
-                    var entry = it.next();
-                    var cap = entry.getKey();
-                    var content = entry.getValue();
-                    var meHandler = getMECapability(cap);
-                    meHandler.initMEHandleContents(recipe, content, simulate);
-                    if (!meHandler.meHandleRecipe(recipe, simulate, trySlot)) {
-                        allSuccess = false;
-                        break;
-                    }
-                }
-                if (allSuccess) return true;
-            }
-        }
-        return false;
-    }
-
-    @Override
-    public <T extends Predicate<S>, S> Object2LongMap<S> getContent(RecipeCapability<T> cap) {
-        return getMEContent(cap);
     }
 }

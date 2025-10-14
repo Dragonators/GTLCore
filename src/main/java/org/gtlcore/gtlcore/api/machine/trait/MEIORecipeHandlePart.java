@@ -1,54 +1,57 @@
 package org.gtlcore.gtlcore.api.machine.trait;
 
 import org.gtlcore.gtlcore.api.capability.IMERecipeHandler;
-import org.gtlcore.gtlcore.api.machine.trait.MEPart.IMETraitIOPartMachine;
+import org.gtlcore.gtlcore.api.machine.trait.MEPart.IMEFilterIOPartMachine;
+import org.gtlcore.gtlcore.api.machine.trait.MEPart.IMEFilterIOTrait;
 
-import com.gregtechceu.gtceu.api.capability.recipe.IO;
+import com.gregtechceu.gtceu.api.capability.recipe.FluidRecipeCapability;
+import com.gregtechceu.gtceu.api.capability.recipe.ItemRecipeCapability;
 import com.gregtechceu.gtceu.api.capability.recipe.RecipeCapability;
+import com.gregtechceu.gtceu.api.recipe.ingredient.FluidIngredient;
+
+import com.lowdragmc.lowdraglib.side.fluid.FluidStack;
+
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.Ingredient;
 
 import it.unimi.dsi.fastutil.objects.*;
-import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.Predicate;
 
-public class MEIORecipeHandlePart implements IRecipeHandlePart {
+public class MEIORecipeHandlePart<T extends IMEFilterIOTrait> {
 
-    public static final Comparator<MEIORecipeHandlePart> COMPARATOR = Comparator.comparingInt(h -> sumPriority(h.meHandlerMap));
+    public static final Comparator<MEIORecipeHandlePart<?>> COMPARATOR = Comparator.comparingInt(MEIORecipeHandlePart::getTotalPriority);
 
-    protected static int sumPriority(Reference2ObjectMap<RecipeCapability<?>, IMERecipeHandler<?, ?>> meHandlerMap) {
-        int sum = 0;
-        for (var it = Reference2ObjectMaps.fastIterator(meHandlerMap); it.hasNext();) {
-            sum += it.next().getValue().getPriority();
-        }
-        return sum;
+    protected final @NotNull T meTrait;
+    protected final @NotNull IMERecipeHandler<Ingredient, ItemStack> itemHandler;
+    protected final @NotNull IMERecipeHandler<FluidIngredient, FluidStack> fluidHandler;
+    protected final IMERecipeHandler<?, ?>[] handlers;
+
+    public MEIORecipeHandlePart(@NotNull T meTrait, @NotNull IMERecipeHandler<Ingredient, ItemStack> itemHandler, @NotNull IMERecipeHandler<FluidIngredient, FluidStack> fluidHandler) {
+        this.itemHandler = itemHandler;
+        this.fluidHandler = fluidHandler;
+        this.handlers = new IMERecipeHandler[] { itemHandler, fluidHandler };
+        this.meTrait = meTrait;
     }
 
-    @Getter
-    protected final IMETraitIOPartMachine ioMachine;
-    @Getter
-    protected final Reference2ObjectOpenHashMap<RecipeCapability<?>, IMERecipeHandler<? extends Predicate<?>, ?>> meHandlerMap = new Reference2ObjectOpenHashMap<>();
-
-    public MEIORecipeHandlePart(IMETraitIOPartMachine machine) {
-        this.ioMachine = machine;
+    public static MEIORecipeHandlePart<IMEFilterIOTrait> of(IMEFilterIOPartMachine machine) {
+        var meTrait = machine.getMETrait();
+        var pair = machine.getMERecipeHandlerTraits();
+        return new MEIORecipeHandlePart<>(meTrait, pair.left(), pair.right());
     }
 
-    public static MEIORecipeHandlePart of(IMETraitIOPartMachine machine) {
-        MEIORecipeHandlePart rhl = new MEIORecipeHandlePart(machine);
-        rhl.addMEHandlers(machine.getMERecipeHandlerTraits());
-        return rhl;
+    public boolean hasFilter() {
+        return meTrait.hasFilter();
     }
 
-    public void addMEHandlers(Iterable<IMERecipeHandlerTrait<? extends Predicate<?>, ?>> handlers) {
-        for (var handler : handlers) {
-            meHandlerMap.putIfAbsent(handler.getCapability(), handler);
-        }
-    }
-
-    public @NotNull IMERecipeHandler<? extends Predicate<?>, ?> getMECapability(RecipeCapability<?> cap) {
-        return meHandlerMap.getOrDefault(cap, null);
+    @SuppressWarnings("unchecked")
+    public @NotNull <I extends Predicate<S>, S> IMERecipeHandler<I, S> getMECapability(RecipeCapability<?> cap) {
+        if (cap == ItemRecipeCapability.CAP) return (IMERecipeHandler<I, S>) itemHandler;
+        else if (cap == FluidRecipeCapability.CAP) return (IMERecipeHandler<I, S>) fluidHandler;
+        else throw new AssertionError("Invalid recipe capability");
     }
 
     public Reference2ObjectOpenHashMap<RecipeCapability<?>, List<Object>> meHandleOutput(Reference2ObjectOpenHashMap<RecipeCapability<?>, List<Object>> contents, boolean simulate) {
@@ -69,17 +72,11 @@ public class MEIORecipeHandlePart implements IRecipeHandlePart {
                 else entry.setValue(new ObjectArrayList<>(result));
             }
         }
-        if (!simulate && hasOutput) ioMachine.notifySelfIO();
+        if (!simulate && hasOutput) meTrait.notifySelfIO();
         return contents;
     }
 
-    @Override
-    public IO getHandlerIO() {
-        return ioMachine.getIO();
-    }
-
-    @Override
-    public <T extends Predicate<S>, S> Object2LongMap<S> getContent(RecipeCapability<T> cap) {
-        return Object2LongMaps.emptyMap();
+    private int getTotalPriority() {
+        return itemHandler.getPriority() + fluidHandler.getPriority();
     }
 }

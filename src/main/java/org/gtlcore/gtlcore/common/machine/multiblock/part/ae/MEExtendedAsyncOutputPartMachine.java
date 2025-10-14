@@ -1,5 +1,7 @@
 package org.gtlcore.gtlcore.common.machine.multiblock.part.ae;
 
+import org.gtlcore.gtlcore.api.machine.trait.MEPart.IMEFilterIOTrait;
+import org.gtlcore.gtlcore.integration.ae2.AEUtils;
 import org.gtlcore.gtlcore.integration.ae2.async.AEAccumulator;
 import org.gtlcore.gtlcore.integration.ae2.async.AEWriteService;
 
@@ -28,8 +30,6 @@ import java.lang.ref.WeakReference;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static org.gtlcore.gtlcore.integration.ae2.AEUtils.reFunds;
 
 public class MEExtendedAsyncOutputPartMachine extends MEExtendedOutputPartMachineBase {
 
@@ -81,6 +81,10 @@ public class MEExtendedAsyncOutputPartMachine extends MEExtendedOutputPartMachin
         return group;
     }
 
+    // ========================================
+    // ME Output Handlers && Tick Service
+    // ========================================
+
     @Override
     protected NotifiableMERecipeHandlerTrait<Ingredient, ItemStack> createItemOutputHandler() {
         return new MEItemOutputHandler(this) {
@@ -113,6 +117,16 @@ public class MEExtendedAsyncOutputPartMachine extends MEExtendedOutputPartMachin
                 return List.of();
             }
         };
+    }
+
+    @Override
+    protected @NotNull IMEFilterIOTrait createMETrait() {
+        return new MEAsyncFilterIOTrait(this);
+    }
+
+    @Override
+    public @NotNull IMEFilterIOTrait getMETrait() {
+        return (IMEFilterIOTrait) meTrait;
     }
 
     @Override
@@ -157,12 +171,24 @@ public class MEExtendedAsyncOutputPartMachine extends MEExtendedOutputPartMachin
                     return TickRateModulation.SLEEP;
                 } else return TickRateModulation.SLOWER;
             } else {
-                if (reFunds(buffer, getMainNode().getGrid(), actionSource) || dataMerged) {
+                if (AEUtils.reFunds(buffer, getMainNode().getGrid(), actionSource) || dataMerged) {
                     return TickRateModulation.URGENT;
                 } else {
                     return TickRateModulation.SLOWER;
                 }
             }
+        }
+    }
+
+    protected class MEAsyncFilterIOTrait extends MEIOTrait implements IMEFilterIOTrait {
+
+        public MEAsyncFilterIOTrait(MEExtendedAsyncOutputPartMachine machine) {
+            super(machine);
+        }
+
+        @Override
+        public MEExtendedAsyncOutputPartMachine getMachine() {
+            return (MEExtendedAsyncOutputPartMachine) machine;
         }
     }
 }

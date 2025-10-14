@@ -18,9 +18,12 @@ import com.gregtechceu.gtceu.common.data.GTRecipeTypes;
 import com.gregtechceu.gtceu.data.recipe.builder.GTRecipeBuilder;
 
 import net.minecraft.network.chat.Component;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import com.mojang.datafixers.util.Pair;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.Objects;
 
 public class HeatExchangerMachine extends NoEnergyMultiblockMachine {
 
@@ -36,14 +39,15 @@ public class HeatExchangerMachine extends NoEnergyMultiblockMachine {
             }
 
             // for recipe cache
-            final GTRecipe plasmaRecipe = new GTRecipeBuilder(GTLCore.id("heat_exchanger"), GTRecipeTypes.DUMMY_RECIPES)
-                    .inputFluids(FluidRecipeCapability.CAP.of(recipe.inputs
-                            .get(FluidRecipeCapability.CAP).get(0).getContent()))
+            final var fluidIngredient = FluidRecipeCapability.CAP.of(recipe.inputs.get(FluidRecipeCapability.CAP).get(0).getContent());
+            final var prefix = Objects.requireNonNull(ForgeRegistries.FLUID_TYPES.get().getKey(fluidIngredient.getStacks()[0].getFluid().getFluidType())).getPath();
+            final GTRecipe plasmaRecipe = new GTRecipeBuilder(GTLCore.id("heat_exchanger_" + prefix), GTRecipeTypes.DUMMY_RECIPES)
+                    .inputFluids(fluidIngredient)
                     .outputFluids(recipe.outputs.get(FluidRecipeCapability.CAP).stream().map(c -> FluidRecipeCapability.CAP.of(c.getContent())).toArray((FluidIngredient[]::new)))
                     .duration(200)
                     .buildRawRecipe();
 
-            if (!RecipeRunnerHelper.matchRecipe(hMachine, plasmaRecipe)) return null;
+            if (!RecipeRunnerHelper.matchRecipeInputNoMEInnerCache(hMachine, plasmaRecipe)) return null;
 
             final Pair<GTRecipe, Integer> result = GTRecipeModifiers.accurateParallel(machine, plasmaRecipe, Integer.MAX_VALUE, false);
 

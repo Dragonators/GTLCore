@@ -4,6 +4,7 @@ import org.gtlcore.gtlcore.api.machine.trait.MEStock.IMEPartMachine;
 
 import com.gregtechceu.gtceu.api.capability.recipe.*;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
+import com.gregtechceu.gtceu.api.recipe.ingredient.FluidIngredient;
 
 import com.lowdragmc.lowdraglib.side.fluid.FluidStack;
 
@@ -12,15 +13,13 @@ import net.minecraft.world.item.ItemStack;
 import com.hepdd.gtmthings.common.block.machine.trait.CatalystFluidStackHandler;
 import com.hepdd.gtmthings.common.block.machine.trait.CatalystItemStackHandler;
 import it.unimi.dsi.fastutil.objects.*;
-import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.Predicate;
 
 public class RecipeHandlePart implements IRecipeHandlePart {
-
-    public static final RecipeHandlePart NO_DATA = new RecipeHandlePart(IO.NONE);
 
     public static final Comparator<RecipeHandlePart> COMPARATOR = (h1, h2) -> {
         int cmp = Long.compare(h1.getPriority(), h2.getPriority());
@@ -30,101 +29,66 @@ public class RecipeHandlePart implements IRecipeHandlePart {
         return Boolean.compare(b1, b2);
     };
 
-    @Getter
-    private final IO handlerIO;
-    @Getter
-    private final Reference2ObjectOpenHashMap<RecipeCapability<?>, List<IRecipeHandler<?>>> handlerMap = new Reference2ObjectOpenHashMap<>();
-    private final List<IRecipeHandler<?>> allHandlers = new ObjectArrayList<>();
-    private Object2LongOpenHashMap<ItemStack> itemContent;
-    private Object2LongOpenHashMap<FluidStack> fluidContent;
+    private final Reference2ObjectMap<RecipeCapability<?>, List<IRecipeHandler<?>>> handlerMap = new Reference2ObjectOpenHashMap<>();
+    private final List<IRecipeHandler<FluidIngredient>> sharedFluidHandlers = new ObjectArrayList<>();
 
-    public RecipeHandlePart(IO io) {
-        this.handlerIO = io;
+    public RecipeHandlePart(Iterable<IRecipeHandler<?>> handlers) {
+        for (var handler : handlers) {
+            handlerMap.computeIfAbsent(handler.getCapability(), c -> new ObjectArrayList<>()).add(handler);
+        }
     }
 
     public static RecipeHandlePart of(IO io, Iterable<IRecipeHandler<?>> handlers) {
-        RecipeHandlePart rhl = new RecipeHandlePart(io);
-        rhl.addHandlers(handlers);
+        RecipeHandlePart rhl = new RecipeHandlePart(handlers);
+        if (io == IO.OUT) {
+            for (var entry : rhl.getHandlerFastIterable()) {
+                entry.getValue().sort(IRecipeHandler.ENTRY_COMPARATOR);
+            }
+        }
         return rhl;
     }
 
-    @SuppressWarnings("unchecked")
-    public <T extends Predicate<S>, S> Object2LongMap<S> getContent(RecipeCapability<T> cap) {
-        return (Object2LongMap<S>) this.initializeContent(cap);
+    public void addSharedFluidHandlers(Iterable<IRecipeHandler<FluidIngredient>> handlers) {
+        for (var handler : handlers) {
+            if (handler.getCapability() == FluidRecipeCapability.CAP) sharedFluidHandlers.add(handler);
+        }
     }
 
-    public Object2LongMap<?> initializeContent(RecipeCapability<?> cap) {
+    public ObjectIterable<Reference2ObjectMap.Entry<RecipeCapability<?>, List<IRecipeHandler<?>>>> getHandlerFastIterable() {
+        return Reference2ObjectMaps.fastIterable(handlerMap);
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T extends Predicate<S>, S> Object2LongMap<S> getSelfContent(RecipeCapability<T> cap) {
         if (cap == ItemRecipeCapability.CAP) {
-            itemContent = new Object2LongOpenHashMap<>();
-            for (var item : this.getCapability(cap)) {
-                if (item instanceof CatalystItemStackHandler || item instanceof NotifiableCircuitItemStackHandler) continue;
-                if (item instanceof IMEPartMachine aeItemHandler) {
-                    final var map = aeItemHandler.getMEItemMap();
-                    if (map != null) {
-                        for (var it = Object2LongMaps.fastIterator(map); it.hasNext();) {
-                            var entry = it.next();
-                            itemContent.addTo(entry.getKey(), entry.getLongValue());
-                        }
-                    }
-                } else {
-                    for (var o : item.getContents()) {
-                        if (o instanceof ItemStack stack) {
-                            itemContent.addTo(stack, stack.getCount());
-                        }
-                    }
-                }
-            }
-            return itemContent;
+            return (Object2LongMap<S>) createItemMap(this.getCapability(cap), new Object2LongOpenHashMap<>());
         } else if (cap == FluidRecipeCapability.CAP) {
-            fluidContent = new Object2LongOpenHashMap<>();
-            for (var fluid : this.getCapability(cap)) {
-                if (fluid instanceof CatalystFluidStackHandler) continue;
-                for (var o : fluid.getContents()) {
-                    if (o instanceof FluidStack stack) {
-                        fluidContent.addTo(stack, stack.getAmount());
-                    }
-                }
-            }
-            return fluidContent;
+            return (Object2LongMap<S>) createFluidMap(this.getCapability(cap), new Object2LongOpenHashMap<>());
         }
         return Object2LongMaps.EMPTY_MAP;
     }
 
-    public void addHandlers(Iterable<IRecipeHandler<?>> handlers) {
-        for (var handler : handlers) {
-            getHandlerMap().computeIfAbsent(handler.getCapability(), c -> new ObjectArrayList<>()).add(handler);
-            allHandlers.add(handler);
+    @SuppressWarnings("unchecked")
+    public <T extends Predicate<S>, S> Object2LongMap<S> getContentWithShared(RecipeCapability<T> cap) {
+        if (cap == ItemRecipeCapability.CAP) {
+            return (Object2LongMap<S>) createItemMap(this.getCapability(cap), new Object2LongOpenHashMap<>());
+        } else if (cap == FluidRecipeCapability.CAP) {
+            return (Object2LongMap<S>) createFluidMap(this.sharedFluidHandlers, createFluidMap(this.getCapability(cap), new Object2LongOpenHashMap<>()));
         }
-        if (handlerIO == IO.OUT) sort();
+        return Object2LongMaps.EMPTY_MAP;
     }
 
-    private void sort() {
-        for (var list : getHandlerMap().values()) {
-            list.sort(IRecipeHandler.ENTRY_COMPARATOR);
-        }
-    }
-
-    public @NotNull List<IRecipeHandler<?>> getCapability(RecipeCapability<?> cap) {
-        return getHandlerMap().getOrDefault(cap, Collections.emptyList());
-    }
-
-    public long getPriority() {
-        long priority = 0;
-        for (var handler : allHandlers) priority += handler.getPriority();
-        return priority;
-    }
-
-    public double getTotalContentAmount() {
-        double sum = 0;
-        for (var handler : allHandlers) sum += handler.getTotalContentAmount();
-        return sum;
+    @SuppressWarnings("unchecked")
+    public @NotNull <T> List<IRecipeHandler<T>> getCapability(RecipeCapability<T> cap) {
+        List<?> handlers = handlerMap.getOrDefault(cap, Collections.emptyList());
+        return (List<IRecipeHandler<T>>) handlers;
     }
 
     public Reference2ObjectOpenHashMap<RecipeCapability<?>, List<Object>> handleRecipe(IO io, GTRecipe recipe,
                                                                                        Map<RecipeCapability<?>, List<Object>> contents,
                                                                                        boolean simulate) {
         var copy = new Reference2ObjectOpenHashMap<>(contents);
-        if (!getHandlerMap().isEmpty()) {
+        if (!handlerMap.isEmpty()) {
             for (var it = copy.reference2ObjectEntrySet().fastIterator(); it.hasNext();) {
                 var entry = it.next();
                 var handlerList = getCapability(entry.getKey());
@@ -138,5 +102,69 @@ public class RecipeHandlePart implements IRecipeHandlePart {
             }
         }
         return copy;
+    }
+
+    @Nullable
+    public List<?> handleRecipe(IO io, GTRecipe recipe, RecipeCapability<?> cap, List<?> contents, boolean simulate) {
+        var handlerList = getCapability(cap);
+        for (var handler : handlerList) {
+            contents = handler.handleRecipe(io, recipe, contents, null, simulate);
+            if (contents == null) return null;
+        }
+        return contents;
+    }
+
+    private static <T> Object2LongOpenHashMap<ItemStack> createItemMap(List<IRecipeHandler<T>> handlers, Object2LongOpenHashMap<ItemStack> itemContent) {
+        for (var handler : handlers) {
+            if (handler instanceof CatalystItemStackHandler || handler instanceof NotifiableCircuitItemStackHandler) continue;
+            if (handler instanceof IMEPartMachine aeItemHandler) {
+                final var map = aeItemHandler.getMEItemMap();
+                if (map != null) {
+                    for (var it = Object2LongMaps.fastIterator(map); it.hasNext();) {
+                        var entry = it.next();
+                        itemContent.addTo(entry.getKey(), entry.getLongValue());
+                    }
+                }
+            } else {
+                for (var o : handler.getContents()) {
+                    if (o instanceof ItemStack stack) {
+                        itemContent.addTo(stack, stack.getCount());
+                    }
+                }
+            }
+        }
+        return itemContent;
+    }
+
+    private static <T> Object2LongOpenHashMap<FluidStack> createFluidMap(List<IRecipeHandler<T>> handlers, Object2LongOpenHashMap<FluidStack> fluidContent) {
+        for (var fluid : handlers) {
+            if (fluid instanceof CatalystFluidStackHandler) continue;
+            for (var o : fluid.getContents()) {
+                if (o instanceof FluidStack stack) {
+                    fluidContent.addTo(stack, stack.getAmount());
+                }
+            }
+        }
+        return fluidContent;
+    }
+
+    private long getPriority() {
+        long priority = 0;
+        for (List<IRecipeHandler<?>> list : handlerMap.values()) {
+            for (IRecipeHandler<?> handler : list) {
+                priority += handler.getPriority();
+            }
+        }
+        return priority;
+    }
+
+    private double getTotalContentAmount() {
+        double sum = 0;
+        for (List<IRecipeHandler<?>> list : handlerMap.values()) {
+            for (IRecipeHandler<?> handler : list) {
+                sum += handler.getTotalContentAmount();
+            }
+        }
+        return sum;
     }
 }

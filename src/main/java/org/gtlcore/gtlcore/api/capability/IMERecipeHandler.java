@@ -5,6 +5,8 @@ import com.gregtechceu.gtceu.api.capability.recipe.RecipeCapability;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.IntCollection;
+import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.objects.*;
 
 import java.util.*;
@@ -29,16 +31,18 @@ public interface IMERecipeHandler<T extends Predicate<S>, S> extends IFilteredHa
 
     /**
      * 获取激活的slot列表
-     * 意味着该slot拥有样板且样板包含对应CAP
+     * 意味着该slot拥有样板且包含任意CAP的Input (禁止纯催化剂槽位)
+     * 因此同一MEPatternBuffer的任意Handler都应当返回相同结果
      *
      * @return 激活的slot index[]
      */
-    List<Integer> getActiveSlots();
+    Set<Integer> getActiveSlots();
 
     // ==================== Content Management ====================
 
     /**
      * 获取所有激活且未缓存GTRecipe的slot -> 与handler对应内容的映射
+     * 激活意味着该slot拥有样板且包含任意CAP的Input (禁止纯催化剂槽位)
      * 查询GTRecipe使用，所有Content缩限到单个元素与Int.MAX上限
      * Object类型说明:
      * - Ingredient -> ItemStack
@@ -49,22 +53,14 @@ public interface IMERecipeHandler<T extends Predicate<S>, S> extends IFilteredHa
     Int2ObjectMap<List<S>> getActiveAndUnCachedSlotsLimitContentsMap();
 
     /**
-     * 获取指定slot中所有与handler对应内容 -> amount的映射
+     * 获取Collection中第一个active槽位内所有与stack -> amount的映射 or Empty Map
+     * FirstAvailable的结果应当对于不同泛型的Handler保持一致性
      * 计算并行使用，amount不缩限
      *
      * @param slots 要查询的slot列表
      * @return 内容到数量的映射
      */
-    Object2LongMap<S> getCustomSlotsStackMap(Collection<Integer> slots);
-
-    /**
-     * 获取指定slot中所有与handler对应内容 -> amount的映射
-     * 计算并行使用，amount不缩限
-     *
-     * @param slots 要查询的slot列表
-     * @return 第一个active槽位内容到数量的映射 Or Empty(对于不同泛型的Handler保持一致性)
-     */
-    Object2LongMap<S> getFirstAvailableSlotFromCustomStackMap(Collection<Integer> slots);
+    Object2LongMap<S> getStackMapFromFirstAvailableSlot(IntCollection slots);
 
     /**
      * 获取单个slot中所有与handler对应内容 -> amount的映射
@@ -73,9 +69,10 @@ public interface IMERecipeHandler<T extends Predicate<S>, S> extends IFilteredHa
      * @return 内容到数量的映射
      */
     default Object2LongMap<S> getSingleSlotStackMap(int slot) {
-        return getCustomSlotsStackMap(Collections.singletonList(slot));
+        return getStackMapFromFirstAvailableSlot(IntList.of(slot));
     }
 
+    @SuppressWarnings("unchecked")
     default T copyContent(Object content) {
         return getCapability().copyInner((T) content);
     }

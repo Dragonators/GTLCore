@@ -41,8 +41,8 @@ public class MachineUtil {
 
     public static boolean inputItem(WorkableMultiblockMachine machine, ItemStack item) {
         GTRecipe recipe = new GTRecipeBuilder(item.kjs$getIdLocation(), GTRecipeTypes.DUMMY_RECIPES).inputItems(item).buildRawRecipe();
-        if (matchRecipeInput(machine, recipe)) {
-            return handleRecipeInput(machine, recipe);
+        if (matchRecipeInputNocache(machine, recipe)) {
+            return handleRecipeInputNocache(machine, recipe);
         } else RecipeResult.of(machine, RecipeResult.fail(Component.translatable("gtceu.recipe.fail.no.input.item", item.getDisplayName())));
         return false;
     }
@@ -68,8 +68,8 @@ public class MachineUtil {
 
     public static boolean inputFluid(WorkableMultiblockMachine machine, FluidStack fluid) {
         GTRecipe recipe = new GTRecipeBuilder(Objects.requireNonNull(ForgeRegistries.FLUIDS.getKey(fluid.getFluid())), GTRecipeTypes.DUMMY_RECIPES).inputFluids(fluid).buildRawRecipe();
-        if (matchRecipeInput(machine, recipe)) {
-            return handleRecipeInput(machine, recipe);
+        if (matchRecipeInputNocache(machine, recipe)) {
+            return handleRecipeInputNocache(machine, recipe);
         } else RecipeResult.of(machine, RecipeResult.fail(Component.translatable("gtceu.recipe.fail.no.input.fluid", fluid.getDisplayName())));
         return false;
     }

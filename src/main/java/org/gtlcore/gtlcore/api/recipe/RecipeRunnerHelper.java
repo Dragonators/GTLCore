@@ -31,12 +31,8 @@ public class RecipeRunnerHelper {
 
     public static boolean matchRecipeOutput(IRecipeCapabilityHolder holder, GTRecipe recipe) {
         if (recipe.outputs.isEmpty()) return true;
-        if (holder instanceof IRecipeCapabilityMachine machine && machine.isRecipeOutput(recipe)) return true;
+        if (holder instanceof IRecipeCapabilityMachine machine && machine.isRecipeOutputAlwaysMatch(recipe)) return true;
         return handleRecipe(IO.OUT, holder, recipe.outputs, Collections.emptyMap(), false, recipe, true).isSuccess();
-    }
-
-    public static boolean handleRecipeIO(IRecipeLogicMachine holder, GTRecipe recipe) {
-        return handleRecipeInput(holder, recipe) && handleRecipeOutput(holder, recipe);
     }
 
     public static boolean handleRecipeInput(IRecipeLogicMachine holder, GTRecipe recipe) {
@@ -49,6 +45,11 @@ public class RecipeRunnerHelper {
 
     public static RecipeResult handleRecipe(IO io, IRecipeCapabilityHolder holder, Map<RecipeCapability<?>, List<Content>> contents,
                                             Map<RecipeCapability<?>, Object2IntMap<?>> chanceCaches, boolean isTick, GTRecipe recipe, boolean isSimulate) {
+        return handleRecipe(io, holder, contents, chanceCaches, isTick, recipe, isSimulate, RecipeCacheStrategy.FULL_CACHE);
+    }
+
+    public static RecipeResult handleRecipe(IO io, IRecipeCapabilityHolder holder, Map<RecipeCapability<?>, List<Content>> contents,
+                                            Map<RecipeCapability<?>, Object2IntMap<?>> chanceCaches, boolean isTick, GTRecipe recipe, boolean isSimulate, RecipeCacheStrategy cacheStrategy) {
         if (holder instanceof PrimitiveWorkableMachine || holder instanceof SteamWorkableMachine ||
                 holder instanceof WorkableTieredMachine || holder instanceof ResearchStationMachine) {
             if (isSimulate) {
@@ -61,11 +62,28 @@ public class RecipeRunnerHelper {
                 if (recipe.handleRecipe(io, holder, isTick, contents, chanceCaches)) return RecipeResult.SUCCESS;
             }
         } else {
-            RecipeRunner runner = new RecipeRunner(recipe, io, isTick, holder, chanceCaches, isSimulate);
-            RecipeResult result = runner.handle(contents);
+            RecipeResult result = RecipeRunner.handle(recipe, io, holder, contents, chanceCaches, isSimulate, cacheStrategy);
             RecipeResult.of((IRecipeLogicMachine) holder, result.isSuccess() ? result : (io == IO.IN ? RecipeResult.FAIL_FIND : RecipeResult.FAIL_OUTPUT));
             if (result.isSuccess()) return result;
         }
         return RecipeResult.fail(null);
+    }
+
+    // ============================================
+    // Custom-Cache versions (for DUMMY_RECIPES)
+    // ============================================
+
+    public static boolean matchRecipeInputNoMEInnerCache(IRecipeCapabilityHolder holder, GTRecipe recipe) {
+        if (recipe.inputs.isEmpty()) return true;
+        return handleRecipe(IO.IN, holder, recipe.inputs, Collections.emptyMap(), false, recipe, true, RecipeCacheStrategy.HANDLE_PART_CACHE_ONLY).isSuccess();
+    }
+
+    public static boolean matchRecipeInputNocache(IRecipeCapabilityHolder holder, GTRecipe recipe) {
+        if (recipe.inputs.isEmpty()) return true;
+        return handleRecipe(IO.IN, holder, recipe.inputs, Collections.emptyMap(), false, recipe, true, RecipeCacheStrategy.NO_CACHE).isSuccess();
+    }
+
+    public static boolean handleRecipeInputNocache(IRecipeLogicMachine holder, GTRecipe recipe) {
+        return handleRecipe(IO.IN, holder, recipe.inputs, holder.getRecipeLogic().getChanceCaches(), true, recipe, false, RecipeCacheStrategy.NO_CACHE).isSuccess();
     }
 }

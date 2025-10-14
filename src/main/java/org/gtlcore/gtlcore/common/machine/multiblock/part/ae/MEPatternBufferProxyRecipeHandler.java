@@ -9,13 +9,14 @@ import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMaps;
+import it.unimi.dsi.fastutil.ints.IntCollection;
 import it.unimi.dsi.fastutil.objects.Object2LongMap;
 import it.unimi.dsi.fastutil.objects.Object2LongMaps;
 import lombok.Setter;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Predicate;
 
 public class MEPatternBufferProxyRecipeHandler<T extends Predicate<S>, S> extends NotifiableMERecipeHandlerTrait<T, S> {
@@ -43,11 +44,11 @@ public class MEPatternBufferProxyRecipeHandler<T extends Predicate<S>, S> extend
     }
 
     @Override
-    public List<Integer> getActiveSlots() {
+    public Set<Integer> getActiveSlots() {
         if (handler != null) {
             return handler.getActiveSlots();
         }
-        return Collections.emptyList();
+        return Collections.emptySet();
     }
 
     @Override
@@ -59,17 +60,9 @@ public class MEPatternBufferProxyRecipeHandler<T extends Predicate<S>, S> extend
     }
 
     @Override
-    public Object2LongMap<S> getCustomSlotsStackMap(Collection<Integer> slots) {
+    public Object2LongMap<S> getStackMapFromFirstAvailableSlot(IntCollection slots) {
         if (handler != null) {
-            return handler.getCustomSlotsStackMap(slots);
-        }
-        return Object2LongMaps.emptyMap();
-    }
-
-    @Override
-    public Object2LongMap<S> getFirstAvailableSlotFromCustomStackMap(Collection<Integer> slots) {
-        if (handler != null) {
-            return handler.getFirstAvailableSlotFromCustomStackMap(slots);
+            return handler.getStackMapFromFirstAvailableSlot(slots);
         }
         return Object2LongMaps.emptyMap();
     }

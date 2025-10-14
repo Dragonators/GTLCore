@@ -13,8 +13,9 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 
-import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ReferenceSet;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -26,47 +27,39 @@ import java.util.*;
 public interface IRecipeCapabilityMachine {
 
     @NotNull
-    Map<IO, List<RecipeHandlePart>> getCapabilities();
+    List<RecipeHandlePart> getNormalRecipeHandlePart(IO io);
 
-    @NotNull
-    Map<IO, Map<RecipeCapability<?>, List<IRecipeHandler<?>>>> getCapabilitiesFlat();
+    @Nullable
+    RecipeHandlePart getSharedRecipeHandlePart();
 
-    @NotNull
-    default List<IRecipeHandler<?>> getCapabilitiesFlat(IO io, RecipeCapability<?> cap) {
-        return getCapabilitiesFlat()
-                .getOrDefault(io, Collections.emptyMap())
-                .getOrDefault(cap, Collections.emptyList());
-    }
+    boolean emptyRecipeHandlePart();
 
-    default void addHandlerList(RecipeHandlePart handler) {
-        if (handler == RecipeHandlePart.NO_DATA) return;
-        IO io = handler.getHandlerIO();
-        getCapabilities().computeIfAbsent(io, i -> new ArrayList<>()).add(handler);
-        var entrySet = handler.getHandlerMap().entrySet();
-        var inner = getCapabilitiesFlat().computeIfAbsent(io, i -> new Reference2ObjectOpenHashMap<>(entrySet.size()));
-        for (var entry : entrySet) {
-            var entryList = entry.getValue();
-            inner.computeIfAbsent(entry.getKey(), c -> new ArrayList<>(entryList.size())).addAll(entryList);
-        }
-    }
+    boolean emptyHandlePart();
 
-    // region ME
+    // ==================== ME ====================
 
     List<MEPatternRecipeHandlePart> getMEPatternRecipeHandleParts();
 
-    List<MEIORecipeHandlePart> getMEIORecipeHandleParts();
+    List<MEIORecipeHandlePart<?>> getMEOutputRecipeHandleParts();
 
-    void setMERecipeHandleMap(MEPatternRecipeHandlePart hatch, GTRecipe recipe, int slot);
+    void tryAddAndActiveMERhp(MEPatternRecipeHandlePart part, GTRecipe recipe, int slot);
 
     void sortMEOutput();
 
-    // endregion
+    // ==================== Cache ====================
 
-    List<RecipeHandlePart> getRecipeHandleParts();
+    @Nullable
+    IRecipeHandlePart getActiveRecipeHandle(GTRecipe recipe);
 
-    Map<GTRecipe, IRecipeHandlePart> getRecipeHandleMap();
+    @NotNull
+    Iterator<@NotNull IRecipeHandlePart> getAllCachedRecipeHandlesIter(GTRecipe recipe);
 
-    void setRecipeHandleMap(RecipeHandlePart hatch, GTRecipe recipe);
+    @NotNull
+    ReferenceSet<@NotNull IRecipeHandlePart> getAllCachedRecipeHandles(GTRecipe recipe);
+
+    void tryAddAndActiveRhp(GTRecipe recipe, IRecipeHandlePart part);
+
+    // ==================== Structure Form ====================
 
     void upDate();
 
@@ -74,19 +67,15 @@ public interface IRecipeCapabilityMachine {
 
     void setDistinct(boolean isDistinct);
 
-    default boolean isMEOutPutBus() {
+    default boolean itemOutPutAlwaysMatch() {
         return false;
     }
 
-    default boolean isMEOutPutHatch() {
+    default boolean fluidOutPutAlwaysMatch() {
         return false;
     }
 
-    default boolean isMEOutPutDual() {
-        return false;
-    }
-
-    default boolean isRecipeOutput(GTRecipe recipe) {
+    default boolean isRecipeOutputAlwaysMatch(GTRecipe recipe) {
         return false;
     }
 

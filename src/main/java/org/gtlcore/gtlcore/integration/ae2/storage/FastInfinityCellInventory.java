@@ -2,8 +2,8 @@ package org.gtlcore.gtlcore.integration.ae2.storage;
 
 import org.gtlcore.gtlcore.GTLCore;
 import org.gtlcore.gtlcore.integration.ae2.FastInfinityCell;
-import org.gtlcore.gtlcore.utils.Int128;
 import org.gtlcore.gtlcore.utils.StorageManager;
+import org.gtlcore.gtlcore.utils.datastructure.Int128;
 
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.LongArrayTag;

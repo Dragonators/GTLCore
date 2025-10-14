@@ -1,10 +1,9 @@
 package org.gtlcore.gtlcore.api.machine.trait.MEPart;
 
-import com.gregtechceu.gtceu.api.capability.recipe.IO;
+import org.jetbrains.annotations.NotNull;
 
 public interface IMEIOPartMachine {
 
-    IO getIO();
-
-    void notifySelfIO();
+    @NotNull
+    IMEIOTrait getMETrait();
 }

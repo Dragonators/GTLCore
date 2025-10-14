@@ -2,13 +2,13 @@ package org.gtlcore.gtlcore.api.recipe;
 
 import org.gtlcore.gtlcore.api.machine.trait.IRecipeCapabilityMachine;
 import org.gtlcore.gtlcore.api.machine.trait.MEPatternRecipeHandlePart;
-import org.gtlcore.gtlcore.api.recipe.chance.ILongChanceLogic;
+import org.gtlcore.gtlcore.api.machine.trait.RecipeHandlePart;
+import org.gtlcore.gtlcore.api.recipe.chance.LongChanceLogic;
 import org.gtlcore.gtlcore.api.recipe.ingredient.LongIngredient;
 
 import com.gregtechceu.gtceu.api.capability.recipe.*;
 import com.gregtechceu.gtceu.api.machine.feature.IRecipeLogicMachine;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
-import com.gregtechceu.gtceu.api.recipe.chance.logic.ChanceLogic;
 import com.gregtechceu.gtceu.api.recipe.content.Content;
 import com.gregtechceu.gtceu.api.recipe.content.ContentModifier;
 import com.gregtechceu.gtceu.api.recipe.ingredient.FluidIngredient;
@@ -44,7 +44,7 @@ public interface IParallelLogic {
                 var function = recipe.getType().getChanceFunction();
                 int holderTier = holder.getChanceTier();
                 var cache = ((IRecipeLogicMachine) holder).getRecipeLogic().getChanceCaches().get(cap);
-                chancedContents = ((ILongChanceLogic) ChanceLogic.OR).roll(chancedContents, function, ((IGTRecipe) recipe).getEuTier(), holderTier, cache, ((IGTRecipe) recipe).getRealParallels(), cap);
+                chancedContents = LongChanceLogic.OR.roll(chancedContents, function, ((IGTRecipe) recipe).getEuTier(), holderTier, cache, ((IGTRecipe) recipe).getRealParallels(), cap);
                 if (chancedContents != null) {
                     for (var cont : chancedContents) {
                         contentList.add(new Content(cont.content, 10000, 10000, 0, null, null));
@@ -97,7 +97,7 @@ public interface IParallelLogic {
     static long getInputItemParallel(IRecipeCapabilityHolder holder, GTRecipe recipe, long parallelAmount) {
         if (parallelAmount <= 1) return parallelAmount;
         if (!(holder instanceof IRecipeCapabilityMachine machine)) return 1;
-        if (machine.getRecipeHandleParts().isEmpty() && machine.getMEPatternRecipeHandleParts().isEmpty()) return 0;
+        if (machine.emptyRecipeHandlePart()) return 0;
 
         Object2LongOpenCustomHashMap<Ingredient> countableMap = new Object2LongOpenCustomHashMap<>(IngredientEquality.IngredientHashStrategy.INSTANCE);
 
@@ -117,27 +117,20 @@ public interface IParallelLogic {
 
         Object2LongOpenCustomHashMap<ItemStack> ingredientStacks = new Object2LongOpenCustomHashMap<>(ItemStackHashStrategy.comparingAllButCount());
 
-        var handle = machine.getRecipeHandleMap().get(recipe);
+        var handle = machine.getActiveRecipeHandle(recipe);
         if (handle instanceof MEPatternRecipeHandlePart mePatternRecipeHandlePart) {
-            // ME handler
-            for (var entry : Object2LongMaps.fastIterable(mePatternRecipeHandlePart.getFirstAvailableMEContentOrEmpty(ItemRecipeCapability.CAP, mePatternRecipeHandlePart.getRecipes2SlotsMap().getValues(recipe)))) {
+            for (var entry : Object2LongMaps.fastIterable(mePatternRecipeHandlePart.getMEContent(ItemRecipeCapability.CAP, recipe))) {
                 ingredientStacks.addTo(entry.getKey(), entry.getLongValue());
             }
 
-        } else if (handle != null) {
-            for (var entry : Object2LongMaps.fastIterable(handle.getContent(ItemRecipeCapability.CAP))) {
+        } else if (handle instanceof RecipeHandlePart recipeHandlePart) {
+            for (var entry : Object2LongMaps.fastIterable(recipeHandlePart.getSelfContent(ItemRecipeCapability.CAP))) {
                 ingredientStacks.addTo(entry.getKey(), entry.getLongValue());
             }
         } else {
-            // ME handlers, All Active Slots
-            for (MEPatternRecipeHandlePart part : machine.getMEPatternRecipeHandleParts()) {
-                for (var entry : Object2LongMaps.fastIterable(part.getMEContent(ItemRecipeCapability.CAP))) {
-                    ingredientStacks.addTo(entry.getKey(), entry.getLongValue());
-                }
-            }
-            // other handlers
-            for (var it : machine.getCapabilities().getOrDefault(IO.IN, Collections.emptyList())) {
-                for (var entry : Object2LongMaps.fastIterable(it.getContent(ItemRecipeCapability.CAP))) {
+            var sharedRecipeHandlePart = machine.getSharedRecipeHandlePart();
+            if (sharedRecipeHandlePart != null) {
+                for (var entry : Object2LongMaps.fastIterable(sharedRecipeHandlePart.getSelfContent(ItemRecipeCapability.CAP))) {
                     ingredientStacks.addTo(entry.getKey(), entry.getLongValue());
                 }
             }
@@ -148,7 +141,7 @@ public interface IParallelLogic {
     static long getInputFluidParallel(IRecipeCapabilityHolder holder, GTRecipe recipe, long parallelAmount) {
         if (parallelAmount <= 1) return parallelAmount;
         if (!(holder instanceof IRecipeCapabilityMachine machine)) return 1;
-        if (machine.getRecipeHandleParts().isEmpty() && machine.getMEPatternRecipeHandleParts().isEmpty()) return 0;
+        if (machine.emptyRecipeHandlePart()) return 0;
 
         Object2LongOpenHashMap<FluidIngredient> fluidCountMap = new Object2LongOpenHashMap<>();
 
@@ -163,24 +156,27 @@ public interface IParallelLogic {
 
         Object2LongOpenCustomHashMap<FluidStack> ingredientStacks = new Object2LongOpenCustomHashMap<>(FluidStackHashStrategy.comparingAllButAmount());
 
-        var recipeHandle = machine.getRecipeHandleMap().get(recipe);
-        if (recipeHandle instanceof MEPatternRecipeHandlePart mePatternRecipeHandlePart) {
-            // ME handler
-            for (var entry : Object2LongMaps.fastIterable(mePatternRecipeHandlePart.getFirstAvailableMEContentOrEmpty(FluidRecipeCapability.CAP, mePatternRecipeHandlePart.getRecipes2SlotsMap().getValues(recipe)))) {
+        var handle = machine.getActiveRecipeHandle(recipe);
+        if (handle instanceof MEPatternRecipeHandlePart mePatternRecipeHandlePart) {
+            for (var entry : Object2LongMaps.fastIterable(mePatternRecipeHandlePart.getMEContent(FluidRecipeCapability.CAP, recipe))) {
                 ingredientStacks.addTo(entry.getKey(), entry.getLongValue());
             }
-        } else if (recipeHandle != null && machine.isDistinct()) {
-            for (var entry : Object2LongMaps.fastIterable(recipeHandle.getContent(FluidRecipeCapability.CAP))) {
+        } else if (handle instanceof RecipeHandlePart recipeHandlePart) {
+            for (var entry : Object2LongMaps.fastIterable(machine.isDistinct() ? recipeHandlePart.getSelfContent(FluidRecipeCapability.CAP) : recipeHandlePart.getContentWithShared(FluidRecipeCapability.CAP))) {
                 ingredientStacks.addTo(entry.getKey(), entry.getLongValue());
             }
         } else {
-            for (var container : machine.getCapabilitiesFlat(IO.IN, FluidRecipeCapability.CAP)) {
-                if (container instanceof CatalystFluidStackHandler) continue;
-                for (var object : container.getContents()) {
-                    if (object instanceof FluidStack fs) {
-                        ingredientStacks.addTo(fs, fs.getAmount());
+            var sharedRecipeHandlePart = machine.getSharedRecipeHandlePart();
+            if (sharedRecipeHandlePart != null) {
+                for (var handler : sharedRecipeHandlePart.getCapability(FluidRecipeCapability.CAP)) {
+                    if (handler instanceof CatalystFluidStackHandler) continue;
+                    for (var object : handler.getContents()) {
+                        if (object instanceof FluidStack fs) {
+                            ingredientStacks.addTo(fs, fs.getAmount());
+                        }
                     }
                 }
+
             }
         }
         return calculate(parallelAmount, fluidCountMap, ingredientStacks);
@@ -212,100 +208,72 @@ public interface IParallelLogic {
         return parallelLimit;
     }
 
-    @SuppressWarnings("unchecked")
     static long getOutputItemParallel(IRecipeCapabilityHolder holder, GTRecipe recipe, List<Content> contents, long multiplier) {
         if (multiplier <= 1L || contents.isEmpty()) return multiplier;
-        if (holder instanceof IRecipeCapabilityMachine machine) {
-            if (machine.isMEOutPutDual() || machine.isMEOutPutBus()) return multiplier;
-            long minMultiplier = 0L;
-            long maxMultiplier = multiplier;
-            long maxCount = 0L;
-            List<Ingredient> ingredients = new ObjectArrayList<>(contents.size());
-            for (var content : contents) {
-                Ingredient ingredient = ItemRecipeCapability.CAP.of(content.content);
-                long ingredientCount;
-                if (ingredient instanceof LongIngredient longIngredient) {
-                    ingredientCount = longIngredient.getAmount();
-                } else if (ingredient instanceof SizedIngredient sizedIngredient) {
-                    ingredientCount = sizedIngredient.getAmount();
-                } else ingredientCount = 1;
-                maxCount = Math.max(maxCount, ingredientCount);
-                ingredients.add(ingredient);
-            }
-            if (maxCount == 0L) return multiplier;
-            var handlers = machine.getCapabilitiesFlat(IO.OUT, ItemRecipeCapability.CAP);
-            if (handlers.isEmpty()) return 0L;
-            while (minMultiplier != maxMultiplier) {
-                List<Ingredient> copied = new ObjectArrayList<>(ingredients.size());
-                for (var ing : ingredients) {
-                    copied.add(ItemRecipeCapability.CAP.copyWithModifier(ing, ContentModifier.multiplier(multiplier)));
-                }
-                for (var handler : handlers) {
-                    copied = (List<Ingredient>) handler.handleRecipe(IO.OUT, recipe, copied, null, true);
-                    if (copied == null || copied.isEmpty()) break;
-                    if (multiplier == 1L) return 0L;
-                }
-                long[] bin = adjustMultiplier(copied == null, minMultiplier, multiplier, maxMultiplier);
-                minMultiplier = bin[0];
-                multiplier = bin[1];
-                maxMultiplier = bin[2];
-            }
-            return multiplier;
+        if (!(holder instanceof IRecipeCapabilityMachine machine)) return 1;
+        if (machine.itemOutPutAlwaysMatch()) return multiplier;
+
+        List<Ingredient> ingredients = new ObjectArrayList<>(contents.size());
+        for (var content : contents) {
+            Ingredient ingredient = ItemRecipeCapability.CAP.of(content.content);
+            if (ingredient instanceof LongIngredient longIngredient && longIngredient.getAmount() <= 0) continue;
+            else if (ingredient instanceof SizedIngredient sizedIngredient && sizedIngredient.getAmount() <= 0) continue;
+            ingredients.add(ingredient);
         }
-        return 1;
+
+        if (ingredients.isEmpty()) return multiplier;
+
+        return binarySearchMaxParallel(machine, recipe, ItemRecipeCapability.CAP, ingredients, multiplier);
+    }
+
+    static long getOutputFluidParallel(IRecipeCapabilityHolder holder, GTRecipe recipe, List<Content> contents, long multiplier) {
+        if (multiplier <= 1L || contents.isEmpty()) return multiplier;
+        if (!(holder instanceof IRecipeCapabilityMachine machine)) return 1;
+        if (machine.fluidOutPutAlwaysMatch()) return multiplier;
+
+        List<FluidIngredient> ingredients = new ObjectArrayList<>(contents.size());
+        for (var content : contents) {
+            FluidIngredient ingredient = FluidRecipeCapability.CAP.of(content.content);
+            if (ingredient.getAmount() > 0) ingredients.add(ingredient);
+        }
+
+        if (ingredients.isEmpty()) return multiplier;
+
+        return binarySearchMaxParallel(machine, recipe, FluidRecipeCapability.CAP, ingredients, multiplier);
     }
 
     @SuppressWarnings("unchecked")
-    static long getOutputFluidParallel(IRecipeCapabilityHolder holder, GTRecipe recipe, List<Content> contents, long multiplier) {
-        if (multiplier <= 1L || contents.isEmpty()) return multiplier;
-        if (holder instanceof IRecipeCapabilityMachine machine) {
-            if (machine.isMEOutPutDual() || machine.isMEOutPutHatch()) return multiplier;
-            long minMultiplier = 0L;
-            long maxMultiplier = multiplier;
-            long maxCount = 0L;
-            List<FluidIngredient> ingredients = new ObjectArrayList<>(contents.size());
-            for (var content : contents) {
-                FluidIngredient recipeIngredient = FluidRecipeCapability.CAP.of(content.content);
-                maxCount = Math.max(maxCount, recipeIngredient.getAmount());
-                ingredients.add(recipeIngredient);
-            }
-            if (maxCount == 0L) return multiplier;
-            List<IRecipeHandler<?>> handlers = machine.getCapabilitiesFlat(IO.OUT, FluidRecipeCapability.CAP);
-            if (handlers.isEmpty()) return 0L;
-            while (minMultiplier != maxMultiplier) {
-                List<FluidIngredient> copied = new ObjectArrayList<>(ingredients.size());
-                for (FluidIngredient ing : ingredients) {
-                    copied.add(FluidRecipeCapability.CAP.copyWithModifier(ing, ContentModifier.multiplier((double) multiplier)));
-                }
-                for (IRecipeHandler<?> handler : handlers) {
-                    copied = (List<FluidIngredient>) handler.handleRecipe(IO.OUT, recipe, copied, null, true);
-                    if (copied == null || copied.isEmpty()) break;
-                    if (multiplier == 1L) return 0L;
-                }
-                long[] bin = adjustMultiplier(copied == null, minMultiplier, multiplier, maxMultiplier);
-                minMultiplier = bin[0];
-                multiplier = bin[1];
-                maxMultiplier = bin[2];
-            }
-            return multiplier;
+    private static <T> long binarySearchMaxParallel(IRecipeCapabilityMachine machine, GTRecipe recipe,
+                                                    RecipeCapability<T> capability, List<T> ingredients, long initialMultiplier) {
+        var handlers = machine.getNormalRecipeHandlePart(IO.OUT);
+        if (handlers.isEmpty()) return 0L;
 
-        }
-        return 1;
-    }
+        long left = 1L, right = initialMultiplier;
 
-    private static long[] adjustMultiplier(boolean mergedAll, long minMultiplier, long multiplier, long maxMultiplier) {
-        if (mergedAll) {
-            minMultiplier = multiplier;
-            long remainder = (maxMultiplier - multiplier) % 2L;
-            multiplier = multiplier + remainder + (maxMultiplier - multiplier) / 2L;
-        } else {
-            maxMultiplier = multiplier;
-            multiplier = (multiplier + minMultiplier) / 2L;
+        while (left < right) {
+            long mid = left + (right - left + 1) / 2;
+
+            List<T> copied = new ObjectArrayList<>(ingredients.size());
+            for (var ing : ingredients) {
+                copied.add(capability.copyWithModifier(ing, ContentModifier.multiplier((double) mid)));
+            }
+
+            boolean canHandle = false;
+            for (var handler : handlers) {
+                copied = (List<T>) handler.handleRecipe(IO.OUT, recipe, capability, copied, true);
+                if (copied == null || copied.isEmpty()) {
+                    canHandle = true;
+                    break;
+                }
+            }
+
+            if (canHandle) {
+                left = mid;
+            } else {
+                right = mid - 1;
+            }
         }
-        if (maxMultiplier - minMultiplier <= 1L) {
-            maxMultiplier = minMultiplier;
-            multiplier = minMultiplier;
-        }
-        return new long[] { minMultiplier, multiplier, maxMultiplier };
+
+        return left;
     }
 }

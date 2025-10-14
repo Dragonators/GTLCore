@@ -168,7 +168,6 @@ public class MEOutputFilterHandler implements ITagSerializable<CompoundTag> {
 
     protected void onUIClosed() {
         if (isRemote()) return;
-        this.updatePriority.run();
         if (hasItemFilterChange || hasFluidFilterChange) {
             if (hasItemFilterChange) {
                 itemFilterHashSet.clear();
@@ -185,7 +184,7 @@ public class MEOutputFilterHandler implements ITagSerializable<CompoundTag> {
                 fluidFilterHashSet.clear();
                 for (FluidStorage filterTank : filterTanks) {
                     var fluidStack = filterTank.getFluid();
-                    if (fluidStack.isEmpty()) {
+                    if (!fluidStack.isEmpty()) {
                         fluidFilterHashSet.add(ignoreFluidNbt ? AEFluidKey.of(fluidStack.getFluid()) : AEFluidKey.of(fluidStack.getFluid(), fluidStack.getTag()));
                     }
                 }
@@ -194,6 +193,7 @@ public class MEOutputFilterHandler implements ITagSerializable<CompoundTag> {
             }
             this.markDirty.run();
         }
+        this.updatePriority.run();
     }
 
     public List<Ingredient> testIngredient(List<Ingredient> left) {
