@@ -180,7 +180,7 @@ public class MEMolecularAssemblerIOPartMachine extends MEIOPartMachine implement
 
             if (!requiredTools.isEmpty()) {
                 AEUtils.pushInputsToMEPatternBufferInventory(keyCounters, this.buffer::addTo);
-                notifySelfIO();
+                this.meTrait.notifySelfIO();
                 return true;
             }
         }

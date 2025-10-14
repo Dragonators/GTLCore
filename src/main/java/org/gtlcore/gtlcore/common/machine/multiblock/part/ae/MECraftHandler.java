@@ -36,7 +36,7 @@ public class MECraftHandler extends NotifiableMAHandlerTrait {
                 buffer.addTo(AEItemKey.of(longIngredient.getItems()[0]), longIngredient.getActualAmount());
             }
         }
-        getMachine().notifySelfIO();
+        getMachine().getMETrait().notifySelfIO();
     }
 
     @Override

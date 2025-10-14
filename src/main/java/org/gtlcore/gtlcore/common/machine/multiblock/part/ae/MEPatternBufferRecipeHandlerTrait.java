@@ -1,6 +1,5 @@
 package org.gtlcore.gtlcore.common.machine.multiblock.part.ae;
 
-import org.gtlcore.gtlcore.api.machine.trait.IMERecipeHandlerTrait;
 import org.gtlcore.gtlcore.api.recipe.ingredient.LongIngredient;
 import org.gtlcore.gtlcore.integration.ae2.AEUtils;
 
@@ -18,16 +17,12 @@ import net.minecraft.world.item.crafting.Ingredient;
 
 import appeng.api.stacks.AEFluidKey;
 import appeng.api.stacks.AEItemKey;
-import appeng.api.stacks.AEKey;
-import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.*;
 import it.unimi.dsi.fastutil.objects.*;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.util.*;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
@@ -41,11 +36,8 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
     @Getter
     protected final MEFluidHandler meFluidHandler;
 
-    protected final Object2LongOpenHashMap<AEKey> buffer;
-
-    public MEPatternBufferRecipeHandlerTrait(MEPatternBufferPartMachine ioBuffer, Object2LongOpenHashMap<AEKey> buffer, IO io) {
+    public MEPatternBufferRecipeHandlerTrait(MEPatternBufferPartMachine ioBuffer, IO io) {
         super(ioBuffer);
-        this.buffer = buffer;
         meItemHandler = new MEItemInputHandler(ioBuffer, io);
         meFluidHandler = new MEFluidHandler(ioBuffer, io);
     }
@@ -63,48 +55,38 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
     @Override
     public void onChanged() {}
 
-    public List<IMERecipeHandlerTrait<? extends Predicate<?>, ?>> getMERecipeHandlers() {
-        return List.of(meItemHandler, meFluidHandler);
-    }
-
-    public Reference2ObjectMap<RecipeCapability<?>, IMERecipeHandlerTrait<? extends Predicate<?>, ?>> getMERecipeHandlerMap() {
-        Reference2ObjectMap<RecipeCapability<?>, IMERecipeHandlerTrait<? extends Predicate<?>, ?>> map = new Reference2ObjectArrayMap<>();
-        map.put(ItemRecipeCapability.CAP, meItemHandler);
-        map.put(FluidRecipeCapability.CAP, meFluidHandler);
-        return map;
-    }
-
     private boolean handleItemInner(GTRecipe recipe, Object2LongMap<Ingredient> left, int circuit, boolean simulate, int trySlot) {
         var internalSlot = getMachine().getInternalInventory()[trySlot];
-        if (internalSlot.isActive(ItemRecipeCapability.CAP)) {
+        if (internalSlot.isItemActive(simulate)) {
             if (simulate) {
                 if (!internalSlot.testCatalystItemInternal(recipe)) return false;
             }
             return internalSlot.handleItemInternal(left, circuit, simulate);
-        } else return false;
+        } else return left.isEmpty() && circuit < 0;
     }
 
     private boolean handleFluidInner(GTRecipe recipe, Object2LongMap<FluidIngredient> left, boolean simulate, int trySlot) {
         var internalSlot = getMachine().getInternalInventory()[trySlot];
-        if (internalSlot.isActive(FluidRecipeCapability.CAP)) {
+        if (internalSlot.isFluidActive(simulate)) {
             if (simulate) {
                 if (!internalSlot.testCatalystFluidInternal(recipe)) return false;
             }
             return internalSlot.handleFluidInternal(left, simulate);
-        } else return false;
+        } else return left.isEmpty();
     }
 
-    private List<Integer> getActiveSlots(MEPatternBufferPartMachine.InternalSlot[] slots, RecipeCapability<?> recipeCapability) {
-        return IntStream.range(0, slots.length)
-                .filter(i -> slots[i].isActive(recipeCapability))
-                .boxed()
-                .collect(Collectors.toList());
+    private Set<Integer> getActiveSlots(MEPatternBufferPartMachine.InternalSlot[] slots) {
+        final Set<Integer> activeSlots = new IntOpenHashSet();
+        for (int i = 0; i < slots.length; i++) {
+            if (slots[i].isActive()) activeSlots.add(i);
+        }
+        return activeSlots;
     }
 
-    private int[] getActiveAndUnCachedSlots(MEPatternBufferPartMachine.InternalSlot[] slots, RecipeCapability<?> recipeCapability) {
-        var machine = getMachine();
+    private int[] getActiveAndUnCachedSlots(MEPatternBufferPartMachine.InternalSlot[] slots) {
+        final var machine = getMachine();
         return IntStream.range(0, slots.length)
-                .filter(i -> slots[i].isActive(recipeCapability) && !machine.cacheRecipe[i])
+                .filter(i -> slots[i].isActive() && !machine.cacheRecipe[i])
                 .toArray();
     }
 
@@ -135,8 +117,8 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
         }
 
         @Override
-        public List<Integer> getActiveSlots() {
-            return MEPatternBufferRecipeHandlerTrait.this.getActiveSlots(getMachine().getInternalInventory(), ItemRecipeCapability.CAP);
+        public Set<Integer> getActiveSlots() {
+            return MEPatternBufferRecipeHandlerTrait.this.getActiveSlots(getMachine().getInternalInventory());
         }
 
         @SuppressWarnings("unchecked")
@@ -145,7 +127,7 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
             var map = new Int2ObjectArrayMap<List<ItemStack>>();
             var machine = getMachine();
             var shared = (List<ItemStack>) (Object) machine.getSharedCatalystInventory().getContents();
-            for (int slot : MEPatternBufferRecipeHandlerTrait.this.getActiveAndUnCachedSlots(getMachine().getInternalInventory(), ItemRecipeCapability.CAP)) {
+            for (int slot : MEPatternBufferRecipeHandlerTrait.this.getActiveAndUnCachedSlots(getMachine().getInternalInventory())) {
                 var inputs = machine.getInternalInventory()[slot].getLimitItemStackInput();
 
                 // 通过统一方法获取该槽位的电路（可能来自样板或总成配置）
@@ -161,26 +143,12 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
         }
 
         @Override
-        public Object2LongMap<ItemStack> getCustomSlotsStackMap(Collection<Integer> slots) {
-            Object2LongOpenHashMap<ItemStack> map = new Object2LongOpenHashMap<>();
-            for (int i : slots) {
-                var slot = getMachine().getInternalInventory()[i];
-                for (var it = Object2LongMaps.fastIterator(slot.getItemStackInputMap()); it.hasNext();) {
-                    var entry = it.next();
-                    map.addTo(entry.getKey(), entry.getLongValue());
-                }
-            }
-            return map;
-        }
-
-        @Override
-        public Object2LongMap<ItemStack> getFirstAvailableSlotFromCustomStackMap(Collection<Integer> slots) {
+        public Object2LongMap<ItemStack> getStackMapFromFirstAvailableSlot(IntCollection slots) {
             final var inventory = getMachine().getInternalInventory();
             for (int slot : slots) {
                 if (!inventory[slot].isActive()) continue;
                 Object2LongOpenHashMap<ItemStack> map = new Object2LongOpenHashMap<>();
-                for (var it = Object2LongMaps.fastIterator(inventory[slot].getItemStackInputMap()); it.hasNext();) {
-                    var entry = it.next();
+                for (var entry : Object2LongMaps.fastIterable(inventory[slot].getItemStackInputMap())) {
                     map.addTo(entry.getKey(), entry.getLongValue());
                 }
                 return map;
@@ -195,6 +163,7 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
 
         @Override
         public void prepareMEHandleContents(GTRecipe recipe, List<Ingredient> left, boolean simulate) {
+            preparedCircuitConfig = -1;
             if (simulate) {
                 // 处理总成配置的电路
                 getMachine().getSharedCircuitInventory().handleRecipeInner(IO.IN, recipe, left, null, true);
@@ -212,6 +181,7 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
         @Override
         public List<Ingredient> meHandleRecipeOutputInner(List<Ingredient> left, boolean simulate) {
             if (simulate) return List.of();
+            final var buffer = getMachine().buffer;
             for (Ingredient ingredient : left) {
                 if (ingredient instanceof IntProviderIngredient intProvider) {
                     intProvider.setItemStacks(null);
@@ -254,8 +224,8 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
         }
 
         @Override
-        public List<Integer> getActiveSlots() {
-            return MEPatternBufferRecipeHandlerTrait.this.getActiveSlots(getMachine().getInternalInventory(), FluidRecipeCapability.CAP);
+        public Set<Integer> getActiveSlots() {
+            return MEPatternBufferRecipeHandlerTrait.this.getActiveSlots(getMachine().getInternalInventory());
         }
 
         @SuppressWarnings("unchecked")
@@ -264,7 +234,7 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
             var map = new Int2ObjectArrayMap<List<FluidStack>>();
             var machine = getMachine();
             var shared = (List<FluidStack>) (Object) machine.getSharedCatalystTank().getContents();
-            for (int slot : MEPatternBufferRecipeHandlerTrait.this.getActiveAndUnCachedSlots(getMachine().getInternalInventory(), FluidRecipeCapability.CAP)) {
+            for (int slot : MEPatternBufferRecipeHandlerTrait.this.getActiveAndUnCachedSlots(getMachine().getInternalInventory())) {
                 var inputs = machine.getInternalInventory()[slot].getLimitFluidStackInput();
                 inputs.addAll(shared);
                 map.put(slot, inputs);
@@ -273,26 +243,12 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
         }
 
         @Override
-        public Object2LongMap<FluidStack> getCustomSlotsStackMap(Collection<Integer> slots) {
-            Object2LongOpenHashMap<FluidStack> map = new Object2LongOpenHashMap<>();
-            for (int i : slots) {
-                var slot = getMachine().getInternalInventory()[i];
-                for (var it = Object2LongMaps.fastIterator(slot.getFluidStackInputMap()); it.hasNext();) {
-                    var entry = it.next();
-                    map.addTo(entry.getKey(), entry.getLongValue());
-                }
-            }
-            return map;
-        }
-
-        @Override
-        public Object2LongMap<FluidStack> getFirstAvailableSlotFromCustomStackMap(Collection<Integer> slots) {
+        public Object2LongMap<FluidStack> getStackMapFromFirstAvailableSlot(IntCollection slots) {
             final var inventory = getMachine().getInternalInventory();
             for (int slot : slots) {
                 if (!inventory[slot].isActive()) continue;
                 Object2LongOpenHashMap<FluidStack> map = new Object2LongOpenHashMap<>();
-                for (var it = Object2LongMaps.fastIterator(inventory[slot].getFluidStackInputMap()); it.hasNext();) {
-                    var entry = it.next();
+                for (var entry : Object2LongMaps.fastIterable(inventory[slot].getFluidStackInputMap())) {
                     map.addTo(entry.getKey(), entry.getLongValue());
                 }
                 return map;
@@ -316,6 +272,7 @@ public class MEPatternBufferRecipeHandlerTrait extends MachineTrait {
         @Override
         public List<FluidIngredient> meHandleRecipeOutputInner(List<FluidIngredient> left, boolean simulate) {
             if (simulate) return List.of();
+            final var buffer = getMachine().buffer;
             for (FluidIngredient fluidIngredient : left) {
                 if (!fluidIngredient.isEmpty()) {
                     FluidStack[] fluids = fluidIngredient.getStacks();

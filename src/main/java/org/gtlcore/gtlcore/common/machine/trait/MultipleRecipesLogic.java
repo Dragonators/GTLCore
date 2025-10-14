@@ -4,6 +4,7 @@ import org.gtlcore.gtlcore.api.machine.multiblock.ParallelMachine;
 import org.gtlcore.gtlcore.api.machine.trait.ILockRecipe;
 import org.gtlcore.gtlcore.api.machine.trait.IRecipeCapabilityMachine;
 import org.gtlcore.gtlcore.api.recipe.IGTRecipe;
+import org.gtlcore.gtlcore.api.recipe.RecipeResult;
 
 import com.gregtechceu.gtceu.api.capability.recipe.*;
 import com.gregtechceu.gtceu.api.machine.feature.IRecipeLogicMachine;
@@ -66,6 +67,7 @@ public class MultipleRecipesLogic extends RecipeLogic implements ILockRecipe {
         lastRecipe = null;
         var match = getRecipe();
         if (match != null) {
+            RecipeResult.of(machine, RecipeResult.SUCCESS);
             if (matchRecipeOutput(machine, match)) {
                 setupRecipe(match);
             }

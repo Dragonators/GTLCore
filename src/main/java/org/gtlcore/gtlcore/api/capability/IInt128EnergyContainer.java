@@ -1,6 +1,6 @@
 package org.gtlcore.gtlcore.api.capability;
 
-import org.gtlcore.gtlcore.utils.Int128;
+import org.gtlcore.gtlcore.utils.datastructure.Int128;
 
 public interface IInt128EnergyContainer {
 

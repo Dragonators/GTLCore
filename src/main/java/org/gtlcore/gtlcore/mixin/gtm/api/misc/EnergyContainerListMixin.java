@@ -1,8 +1,8 @@
 package org.gtlcore.gtlcore.mixin.gtm.api.misc;
 
 import org.gtlcore.gtlcore.api.capability.IInt128EnergyContainer;
-import org.gtlcore.gtlcore.utils.Int128;
 import org.gtlcore.gtlcore.utils.NumberUtils;
+import org.gtlcore.gtlcore.utils.datastructure.Int128;
 
 import com.gregtechceu.gtceu.api.capability.IEnergyContainer;
 import com.gregtechceu.gtceu.api.misc.EnergyContainerList;

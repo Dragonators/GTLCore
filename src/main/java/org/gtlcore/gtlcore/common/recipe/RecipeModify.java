@@ -35,6 +35,7 @@ public class RecipeModify {
         });
 
         GTRecipeTypes.LASER_ENGRAVER_RECIPES.onRecipeBuild((recipeBuilder, provider) -> {
+            if (recipeBuilder.output.containsKey(FluidRecipeCapability.CAP)) return;
             GTRecipeBuilder recipe = GTLRecipeTypes.DIMENSIONAL_FOCUS_ENGRAVING_ARRAY_RECIPES.copyFrom(recipeBuilder)
                     .duration((int) (recipeBuilder.duration * 0.2))
                     .EUt(recipeBuilder.EUt() * 4);

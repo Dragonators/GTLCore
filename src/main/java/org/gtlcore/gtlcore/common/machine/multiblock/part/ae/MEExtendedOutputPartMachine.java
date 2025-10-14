@@ -1,6 +1,7 @@
 package org.gtlcore.gtlcore.common.machine.multiblock.part.ae;
 
 import org.gtlcore.gtlcore.api.machine.MEExtendedOutputFancyConfigurator;
+import org.gtlcore.gtlcore.api.machine.trait.MEPart.IMEFilterIOTrait;
 import org.gtlcore.gtlcore.api.recipe.ingredient.LongIngredient;
 
 import com.gregtechceu.gtceu.api.gui.fancy.TabsWidget;
@@ -53,11 +54,6 @@ public class MEExtendedOutputPartMachine extends MEExtendedOutputPartMachineBase
     private void onFilterChanged() {
         markDirty();
         notifyHandlers();
-    }
-
-    @Override
-    public boolean hasFilter() {
-        return filterHandler.hasFilter();
     }
 
     // ========================================
@@ -176,6 +172,16 @@ public class MEExtendedOutputPartMachine extends MEExtendedOutputPartMachineBase
     }
 
     @Override
+    protected @NotNull IMEFilterIOTrait createMETrait() {
+        return new MEFilterIOTrait(this);
+    }
+
+    @Override
+    public @NotNull IMEFilterIOTrait getMETrait() {
+        return (IMEFilterIOTrait) meTrait;
+    }
+
+    @Override
     protected void registerDefaultServices() {
         getMainNode().addService(IGridTickable.class, new Ticker());
     }
@@ -199,6 +205,23 @@ public class MEExtendedOutputPartMachine extends MEExtendedOutputPartMachineBase
                     return TickRateModulation.SLEEP;
                 } else return TickRateModulation.SLOWER;
             } else return reFunds(buffer, getMainNode().getGrid(), actionSource) ? TickRateModulation.URGENT : TickRateModulation.SLOWER;
+        }
+    }
+
+    protected class MEFilterIOTrait extends MEIOTrait implements IMEFilterIOTrait {
+
+        public MEFilterIOTrait(MEExtendedOutputPartMachine machine) {
+            super(machine);
+        }
+
+        @Override
+        public MEExtendedOutputPartMachine getMachine() {
+            return (MEExtendedOutputPartMachine) machine;
+        }
+
+        @Override
+        public boolean hasFilter() {
+            return filterHandler.hasFilter();
         }
     }
 }

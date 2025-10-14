@@ -1,4 +1,4 @@
-package org.gtlcore.gtlcore.utils;
+package org.gtlcore.gtlcore.utils.datastructure;
 
 import com.google.common.primitives.Ints;
 import lombok.Getter;

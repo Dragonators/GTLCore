@@ -7,7 +7,6 @@ import org.gtlcore.gtlcore.api.recipe.RecipeResult;
 import org.gtlcore.gtlcore.common.machine.multiblock.electric.StorageMachine;
 import org.gtlcore.gtlcore.common.machine.multiblock.steam.LargeSteamParallelMultiblockMachine;
 
-import com.gregtechceu.gtceu.api.capability.IParallelHatch;
 import com.gregtechceu.gtceu.api.capability.recipe.EURecipeCapability;
 import com.gregtechceu.gtceu.api.capability.recipe.FluidRecipeCapability;
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
@@ -37,7 +36,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 public class GTLRecipeModifiers {
 
@@ -155,13 +153,9 @@ public class GTLRecipeModifiers {
     }
 
     public static int getHatchParallel(MetaMachine machine) {
-        if (machine instanceof IMultiController controller && controller.isFormed()) {
-            Optional<IParallelHatch> optional = controller.getParts().stream().filter(IParallelHatch.class::isInstance)
-                    .map(IParallelHatch.class::cast).findAny();
-            if (optional.isPresent()) {
-                IParallelHatch hatch = optional.get();
-                return hatch.getCurrentParallel();
-            }
+        if (machine instanceof IMultiController controller && controller.isFormed() && controller instanceof IRecipeCapabilityMachine recipeCapabilityMachine) {
+            final var parallelHatch = recipeCapabilityMachine.getParallelHatch();
+            if (parallelHatch != null) return parallelHatch.getCurrentParallel();
         }
         return 1;
     }
@@ -195,14 +189,14 @@ public class GTLRecipeModifiers {
         long a = 0, b = 0;
 
         if (workmachine instanceof IRecipeCapabilityMachine rcm) {
-            var handlePart = rcm.getRecipeHandleMap().get(recipe);
+            var handlePart = rcm.getActiveRecipeHandle(recipe);
             if (handlePart != null) {
                 if (handlePart instanceof RecipeHandlePart rhp) {
                     FluidAmounts amounts = countFluidInRecipeHandlePart(rhp, fluid1, fluid2);
                     a += amounts.first();
                     b += amounts.second();
-                } else if (handlePart instanceof MEPatternRecipeHandlePart merhp) {
-                    FluidAmounts amounts = countFluidInMERecipeHandlePart(merhp, recipe, fluid1, fluid2);
+                } else if (handlePart instanceof MEPatternRecipeHandlePart meRhp) {
+                    FluidAmounts amounts = countFluidInMERecipeHandlePart(meRhp, recipe, fluid1, fluid2);
                     a += amounts.first();
                     b += amounts.second();
                 }
@@ -229,9 +223,9 @@ public class GTLRecipeModifiers {
         return new FluidAmounts(a, b);
     }
 
-    private static FluidAmounts countFluidInMERecipeHandlePart(MEPatternRecipeHandlePart merhp, GTRecipe recipe, Fluid fluid1, Fluid fluid2) {
+    private static FluidAmounts countFluidInMERecipeHandlePart(MEPatternRecipeHandlePart meRhp, GTRecipe recipe, Fluid fluid1, Fluid fluid2) {
         long a = 0, b = 0;
-        for (var it = Object2LongMaps.fastIterator(merhp.getMEContent(FluidRecipeCapability.CAP, merhp.getRecipes2SlotsMap().getValues(recipe))); it.hasNext();) {
+        for (var it = Object2LongMaps.fastIterator(meRhp.getMEContent(FluidRecipeCapability.CAP, recipe)); it.hasNext();) {
             var entry = it.next();
             if (fluid1 == entry.getKey().getFluid()) a += entry.getLongValue();
             if (fluid2 == entry.getKey().getFluid()) b += entry.getLongValue();
@@ -239,9 +233,9 @@ public class GTLRecipeModifiers {
         return new FluidAmounts(a, b);
     }
 
-    private static FluidAmounts countFluidInParts(WorkableElectricMultiblockMachine workmachine, Fluid fluid1, Fluid fluid2) {
+    private static FluidAmounts countFluidInParts(WorkableElectricMultiblockMachine workMachine, Fluid fluid1, Fluid fluid2) {
         long a = 0, b = 0;
-        for (var part : workmachine.getParts()) {
+        for (var part : workMachine.getParts()) {
             for (var handler : part.getRecipeHandlers()) {
                 if (handler.getHandlerIO() == IO.IN) {
                     for (var contents : handler.getContents()) {

@@ -1,9 +1,10 @@
 package org.gtlcore.gtlcore.mixin.gtm.api.machine;
 
 import org.gtlcore.gtlcore.api.machine.trait.*;
+import org.gtlcore.gtlcore.api.machine.trait.MEPart.IMEFilterIOPartMachine;
 import org.gtlcore.gtlcore.api.machine.trait.MEPart.IMEPatternPartMachine;
-import org.gtlcore.gtlcore.api.machine.trait.MEPart.IMETraitIOPartMachine;
 import org.gtlcore.gtlcore.api.recipe.RecipeResult;
+import org.gtlcore.gtlcore.utils.datastructure.FirstFlagRecipePartSet;
 
 import com.gregtechceu.gtceu.api.capability.IDataAccessHatch;
 import com.gregtechceu.gtceu.api.capability.IParallelHatch;
@@ -25,12 +26,10 @@ import com.lowdragmc.lowdraglib.syncdata.ISubscription;
 import com.lowdragmc.lowdraglib.syncdata.annotation.DescSynced;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 
-import net.minecraft.server.TickTask;
 import net.minecraft.server.level.ServerLevel;
 
 import com.hepdd.gtmthings.common.block.machine.multiblock.part.appeng.MEOutputPartMachine;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
@@ -53,38 +52,6 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
     @Final
     public RecipeLogic recipeLogic;
 
-    @Getter
-    private boolean MEOutPutBus = false;
-    @Getter
-    private boolean MEOutPutHatch = false;
-    @Getter
-    private boolean MEOutPutDual = false;
-    @Getter
-    private boolean MEOutPutWithFilter = false;
-    @Persisted
-    @DescSynced
-    @Getter
-    @Setter
-    public boolean isDistinct = false;
-    @Getter
-    private @Nullable IParallelHatch parallelHatch = null;
-    private IMufflerMachine mufflerMachine = null;
-    @Getter
-    private IMaintenanceMachine maintenanceMachine = null;
-    private IDataAccessHatch dataAccessHatch = null;
-    @Getter
-    private final List<RecipeHandlePart> recipeHandleParts = new ObjectArrayList<>();
-    @Getter
-    private final List<MEPatternRecipeHandlePart> mEPatternRecipeHandleParts = new ObjectArrayList<>();
-    @Getter
-    private final List<MEIORecipeHandlePart> mEIORecipeHandleParts = new ObjectArrayList<>();
-    @Getter
-    private final Map<GTRecipe, IRecipeHandlePart> recipeHandleMap = new Object2ObjectOpenHashMap<>();
-    @Getter
-    protected Map<IO, List<RecipeHandlePart>> capabilities = new EnumMap<>(IO.class);
-    @Getter
-    protected Map<IO, Map<RecipeCapability<?>, List<IRecipeHandler<?>>>> capabilitiesFlat = new EnumMap<>(IO.class);
-
     public WorkableMultiblockMachineMixin(IMachineBlockEntity holder) {
         super(holder);
     }
@@ -92,24 +59,20 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
     @Inject(method = "onStructureFormed", at = @At("TAIL"), remap = false)
     public void onStructureFormed(CallbackInfo ci) {
         if (this.getLevel() instanceof ServerLevel sl) {
-            sl.getServer().tell(new TickTask(1, this::upDate));
+            sl.getServer().execute(this::upDate);
         }
     }
 
     @Inject(method = "onStructureInvalid", at = @At("TAIL"), remap = false)
     public void onStructureInvalid(CallbackInfo ci) {
-        MEOutPutBus = false;
-        MEOutPutHatch = false;
-        MEOutPutDual = false;
+        clear();
         RecipeResult.of(this, null);
         RecipeResult.ofWorking(this, null);
     }
 
     @Inject(method = "onPartUnload", at = @At("TAIL"), remap = false)
     public void onPartUnload(CallbackInfo ci) {
-        MEOutPutBus = false;
-        MEOutPutHatch = false;
-        MEOutPutDual = false;
+        clear();
     }
 
     @Inject(method = "setActiveRecipeType", at = @At("TAIL"), remap = false)
@@ -123,11 +86,10 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
      */
     @Overwrite(remap = false)
     public final @Nullable GTRecipe doModifyRecipe(GTRecipe recipe, @NotNull OCParams params, @NotNull OCResult result) {
-        if (this.maintenanceMachine != null) recipe = maintenanceMachine.modifyRecipe(recipe);
-        if (recipe != null && this.mufflerMachine != null) recipe = mufflerMachine.modifyRecipe(recipe);
-        if (recipe != null && this.dataAccessHatch != null) recipe = dataAccessHatch.modifyRecipe(recipe);
-        if (recipe == null) return null;
-        return this.self().getDefinition().getRecipeModifier().apply(this.self(), recipe, params, result);
+        if (maintenanceMachine != null) recipe = maintenanceMachine.modifyRecipe(recipe);
+        if (recipe != null && mufflerMachine != null) recipe = mufflerMachine.modifyRecipe(recipe);
+        if (recipe != null && dataAccessHatch != null) recipe = dataAccessHatch.modifyRecipe(recipe);
+        return recipe != null ? this.self().getDefinition().getRecipeModifier().apply(this.self(), recipe, params, result) : null;
     }
 
     /**
@@ -161,122 +123,278 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
      */
     @Overwrite(remap = false)
     public void afterWorking() {
-        if (this.maintenanceMachine != null) maintenanceMachine.afterWorking((IWorkableMultiController) this);
-        if (this.mufflerMachine != null) mufflerMachine.afterWorking((IWorkableMultiController) this);
+        if (maintenanceMachine != null) maintenanceMachine.afterWorking((IWorkableMultiController) this);
+        if (mufflerMachine != null) mufflerMachine.afterWorking((IWorkableMultiController) this);
         this.self().getDefinition().getAfterWorking().accept(this);
     }
 
+    // ========================================
+    // IRecipeCapabilityMachine
+    // ========================================
+
+    @Persisted
+    @DescSynced
+    @Getter
+    @Setter
+    private boolean isDistinct = false;
+    private boolean meOutPutBus = false;
+    private boolean meOutPutHatch = false;
+    private boolean meOutPutDual = false;
+    private boolean meOutPutWithFilter = false;
+
+    // ==================== Special Hatch ====================
+    private @Nullable IParallelHatch parallelHatch = null;
+    private @Nullable IMaintenanceMachine maintenanceMachine = null;
+    private @Nullable IMufflerMachine mufflerMachine = null;
+    private @Nullable IDataAccessHatch dataAccessHatch = null;
+
+    // ==================== Normal Part ====================
+    private @Nullable RecipeHandlePart sharedInputRecipeHandlePart = null;
+    private final Map<IO, List<RecipeHandlePart>> normalCapabilities = new EnumMap<>(IO.class); // Only Distinct Part
+
+    // ==================== ME Part ====================
+    private final ObjectList<MEPatternRecipeHandlePart> mePatternRecipeHandleParts = new ObjectArrayList<>();
+    private final ObjectList<MEIORecipeHandlePart<?>> meOutputRecipeHandleParts = new ObjectArrayList<>();
+
+    // ==================== Recipe -> Parts ====================
+    private final Object2ObjectMap<GTRecipe, FirstFlagRecipePartSet> recipeHandleMap = new Object2ObjectOpenHashMap<>();
+
     @Override
-    public boolean isRecipeOutput(GTRecipe recipe) {
-        if (MEOutPutWithFilter) return false;
-        else if (MEOutPutDual) return true;
-        else if (MEOutPutBus || recipe.getOutputContents(ItemRecipeCapability.CAP).isEmpty()) {
-            return MEOutPutHatch || recipe.getOutputContents(FluidRecipeCapability.CAP).isEmpty();
-        }
-        return false;
+    public boolean isRecipeOutputAlwaysMatch(GTRecipe recipe) {
+        if (meOutPutWithFilter) return false;
+        else if (meOutPutDual) return true;
+        else if (meOutPutBus || recipe.getOutputContents(ItemRecipeCapability.CAP).isEmpty())
+            return meOutPutHatch || recipe.getOutputContents(FluidRecipeCapability.CAP).isEmpty();
+        else return false;
+    }
+
+    @Override
+    public boolean itemOutPutAlwaysMatch() {
+        return meOutPutWithFilter || meOutPutDual;
+    }
+
+    @Override
+    public boolean fluidOutPutAlwaysMatch() {
+        return meOutPutHatch || meOutPutDual;
+    }
+
+    // ========================================
+    // Recipe -> HandlePart Cache
+    // ========================================
+
+    @Override
+    public @Nullable IRecipeHandlePart getActiveRecipeHandle(GTRecipe recipe) {
+        final var handlers = recipeHandleMap.get(recipe);
+        return handlers != null ? handlers.getActive() : null;
+    }
+
+    @Override
+    public @NotNull Iterator<@NotNull IRecipeHandlePart> getAllCachedRecipeHandlesIter(GTRecipe recipe) {
+        final var handlers = recipeHandleMap.get(recipe);
+        return handlers != null ? handlers.getReverseIterator() : ObjectIterators.emptyIterator();
+    }
+
+    @Override
+    public @NotNull ReferenceSet<@NotNull IRecipeHandlePart> getAllCachedRecipeHandles(GTRecipe recipe) {
+        final var handlers = recipeHandleMap.get(recipe);
+        return handlers != null ? handlers.getAll() : ReferenceSets.emptySet();
+    }
+
+    @Override
+    public void tryAddAndActiveMERhp(MEPatternRecipeHandlePart part, GTRecipe recipe, int slot) {
+        part.setLastRecipe2Slot(recipe, slot);
+        tryAddAndActiveRhp(recipe, part);
+    }
+
+    @Override
+    public void tryAddAndActiveRhp(GTRecipe recipe, IRecipeHandlePart part) {
+        recipeHandleMap.computeIfAbsent(recipe, k -> new FirstFlagRecipePartSet()).addOrSetActive(part);
     }
 
     @Override
     public void sortMEOutput() {
-        if (!mEIORecipeHandleParts.isEmpty()) {
-            mEIORecipeHandleParts.sort(MEPatternRecipeHandlePart.COMPARATOR.reversed());
-            MEOutPutWithFilter = mEIORecipeHandleParts.get(0).getIoMachine().hasFilter();
+        if (!meOutputRecipeHandleParts.isEmpty()) {
+            meOutputRecipeHandleParts.sort(MEPatternRecipeHandlePart.COMPARATOR.reversed());
+            meOutPutWithFilter = meOutputRecipeHandleParts.get(0).hasFilter();
         }
     }
 
     @Override
-    public void setRecipeHandleMap(RecipeHandlePart hatch, GTRecipe recipe) {
-        this.recipeHandleMap.put(recipe, hatch);
+    public boolean emptyRecipeHandlePart() {
+        return normalCapabilities.isEmpty() && mePatternRecipeHandleParts.isEmpty() && sharedInputRecipeHandlePart == null;
     }
 
     @Override
-    public void setMERecipeHandleMap(MEPatternRecipeHandlePart hatch, GTRecipe recipe, int slot) {
-        hatch.getRecipes2SlotsMap().put(recipe, slot);
-        this.recipeHandleMap.put(recipe, hatch);
+    public boolean emptyHandlePart() {
+        return normalCapabilities.isEmpty() && mePatternRecipeHandleParts.isEmpty() && meOutputRecipeHandleParts.isEmpty() && sharedInputRecipeHandlePart == null;
     }
 
+    @Override
+    @Nullable
+    public RecipeHandlePart getSharedRecipeHandlePart() {
+        return sharedInputRecipeHandlePart;
+    }
+
+    @Override
+    public List<MEPatternRecipeHandlePart> getMEPatternRecipeHandleParts() {
+        return mePatternRecipeHandleParts;
+    }
+
+    @Override
+    public List<MEIORecipeHandlePart<?>> getMEOutputRecipeHandleParts() {
+        return meOutputRecipeHandleParts;
+    }
+
+    @Override
+    public @NotNull List<RecipeHandlePart> getNormalRecipeHandlePart(IO io) {
+        return normalCapabilities.getOrDefault(io, Collections.emptyList());
+    }
+
+    @Override
     public void upDate() {
-        MEOutPutBus = false;
-        MEOutPutHatch = false;
-        MEOutPutDual = false;
-        MEOutPutWithFilter = false;
+        if (!this.isFormed) return;
+        rebuildRecipeHandleParts(traitSubscriptions, getParts(), recipeLogic, isDistinct);
+    }
+
+    @Override
+    public @Nullable IParallelHatch getParallelHatch() {
+        return parallelHatch;
+    }
+
+    @Override
+    public @Nullable IMaintenanceMachine getMaintenanceMachine() {
+        return maintenanceMachine;
+    }
+
+    // ========================================
+    // Rebuild
+    // ========================================
+
+    private void rebuildRecipeHandleParts(List<ISubscription> traitSubscriptions, List<IMultiPart> parts, RecipeLogic recipeLogic, boolean isDistinct) {
+        clear();
+
+        final var sharedInputHandlers = new ObjectArrayList<IRecipeHandler<?>>();
+        for (IMultiPart part : parts) {
+            if (part instanceof IMEFilterIOPartMachine mePart) {
+                handleMETraitPart(traitSubscriptions, recipeLogic, mePart);
+            } else if (part instanceof FluidHatchPartMachine || part instanceof IDistinctPart) {
+                handleNormalPart(part, isDistinct, sharedInputHandlers);
+            } else {
+                handleSpecialPart(part);
+            }
+        }
+
+        if (!isDistinct && !sharedInputHandlers.isEmpty()) {
+            sharedInputRecipeHandlePart = RecipeHandlePart.of(IO.IN, sharedInputHandlers);
+            mergeSharedHandlePart(sharedInputRecipeHandlePart);
+        }
+        sortMEOutput();
+    }
+
+    private void handleMETraitPart(List<ISubscription> traitSubscriptions, RecipeLogic recipeLogic, IMEFilterIOPartMachine mePart) {
+        var pair = mePart.getMERecipeHandlerTraits();
+        traitSubscriptions.add(pair.left().addBufferChangedListener(recipeLogic::updateTickSubscription));
+        traitSubscriptions.add(pair.right().addBufferChangedListener(recipeLogic::updateTickSubscription));
+
+        IO io = mePart.getMETrait().getIO();
+        if (mePart instanceof IMEPatternPartMachine mePatternPart) {
+            var me = MEPatternRecipeHandlePart.of(mePatternPart);
+            me.restoreMachineCache(this::tryAddAndActiveRhp);
+            mePatternRecipeHandleParts.add(me);
+            if (io == IO.BOTH) {
+                meOutputRecipeHandleParts.add(me);
+                setAllMEOutputFlags();
+            }
+        } else if (io == IO.OUT) {
+            meOutputRecipeHandleParts.add(MEIORecipeHandlePart.of(mePart));
+            setAllMEOutputFlags();
+        }
+    }
+
+    private void handleNormalPart(IMultiPart part, boolean isDistinct, List<IRecipeHandler<?>> sharedInputHandlers) {
+        if (part instanceof MEOutputPartMachine) {
+            setAllMEOutputFlags();
+        } else if (part instanceof MEOutputBusPartMachine) {
+            meOutPutBus = true;
+        } else if (part instanceof MEOutputHatchPartMachine) {
+            meOutPutHatch = true;
+        }
+
+        List<IRecipeHandler<?>> fluidHandlers = new ObjectArrayList<>();
+        List<IRecipeHandler<?>> isolableHandlers = new ObjectArrayList<>();
+        List<IRecipeHandler<?>> outputHandlers = new ObjectArrayList<>();
+        boolean isOutput = false;
+
+        for (var handler : part.getRecipeHandlers()) {
+            if (handler.isProxy()) continue;
+
+            IO io = handler.getHandlerIO();
+            if (io == IO.IN) {
+                if (handler.getCapability() == FluidRecipeCapability.CAP) fluidHandlers.add(handler);
+                else isolableHandlers.add(handler);
+            } else if (io == IO.OUT) {
+                isOutput = true;
+                outputHandlers.add(handler);
+            }
+        }
+
+        if (isOutput) {
+            normalCapabilities.computeIfAbsent(IO.OUT, ignore -> new ReferenceArrayList<>()).add(RecipeHandlePart.of(IO.OUT, outputHandlers));
+        } else if (isDistinct) {
+            isolableHandlers.addAll(fluidHandlers);
+            normalCapabilities.computeIfAbsent(IO.IN, ignore -> new ReferenceArrayList<>()).add(RecipeHandlePart.of(IO.IN, isolableHandlers));
+        } else if (part instanceof IDistinctPart distinctPart && distinctPart.isDistinct()) {
+            normalCapabilities.computeIfAbsent(IO.IN, ignore -> new ReferenceArrayList<>()).add(RecipeHandlePart.of(IO.IN, isolableHandlers));
+            sharedInputHandlers.addAll(fluidHandlers);
+        } else {
+            sharedInputHandlers.addAll(isolableHandlers);
+            sharedInputHandlers.addAll(fluidHandlers);
+        }
+    }
+
+    private void handleSpecialPart(IMultiPart part) {
+        if (part instanceof IParallelHatch parallel) {
+            this.parallelHatch = parallel;
+        } else if (part instanceof IMufflerMachine muffler) {
+            this.mufflerMachine = muffler;
+        } else if (part instanceof IMaintenanceMachine maintenance) {
+            this.maintenanceMachine = maintenance;
+        } else if (part instanceof IDataAccessHatch data) {
+            this.dataAccessHatch = data;
+        }
+    }
+
+    private void mergeSharedHandlePart(@NotNull RecipeHandlePart shared) {
+        for (List<RecipeHandlePart> value : normalCapabilities.values()) {
+            for (RecipeHandlePart part : value) {
+                part.addSharedFluidHandlers(shared.getCapability(FluidRecipeCapability.CAP));
+            }
+        }
+    }
+
+    // ========================================
+    // Utils Methods
+    // ========================================
+
+    private void setAllMEOutputFlags() {
+        meOutPutBus = true;
+        meOutPutHatch = true;
+        meOutPutDual = true;
+    }
+
+    private void clear() {
+        meOutPutBus = false;
+        meOutPutHatch = false;
+        meOutPutDual = false;
+        meOutPutWithFilter = false;
         parallelHatch = null;
         mufflerMachine = null;
         maintenanceMachine = null;
         dataAccessHatch = null;
-        capabilities.clear();
-        capabilitiesFlat.clear();
-        recipeHandleParts.clear();
-        mEPatternRecipeHandleParts.clear();
-        mEIORecipeHandleParts.clear();
+        sharedInputRecipeHandlePart = null;
+        normalCapabilities.clear();
+        mePatternRecipeHandleParts.clear();
+        meOutputRecipeHandleParts.clear();
         recipeHandleMap.clear();
-        if (!this.isFormed) return;
-
-        // IMultiPart
-        var distinctParts = new ObjectArrayList<IRecipeHandler<?>>();
-        for (IMultiPart part : this.getParts()) {
-            if (part instanceof IMETraitIOPartMachine mePart) {
-                var meHandlers = mePart.getMERecipeHandlerTraits();
-                for (var meHandlerTrait : meHandlers) {
-                    traitSubscriptions.add(meHandlerTrait.addBufferChangedListener(recipeLogic::updateTickSubscription));
-                }
-
-                if (mePart instanceof IMEPatternPartMachine mePatternPart) {
-                    var me = MEPatternRecipeHandlePart.of(mePatternPart);
-                    me.restoreMachineCache(recipeHandleMap);
-                    mEPatternRecipeHandleParts.add(me);
-                    if (mePart.getIO() == IO.BOTH) {
-                        mEIORecipeHandleParts.add(me);
-                        MEOutPutBus = true;
-                        MEOutPutHatch = true;
-                        MEOutPutDual = true;
-                    }
-                } else if (mePart.getIO() == IO.OUT) {
-                    mEIORecipeHandleParts.add(MEIORecipeHandlePart.of(mePart));
-                    MEOutPutBus = true;
-                    MEOutPutHatch = true;
-                    MEOutPutDual = true;
-                }
-            } else if (part instanceof FluidHatchPartMachine || part instanceof IDistinctPart) {
-                if (part instanceof MEOutputPartMachine) {
-                    MEOutPutBus = true;
-                    MEOutPutHatch = true;
-                    MEOutPutDual = true;
-                } else if (part instanceof MEOutputBusPartMachine) {
-                    MEOutPutBus = true;
-                } else if (part instanceof MEOutputHatchPartMachine) {
-                    MEOutPutHatch = true;
-                }
-                List<IRecipeHandler<?>> hatch = new ObjectArrayList<>();
-                boolean isOutput = false;
-                for (var v : part.getRecipeHandlers()) {
-                    if (!v.isProxy()) {
-                        if (v.getHandlerIO() == IO.IN) hatch.add(v);
-                        else if (v.getHandlerIO() == IO.OUT) {
-                            isOutput = true;
-                            hatch.add(v);
-                        }
-                    }
-                }
-                if (isDistinct) {
-                    recipeHandleParts.add(RecipeHandlePart.of(isOutput ? IO.OUT : IO.IN, hatch));
-                } else {
-                    if (part instanceof IDistinctPart distinctPart && distinctPart.isDistinct()) {
-                        recipeHandleParts.add(RecipeHandlePart.of(IO.IN, hatch));
-                    } else {
-                        if (isOutput) recipeHandleParts.add(RecipeHandlePart.of(IO.OUT, hatch));
-                        else distinctParts.addAll(hatch);
-                    }
-                }
-            } else if (part instanceof IParallelHatch parallel) this.parallelHatch = parallel;
-            else if (part instanceof IMufflerMachine muffler) this.mufflerMachine = muffler;
-            else if (part instanceof IMaintenanceMachine maintenance) this.maintenanceMachine = maintenance;
-            else if (part instanceof IDataAccessHatch data) this.dataAccessHatch = data;
-        }
-        if (!distinctParts.isEmpty()) recipeHandleParts.add(RecipeHandlePart.of(IO.IN, distinctParts));
-        for (var recipeHandle : getRecipeHandleParts()) {
-            this.addHandlerList(recipeHandle);
-        }
-        sortMEOutput();
     }
 }

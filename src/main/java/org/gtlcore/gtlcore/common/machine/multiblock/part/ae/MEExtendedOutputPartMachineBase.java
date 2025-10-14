@@ -2,7 +2,8 @@ package org.gtlcore.gtlcore.common.machine.multiblock.part.ae;
 
 import org.gtlcore.gtlcore.api.machine.trait.IMERecipeHandlerTrait;
 import org.gtlcore.gtlcore.api.machine.trait.IRecipeCapabilityMachine;
-import org.gtlcore.gtlcore.api.machine.trait.MEPart.IMETraitIOPartMachine;
+import org.gtlcore.gtlcore.api.machine.trait.MEPart.IMEFilterIOPartMachine;
+import org.gtlcore.gtlcore.api.machine.trait.MEPart.IMEFilterIOTrait;
 import org.gtlcore.gtlcore.client.gui.widget.MEOutListGridWidget;
 import org.gtlcore.gtlcore.config.ConfigHolder;
 import org.gtlcore.gtlcore.integration.ae2.AEUtils;
@@ -34,8 +35,10 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 
 import appeng.api.stacks.AEKey;
+import it.unimi.dsi.fastutil.Pair;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMaps;
+import it.unimi.dsi.fastutil.ints.IntCollection;
 import it.unimi.dsi.fastutil.objects.Object2LongMap;
 import it.unimi.dsi.fastutil.objects.Object2LongMaps;
 import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
@@ -43,12 +46,13 @@ import lombok.Getter;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import static org.gtlcore.gtlcore.integration.ae2.AEUtils.loadInventory;
 
-public abstract class MEExtendedOutputPartMachineBase extends MEIOPartMachine implements IDataStickInteractable, IMETraitIOPartMachine {
+public abstract class MEExtendedOutputPartMachineBase extends MEIOPartMachine implements IDataStickInteractable, IMEFilterIOPartMachine {
 
     @Override
     public @NotNull ManagedFieldHolder getFieldHolder() {
@@ -99,9 +103,12 @@ public abstract class MEExtendedOutputPartMachineBase extends MEIOPartMachine im
     // ========================================
 
     @Override
-    public Iterable<IMERecipeHandlerTrait<?, ?>> getMERecipeHandlerTraits() {
-        return List.of(itemOutputHandler, fluidOutputHandler);
+    public Pair<IMERecipeHandlerTrait<Ingredient, ItemStack>, IMERecipeHandlerTrait<FluidIngredient, FluidStack>> getMERecipeHandlerTraits() {
+        return Pair.of(itemOutputHandler, fluidOutputHandler);
     }
+
+    @Override
+    public abstract @NotNull IMEFilterIOTrait getMETrait();
 
     protected abstract NotifiableMERecipeHandlerTrait<Ingredient, ItemStack> createItemOutputHandler();
 
@@ -211,8 +218,8 @@ public abstract class MEExtendedOutputPartMachineBase extends MEIOPartMachine im
 
         // region Unused
         @Override
-        public List<Integer> getActiveSlots() {
-            return List.of();
+        public Set<Integer> getActiveSlots() {
+            return Collections.emptySet();
         }
 
         @Override
@@ -221,12 +228,7 @@ public abstract class MEExtendedOutputPartMachineBase extends MEIOPartMachine im
         }
 
         @Override
-        public Object2LongMap<ItemStack> getCustomSlotsStackMap(Collection<Integer> list) {
-            return Object2LongMaps.emptyMap();
-        }
-
-        @Override
-        public Object2LongMap<ItemStack> getFirstAvailableSlotFromCustomStackMap(Collection<Integer> slots) {
+        public Object2LongMap<ItemStack> getStackMapFromFirstAvailableSlot(IntCollection slots) {
             return Object2LongMaps.emptyMap();
         }
 
@@ -272,8 +274,8 @@ public abstract class MEExtendedOutputPartMachineBase extends MEIOPartMachine im
 
         // region Unused
         @Override
-        public List<Integer> getActiveSlots() {
-            return List.of();
+        public Set<Integer> getActiveSlots() {
+            return Collections.emptySet();
         }
 
         @Override
@@ -282,12 +284,7 @@ public abstract class MEExtendedOutputPartMachineBase extends MEIOPartMachine im
         }
 
         @Override
-        public Object2LongMap<FluidStack> getCustomSlotsStackMap(Collection<Integer> list) {
-            return Object2LongMaps.emptyMap();
-        }
-
-        @Override
-        public Object2LongMap<FluidStack> getFirstAvailableSlotFromCustomStackMap(Collection<Integer> slots) {
+        public Object2LongMap<FluidStack> getStackMapFromFirstAvailableSlot(IntCollection slots) {
             return Object2LongMaps.emptyMap();
         }
 
