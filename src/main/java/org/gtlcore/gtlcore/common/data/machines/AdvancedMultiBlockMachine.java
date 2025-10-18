@@ -406,7 +406,7 @@ public class AdvancedMultiBlockMachine {
                     .where("d", Predicates.blocks(GTMachines.ITEM_IMPORT_BUS[0].get()).or(Predicates.blocks(CustomMachines.HUGE_ITEM_IMPORT_BUS[0].get())))
                     .where("e", Predicates.blocks(Registries.getBlock("kubejs:machine_casing_circuit_assembly_line")))
                     .where("f", GTLPredicates.diffAbilities(List.of(PartAbility.EXPORT_ITEMS), List.of(PartAbility.IMPORT_ITEMS, PartAbility.IMPORT_FLUIDS)))
-                    .where("g", Predicates.abilities(PartAbility.IMPORT_FLUIDS_4X))
+                    .where("g", Predicates.abilities(PartAbility.IMPORT_FLUIDS_4X).or(Predicates.blocks(GTLMachines.HUGE_FLUID_IMPORT_HATCH[4].get())))
                     .build())
             .workableCasingRenderer(GTLCore.id("block/casings/pikyonium_machine_casing"), GTCEu.id("block/multiblock/assembly_line"))
             .register();

@@ -230,7 +230,7 @@ public class AdditionalMultiBlockMachine {
                     .where("C", Predicates.blocks(GTBlocks.CASING_PTFE_INERT.get())
                             .or(Predicates.autoAbilities(definition.getRecipeTypes()))
                             .or(Predicates.autoAbilities(true, false, true))
-                            .or(Predicates.abilities(PartAbility.INPUT_LASER).setExactLimit(1)))
+                            .or(Predicates.abilities(PartAbility.INPUT_LASER).setMaxGlobalLimited(1)))
                     .where("D", Predicates.blocks(GTBlocks.HIGH_POWER_CASING.get()))
                     .where("E", Predicates.blocks(GTBlocks.CASING_HSSE_STURDY.get()))
                     .where("F", Predicates.blocks(GTBlocks.CASING_POLYTETRAFLUOROETHYLENE_PIPE.get()))

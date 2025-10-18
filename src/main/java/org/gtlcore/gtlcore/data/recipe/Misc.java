@@ -45,6 +45,15 @@ public class Misc {
         VanillaRecipeHelper.addShapelessRecipe(provider, GTLCore.id("me_pattern_buffer_copy"),
                 GTLItems.ME_PATTERN_BUFFER_COPY.asStack(),
                 "A", MEMORY_CARD);
+        VanillaRecipeHelper.addShapedRecipe(provider, true, GTLCore.id("heat_sensor"),
+                GTLMachines.HEAT_SENSOR.asStack(),
+                "FDF", "BAB", "CEC",
+                'A', GTMachines.HULL[12].asStack(),
+                'B', new UnificationEntry(wireFine, EnrichedNaquadahTriniumEuropiumDuranide),
+                'C', SENSOR_ZPM.asStack(),
+                'D', Registries.getItemStack("gtceu:advanced_activity_detector_cover"),
+                'E', Registries.getItemStack("gtceu:computer_monitor_cover"),
+                'F', CustomTags.UV_CIRCUITS);
         VanillaRecipeHelper.addShapedRecipe(provider, true, GTLCore.id("fast_infinity_cell_0"),
                 GTLItems.FAST_INFINITY_CELL.asStack(),
                 "AAA", "BCD", "AAA",
@@ -203,7 +212,8 @@ public class Misc {
                 .inputItems(EX_INTERFACE.asItem(), 32)
                 .inputItems(INGREDIENT_BUFFER.asItem(), 32)
                 .inputItems(EX_IO_PORT.asItem(), 32)
-                .inputItems(QUANTUM_ENTANGLED_SINGULARITY.asItem(), 4)
+                .inputItems(QUANTUM_ENTANGLED_SINGULARITY.asItem(), 2)
+                .inputItems(QUANTUM_ENTANGLED_SINGULARITY.asItem(), 2)
                 .inputItems(SPATIAL_128_CELL_COMPONENT.asItem(), 16)
                 .inputFluids(MutatedLivingSolder.getFluid(1152))
                 .inputFluids(Naquadria.getFluid(1728))
