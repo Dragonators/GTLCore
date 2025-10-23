@@ -892,6 +892,7 @@
   "gtceu.recipe.fail.Output": "输出空间不足",
   "gtceu.recipe.fail.Output.Content": "无法输出: %s",
   "gtceu.recipe.fail.Input.Content": "缺少输入: %s",
+  "gtceu.recipe.fail.Input": "输入材料不足",
   "gtceu.recipe.fail.block": "上方有方块阻挡",
   "gtceu.recipe.fail.cleanroom": "未满足%s条件",
   "gtceu.recipe.fail.find": "未找到配方",

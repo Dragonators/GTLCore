@@ -57,12 +57,12 @@ public class RecipeRunnerHelper {
                 if (result.isSuccess()) {
                     RecipeResult.of((IRecipeLogicMachine) holder, RecipeResult.SUCCESS);
                     return RecipeResult.SUCCESS;
-                } else RecipeResult.of((IRecipeLogicMachine) holder, io == IO.IN ? RecipeResult.FAIL_FIND : RecipeResult.FAIL_OUTPUT);
-            } else {
-                if (recipe.handleRecipe(io, holder, isTick, contents, chanceCaches)) return RecipeResult.SUCCESS;
-            }
+                } else RecipeResult.of((IRecipeLogicMachine) holder, io == IO.IN ? RecipeResult.FAIL_INPUT : RecipeResult.FAIL_OUTPUT);
+            } else if (recipe.handleRecipe(io, holder, isTick, contents, chanceCaches)) return RecipeResult.SUCCESS;
         } else {
             var result = RecipeRunner.handle(recipe, io, holder, contents, chanceCaches, isSimulate, cacheStrategy);
+            RecipeResult.of((IRecipeLogicMachine) holder, result.isSuccess() ? result :
+                    (io == IO.IN ? RecipeResult.FAIL_INPUT : null));
             if (result.isSuccess()) return result;
         }
         return RecipeResult.fail(null);
