@@ -1,5 +1,6 @@
 package org.gtlcore.gtlcore.api.machine.trait;
 
+import com.gregtechceu.gtceu.api.capability.IDataAccessHatch;
 import com.gregtechceu.gtceu.api.capability.IParallelHatch;
 import com.gregtechceu.gtceu.api.capability.recipe.*;
 import com.gregtechceu.gtceu.api.gui.GuiTextures;
@@ -84,6 +85,10 @@ public interface IRecipeCapabilityMachine {
     }
 
     default IMaintenanceMachine getMaintenanceMachine() {
+        return null;
+    }
+
+    default IDataAccessHatch getDataAccessHatch() {
         return null;
     }
 

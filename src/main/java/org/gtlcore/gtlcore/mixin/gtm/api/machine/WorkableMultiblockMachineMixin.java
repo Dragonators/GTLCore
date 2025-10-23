@@ -266,6 +266,11 @@ public abstract class WorkableMultiblockMachineMixin extends MultiblockControlle
         return maintenanceMachine;
     }
 
+    @Override
+    public @Nullable IDataAccessHatch getDataAccessHatch() {
+        return dataAccessHatch;
+    }
+
     // ========================================
     // Rebuild
     // ========================================
