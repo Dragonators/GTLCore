@@ -53,7 +53,7 @@ public class RecipeRunnerHelper {
         if (holder instanceof PrimitiveWorkableMachine || holder instanceof SteamWorkableMachine ||
                 holder instanceof WorkableTieredMachine || holder instanceof ResearchStationMachine) {
             if (isSimulate) {
-                GTRecipe.ActionResult result = recipe.matchRecipe(holder);
+                var result = recipe.matchRecipeContents(io, holder, io == IO.IN ? recipe.inputs : recipe.outputs, isTick);
                 if (result.isSuccess()) {
                     RecipeResult.of((IRecipeLogicMachine) holder, RecipeResult.SUCCESS);
                     return RecipeResult.SUCCESS;
@@ -62,8 +62,7 @@ public class RecipeRunnerHelper {
                 if (recipe.handleRecipe(io, holder, isTick, contents, chanceCaches)) return RecipeResult.SUCCESS;
             }
         } else {
-            RecipeResult result = RecipeRunner.handle(recipe, io, holder, contents, chanceCaches, isSimulate, cacheStrategy);
-            RecipeResult.of((IRecipeLogicMachine) holder, result.isSuccess() ? result : (io == IO.IN ? RecipeResult.FAIL_FIND : RecipeResult.FAIL_OUTPUT));
+            var result = RecipeRunner.handle(recipe, io, holder, contents, chanceCaches, isSimulate, cacheStrategy);
             if (result.isSuccess()) return result;
         }
         return RecipeResult.fail(null);

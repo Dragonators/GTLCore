@@ -2,11 +2,17 @@ package org.gtlcore.gtlcore.api.recipe;
 
 import org.gtlcore.gtlcore.api.machine.trait.*;
 import org.gtlcore.gtlcore.api.recipe.chance.LongChanceLogic;
+import org.gtlcore.gtlcore.api.recipe.ingredient.LongIngredient;
 
 import com.gregtechceu.gtceu.api.capability.recipe.*;
+import com.gregtechceu.gtceu.api.machine.feature.IRecipeLogicMachine;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.chance.boost.ChanceBoostFunction;
 import com.gregtechceu.gtceu.api.recipe.content.Content;
+import com.gregtechceu.gtceu.api.recipe.ingredient.FluidIngredient;
+import com.gregtechceu.gtceu.api.recipe.ingredient.SizedIngredient;
+
+import net.minecraft.network.chat.Component;
 
 import it.unimi.dsi.fastutil.objects.*;
 import org.jetbrains.annotations.Nullable;
@@ -109,7 +115,31 @@ public final class RecipeRunner {
             recipeContent = handleMEOutput(machine.getMEOutputRecipeHandleParts(), recipeContent, simulated);
             if (recipeContent.isEmpty()) return true;
             recipeContent = handleNormalOutput(machine.getNormalRecipeHandlePart(IO.OUT), recipe, recipeContent, simulated);
-            return recipeContent.isEmpty();
+            if (recipeContent.isEmpty()) return true;
+            else {
+                if (simulated) {
+                    var builder = new StringBuilder();
+                    for (var it = recipeContent.reference2ObjectEntrySet().fastIterator(); it.hasNext();) {
+                        var entry = it.next();
+                        var cap = entry.getKey();
+                        for (var ing : entry.getValue()) {
+                            if (cap == ItemRecipeCapability.CAP) {
+                                if (ing instanceof LongIngredient li) {
+                                    builder.append(li.getItems()[0].getDisplayName().getString()).append("x ").append(li.getActualAmount()).append(" ");
+                                } else if (ing instanceof SizedIngredient si) {
+                                    builder.append(si.getItems()[0].getDisplayName().getString()).append("x ").append(si.getAmount()).append(" ");
+                                }
+                            } else if (cap == FluidRecipeCapability.CAP) {
+                                if (ing instanceof FluidIngredient fi) {
+                                    builder.append(fi.getStacks()[0].getDisplayName().getString()).append("x ").append(fi.getAmount()).append(" ");
+                                }
+                            }
+                        }
+                    }
+                    RecipeResult.of((IRecipeLogicMachine) machine, RecipeResult.fail(Component.translatable("gtceu.recipe.fail.Output.Content", builder)));
+                }
+                return false;
+            }
         }
     }
 

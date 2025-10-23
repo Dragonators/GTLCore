@@ -891,6 +891,8 @@
   "gtceu.recipe.ev_min": "Min Neutron Kinetic Energy: %s MeV",
   "gtceu.recipe.evt": "Neutron Kinetic Energy Consumption per Tick: %s KeV",
   "gtceu.recipe.fail.Output": "Insufficient output space",
+  "gtceu.recipe.fail.Output.Content": "Unable to Output: %s",
+  "gtceu.recipe.fail.Input.Content": "Missing input: %s",
   "gtceu.recipe.fail.block": "Block obstruction above",
   "gtceu.recipe.fail.cleanroom": "%s conditions not met",
   "gtceu.recipe.fail.find": "Recipe not found",
