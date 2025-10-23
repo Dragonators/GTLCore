@@ -43,7 +43,6 @@ import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.*;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.TickTask;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -54,6 +53,7 @@ import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraftforge.server.ServerLifecycleHooks;
 
 import appeng.api.crafting.IPatternDetails;
 import appeng.api.implementations.blockentities.PatternContainerGroup;
@@ -257,7 +257,7 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
     public void onLoad() {
         super.onLoad();
         if (getLevel() instanceof ServerLevel serverLevel) {
-            serverLevel.getServer().tell(new TickTask(1, () -> {
+            serverLevel.getServer().execute(() -> {
                 for (int i = 0; i < patternInventory.getSlots(); i++) {
                     var pattern = patternInventory.getStackInSlot(i);
                     var realPattern = getRealPattern(i, pattern);
@@ -268,7 +268,7 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
                 }
                 reCalculatePatternSlotMap();
                 needPatternSync = true;
-            }));
+            });
             for (int i = 0; i < maxPatternCount; i++) {
                 final int index = i;
                 catalystItems[index].setOnContentsChanged(() -> reCalculateCatalystItemMap(index));
@@ -428,6 +428,7 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
         System.arraycopy(byteArray, 0, cacheRecipeCount, 0, byteArray.length);
 
         recipeMultipleCacheMap.clear();
+        var recipeManager = ServerLifecycleHooks.getCurrentServer().getRecipeManager();
         if (tag.contains("recipeMultipleCacheIdMap")) {
             CompoundTag recipeCacheTag = tag.getCompound("recipeMultipleCacheIdMap");
             for (String key : recipeCacheTag.getAllKeys()) {
@@ -436,9 +437,12 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
                 for (Tag recipeTag : recipeTags) {
                     GTRecipe recipe = GTLUtil.deserializeNBT(recipeTag);
                     if (recipe != null && slotIndex >= 0 && slotIndex < maxPatternCount) {
-                        var set = recipeMultipleCacheMap.computeIfAbsent(slotIndex, integer -> new ObjectArraySet<>());
-                        set.add(recipe);
-                        if (set.size() >= cacheRecipeCount[slotIndex]) cacheRecipe[slotIndex] = true;
+                        var real = recipe.recipeType.getRecipe(recipeManager, recipe.id);
+                        if (real != null) {
+                            var set = recipeMultipleCacheMap.computeIfAbsent(slotIndex, integer -> new ObjectArraySet<>());
+                            set.add(real);
+                            if (set.size() >= cacheRecipeCount[slotIndex]) cacheRecipe[slotIndex] = true;
+                        }
                     }
                 }
             }
@@ -449,9 +453,12 @@ public class MEPatternBufferPartMachine extends MEIOPartMachine implements IInte
                 Tag recipeTag = oldRecipeCacheTag.get(key);
                 GTRecipe recipe = GTLUtil.deserializeNBT(recipeTag);
                 if (recipe != null && slotIndex >= 0 && slotIndex < maxPatternCount) {
-                    var set = recipeMultipleCacheMap.computeIfAbsent(slotIndex, integer -> new ObjectArraySet<>());
-                    set.add(recipe);
-                    if (set.size() >= cacheRecipeCount[slotIndex]) cacheRecipe[slotIndex] = true;
+                    var real = recipe.recipeType.getRecipe(recipeManager, recipe.id);
+                    if (real != null) {
+                        var set = recipeMultipleCacheMap.computeIfAbsent(slotIndex, integer -> new ObjectArraySet<>());
+                        set.add(real);
+                        if (set.size() >= cacheRecipeCount[slotIndex]) cacheRecipe[slotIndex] = true;
+                    }
                 }
             }
         } // Compatibility

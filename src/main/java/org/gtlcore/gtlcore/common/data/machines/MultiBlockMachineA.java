@@ -2604,7 +2604,7 @@ public class MultiBlockMachineA {
             .workableCasingRenderer(GTCEu.id("block/casings/gcym/laser_safe_engraving_casing"), GTCEu.id("block/multiblock/fusion_reactor"))
             .register();
 
-    public final static MultiblockMachineDefinition MEGA_WIREMILL = REGISTRATE.multiblock("mega_wiremill", (holder) -> new CoilWorkableElectricMultipleRecipesMultiblockMachine(holder))
+    public final static MultiblockMachineDefinition MEGA_WIREMILL = REGISTRATE.multiblock("mega_wiremill", CoilWorkableElectricMultipleRecipesMultiblockMachine::new)
             .rotationState(RotationState.ALL)
             .recipeType(GTRecipeTypes.WIREMILL_RECIPES)
             .tooltips(Component.translatable("gtceu.multiblock.coil_parallel"))
@@ -2664,7 +2664,7 @@ public class MultiBlockMachineA {
             .workableCasingRenderer(GTLCore.id("block/casings/oxidation_resistant_hastelloy_n_mechanical_casing"), GTCEu.id("block/multiblock/gcym/large_wiremill"))
             .register();
 
-    public final static MultiblockMachineDefinition MEGA_PRESSER = REGISTRATE.multiblock("mega_presser", (holder) -> new CoilWorkableElectricMultipleRecipesMultiblockMachine(holder))
+    public final static MultiblockMachineDefinition MEGA_PRESSER = REGISTRATE.multiblock("mega_presser", CoilWorkableElectricMultipleRecipesMultiblockMachine::new)
             .rotationState(RotationState.ALL)
             .recipeType(GTRecipeTypes.BENDER_RECIPES)
             .recipeType(GTRecipeTypes.FORGE_HAMMER_RECIPES)
@@ -2722,7 +2722,7 @@ public class MultiBlockMachineA {
             .workableCasingRenderer(GTLCore.id("block/molecular_casing"), GTCEu.id("block/multiblock/fusion_reactor"))
             .register();
 
-    public final static MultiblockMachineDefinition MEGA_EXTRACTOR = REGISTRATE.multiblock("mega_extractor", (holder) -> new CoilWorkableElectricMultipleRecipesMultiblockMachine(holder))
+    public final static MultiblockMachineDefinition MEGA_EXTRACTOR = REGISTRATE.multiblock("mega_extractor", CoilWorkableElectricMultipleRecipesMultiblockMachine::new)
             .rotationState(RotationState.ALL)
             .recipeType(GTRecipeTypes.EXTRACTOR_RECIPES)
             .recipeType(GTRecipeTypes.FLUID_SOLIDFICATION_RECIPES)
