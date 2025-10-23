@@ -191,6 +191,8 @@ public abstract class RecipeLogicMixin implements ILockRecipe, IRecipeStatus {
     @Overwrite(remap = false)
     public void findAndHandleRecipe() {
         this.lastRecipe = null;
+        this.recipeStatus = null;
+        this.workingStatus = null;
         if (this.isLock && lockRecipe != null) {
             this.lastOriginRecipe = lockRecipe;
             var modified = machine.fullModifyRecipe(lastOriginRecipe.copy(), this.ocParams, this.ocResult);
@@ -302,6 +304,7 @@ public abstract class RecipeLogicMixin implements ILockRecipe, IRecipeStatus {
                     recipe = logic.createCustomRecipe(holder);
                     if (recipe != null) return Collections.singleton(recipe).iterator();
                 }
+                if (recipeStatus == null || recipeStatus.isSuccess()) RecipeResult.of(this.machine, RecipeResult.FAIL_FIND);
                 return Collections.emptyIterator();
             }
         }

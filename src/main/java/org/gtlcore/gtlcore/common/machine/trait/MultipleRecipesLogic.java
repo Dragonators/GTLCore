@@ -3,6 +3,7 @@ package org.gtlcore.gtlcore.common.machine.trait;
 import org.gtlcore.gtlcore.api.machine.multiblock.ParallelMachine;
 import org.gtlcore.gtlcore.api.machine.trait.ILockRecipe;
 import org.gtlcore.gtlcore.api.machine.trait.IRecipeCapabilityMachine;
+import org.gtlcore.gtlcore.api.machine.trait.IRecipeStatus;
 import org.gtlcore.gtlcore.api.recipe.IGTRecipe;
 import org.gtlcore.gtlcore.api.recipe.RecipeResult;
 
@@ -28,7 +29,7 @@ import static org.gtlcore.gtlcore.api.recipe.IParallelLogic.*;
 import static org.gtlcore.gtlcore.api.recipe.RecipeRunnerHelper.*;
 
 @Getter
-public class MultipleRecipesLogic extends RecipeLogic implements ILockRecipe {
+public class MultipleRecipesLogic extends RecipeLogic implements ILockRecipe, IRecipeStatus {
 
     private final ParallelMachine parallel;
 
@@ -65,6 +66,7 @@ public class MultipleRecipesLogic extends RecipeLogic implements ILockRecipe {
     @Override
     public void findAndHandleRecipe() {
         lastRecipe = null;
+        setRecipeStatus(null);
         var match = getRecipe();
         if (match != null) {
             RecipeResult.of(machine, RecipeResult.SUCCESS);
@@ -93,21 +95,21 @@ public class MultipleRecipesLogic extends RecipeLogic implements ILockRecipe {
         GTRecipe output = GTRecipeBuilder.ofRaw().buildRawRecipe();
         output.outputs.put(ItemRecipeCapability.CAP, new ObjectArrayList<>());
         output.outputs.put(FluidRecipeCapability.CAP, new ObjectArrayList<>());
-        long totalEu = 0;
+        double totalEu = 0;
         long remain = (long) this.parallel.getMaxParallel() * MAX_THREADS;
         double euMultiplier = getEuMultiplier();
 
         while (remain > 0 && iterator.hasNext()) {
-            GTRecipe match = iterator.next();
+            var match = iterator.next();
             if (match == null) continue;
-            long p = getMaxParallel(machine, match, remain);
+            var p = getMaxParallel(machine, match, remain);
             if (p <= 0) continue;
             else if (p > 1) match = match.copy(ContentModifier.multiplier(p), false);
             ((IGTRecipe) match).setRealParallels(p);
             match = getRecipeOutputChance(machine, match);
             remain -= p;
             if (handleRecipeInput(machine, match)) {
-                totalEu += (long) (getTotalEuOfRecipe(match) * euMultiplier);
+                totalEu += getTotalEuOfRecipe(match) * euMultiplier;
                 var item = match.outputs.get(ItemRecipeCapability.CAP);
                 if (item != null) output.outputs.get(ItemRecipeCapability.CAP).addAll(item);
                 var fluid = match.outputs.get(FluidRecipeCapability.CAP);
@@ -116,9 +118,11 @@ public class MultipleRecipesLogic extends RecipeLogic implements ILockRecipe {
             if (totalEu / maxEUt > 20 * 500) break;
         }
         if (output.outputs.get(ItemRecipeCapability.CAP).isEmpty() &&
-                output.outputs.get(FluidRecipeCapability.CAP).isEmpty())
+                output.outputs.get(FluidRecipeCapability.CAP).isEmpty()) {
+            if (getRecipeStatus() == null || getRecipeStatus().isSuccess()) RecipeResult.of(this.machine, RecipeResult.FAIL_FIND);
             return null;
-        double d = (double) totalEu / maxEUt;
+        }
+        var d = totalEu / maxEUt;
         long eut = d > 20 ? maxEUt : (long) (maxEUt * d / 20);
         output.tickInputs.put(EURecipeCapability.CAP,
                 List.of(new Content(eut, 10000, 10000, 0, null, null)));

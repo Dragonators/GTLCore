@@ -20,6 +20,7 @@ public record RecipeResult(boolean isSuccess, @Nullable Component reason) {
 
     public static final RecipeResult SUCCESS = new RecipeResult(true, null);
     public static final RecipeResult FAIL_FIND = fail(Component.translatable("gtceu.recipe.fail.find"));
+    public static final RecipeResult FAIL_INPUT = fail(Component.translatable("gtceu.recipe.fail.Input"));
     public static final RecipeResult FAIL_OUTPUT = fail(Component.translatable("gtceu.recipe.fail.Output"));
     public static final RecipeResult FAIL_VOLTAGE_TIER = fail(Component.translatable("gtceu.recipe.fail.voltage.tier"));
     public static final RecipeResult FAIL_NO_ENOUGH_EU_IN = fail(Component.translatable("gtceu.recipe.fail.no.enough.eu.in"));
