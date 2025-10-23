@@ -58,71 +58,75 @@ public class PatternPreviewWidget extends WidgetGroup {
     private static final Map<MultiblockMachineDefinition, MBPattern[]> CACHE = new Object2ObjectOpenHashMap<>();
     private final SceneWidget sceneWidget;
     private final DraggableScrollableWidgetGroup scrollableWidgetGroup;
-    public final MultiblockMachineDefinition controllerDefinition;
-    public final MBPattern[] patterns;
+    private final MultiblockMachineDefinition controllerDefinition;
+    private final MBPattern[] patterns;
     private final List<SimplePredicate> predicates;
     private int index;
-    public int layer;
+    private int layer;
     private SlotWidget[] slotWidgets;
     private SlotWidget[] candidates;
 
     protected PatternPreviewWidget(MultiblockMachineDefinition controllerDefinition) {
         super(0, 0, 160, 160);
-        setClientSideWidget();
-        this.controllerDefinition = controllerDefinition;
-        predicates = new ObjectArrayList<>();
-        layer = -1;
+        try {
+            setClientSideWidget();
+            this.controllerDefinition = controllerDefinition;
+            predicates = new ObjectArrayList<>();
+            layer = -1;
 
-        addWidget(sceneWidget = new SceneWidget(3, 3, 150, 150, LEVEL)
-                .setOnSelected(this::onPosSelected)
-                .setRenderFacing(false)
-                .setRenderFacing(false));
+            addWidget(sceneWidget = new SceneWidget(3, 3, 150, 150, LEVEL)
+                    .setOnSelected(this::onPosSelected)
+                    .setRenderFacing(false)
+                    .setRenderFacing(false));
 
-        scrollableWidgetGroup = new DraggableScrollableWidgetGroup(3, 132, 154, 22)
-                .setXScrollBarHeight(4)
-                .setXBarStyle(GuiTextures.SLIDER_BACKGROUND, GuiTextures.BUTTON)
-                .setScrollable(true)
-                .setDraggable(true);
-        scrollableWidgetGroup.setScrollWheelDirection(DraggableScrollableWidgetGroup.ScrollWheelDirection.HORIZONTAL);
-        scrollableWidgetGroup.setScrollYOffset(0);
-        addWidget(scrollableWidgetGroup);
+            scrollableWidgetGroup = new DraggableScrollableWidgetGroup(3, 132, 154, 22)
+                    .setXScrollBarHeight(4)
+                    .setXBarStyle(GuiTextures.SLIDER_BACKGROUND, GuiTextures.BUTTON)
+                    .setScrollable(true)
+                    .setDraggable(true);
+            scrollableWidgetGroup.setScrollWheelDirection(DraggableScrollableWidgetGroup.ScrollWheelDirection.HORIZONTAL);
+            scrollableWidgetGroup.setScrollYOffset(0);
+            addWidget(scrollableWidgetGroup);
 
-        if (ConfigHolder.INSTANCE.client.useVBO) {
-            if (!RenderSystem.isOnRenderThread()) {
-                RenderSystem.recordRenderCall(sceneWidget::useCacheBuffer);
-            } else {
-                sceneWidget.useCacheBuffer();
+            if (ConfigHolder.INSTANCE.client.useVBO) {
+                if (!RenderSystem.isOnRenderThread()) {
+                    RenderSystem.recordRenderCall(sceneWidget::useCacheBuffer);
+                } else {
+                    sceneWidget.useCacheBuffer();
+                }
             }
+
+            addWidget(new ImageWidget(3, 3, 160, 10,
+                    new TextTexture(controllerDefinition.getDescriptionId(), -1)
+                            .setType(TextTexture.TextType.ROLL)
+                            .setWidth(170)
+                            .setDropShadow(true)));
+
+            this.patterns = CACHE.computeIfAbsent(controllerDefinition, definition -> {
+                HashSet<ItemStackKey> drops = new HashSet<>();
+                drops.add(new ItemStackKey(this.controllerDefinition.asStack()));
+                return controllerDefinition.getMatchingShapes().stream()
+                        .map(it -> initializePattern(it, drops))
+                        .filter(Objects::nonNull)
+                        .toArray(MBPattern[]::new);
+            });
+
+            addWidget(new ButtonWidget(138, 30, 18, 18, new GuiTextureGroup(
+                    ColorPattern.T_GRAY.rectTexture(),
+                    new TextTexture("1").setSupplier(() -> "P:" + index)),
+                    (x) -> setPage((index + 1 >= patterns.length) ? 0 : index + 1, x))
+                    .setHoverBorderTexture(1, -1));
+
+            addWidget(new ButtonWidget(138, 50, 18, 18, new GuiTextureGroup(
+                    ColorPattern.T_GRAY.rectTexture(),
+                    new TextTexture("1").setSupplier(() -> layer >= 0 ? "L:" + layer : "ALL")),
+                    this::updateLayer)
+                    .setHoverBorderTexture(1, -1));
+
+            setPage(0, null);
+        } catch (Exception e) {
+            throw new IllegalStateException("The jei preview creation for the Multi Block Machine [" + controllerDefinition.getId().toString() + "] failed! ");
         }
-
-        addWidget(new ImageWidget(3, 3, 160, 10,
-                new TextTexture(controllerDefinition.getDescriptionId(), -1)
-                        .setType(TextTexture.TextType.ROLL)
-                        .setWidth(170)
-                        .setDropShadow(true)));
-
-        this.patterns = CACHE.computeIfAbsent(controllerDefinition, definition -> {
-            HashSet<ItemStackKey> drops = new HashSet<>();
-            drops.add(new ItemStackKey(this.controllerDefinition.asStack()));
-            return controllerDefinition.getMatchingShapes().stream()
-                    .map(it -> initializePattern(it, drops))
-                    .filter(Objects::nonNull)
-                    .toArray(MBPattern[]::new);
-        });
-
-        addWidget(new ButtonWidget(138, 30, 18, 18, new GuiTextureGroup(
-                ColorPattern.T_GRAY.rectTexture(),
-                new TextTexture("1").setSupplier(() -> "P:" + index)),
-                (x) -> setPage((index + 1 >= patterns.length) ? 0 : index + 1, x))
-                .setHoverBorderTexture(1, -1));
-
-        addWidget(new ButtonWidget(138, 50, 18, 18, new GuiTextureGroup(
-                ColorPattern.T_GRAY.rectTexture(),
-                new TextTexture("1").setSupplier(() -> layer >= 0 ? "L:" + layer : "ALL")),
-                this::updateLayer)
-                .setHoverBorderTexture(1, -1));
-
-        setPage(0, null);
     }
 
     private void updateLayer(ClickData cd) {
@@ -147,7 +151,7 @@ public class PatternPreviewWidget extends WidgetGroup {
         if (pattern.controllerBase.isFormed()) {
             LongSet set = pattern.controllerBase.getMultiblockState().getMatchContext().getOrDefault("renderMask",
                     LongSets.EMPTY_SET);
-            Set<BlockPos> modelDisabled = set.stream().map(BlockPos::of).collect(Collectors.toSet());
+            Set<BlockPos> modelDisabled = set.longStream().mapToObj(BlockPos::of).collect(Collectors.toSet());
             if (!modelDisabled.isEmpty()) {
                 sceneWidget.setRenderedCore(
                         stream.filter(pos -> !modelDisabled.contains(pos)).collect(Collectors.toList()), null);
@@ -192,11 +196,9 @@ public class PatternPreviewWidget extends WidgetGroup {
             slotWidgets[i] = new SlotWidget(itemHandler, i, 4 + i * 18, 0, false, false)
                     .setBackgroundTexture(ColorPattern.T_GRAY.rectTexture())
                     .setIngredientIO(IngredientIO.INPUT)
-                    .setOnAddedTooltips((w, tips) -> {
-                        tips.add(Component.translatable("gtceu.machine.quantum_chest.items_stored")
-                                .withStyle(ChatFormatting.DARK_AQUA)
-                                .append(Component.literal(String.valueOf(itemStack.getCount()))));
-                    });
+                    .setOnAddedTooltips((w, tips) -> tips.add(Component.translatable("gtceu.machine.quantum_chest.items_stored")
+                            .withStyle(ChatFormatting.DARK_AQUA)
+                            .append(Component.literal(String.valueOf(itemStack.getCount())))));
             scrollableWidgetGroup.addWidget(slotWidgets[i]);
         }
     }
@@ -319,7 +321,7 @@ public class PatternPreviewWidget extends WidgetGroup {
         if (controllerBase.isFormed()) {
             LongSet set = controllerBase.getMultiblockState().getMatchContext().getOrDefault("renderMask",
                     LongSets.EMPTY_SET);
-            Set<BlockPos> modelDisabled = set.stream().map(BlockPos::of).collect(Collectors.toSet());
+            Set<BlockPos> modelDisabled = set.longStream().mapToObj(BlockPos::of).collect(Collectors.toSet());
             if (!modelDisabled.isEmpty()) {
                 sceneWidget.setRenderedCore(
                         poses.stream().filter(pos -> !modelDisabled.contains(pos)).collect(Collectors.toList()), null);
