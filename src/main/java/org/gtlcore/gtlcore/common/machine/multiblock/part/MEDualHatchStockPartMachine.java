@@ -47,6 +47,7 @@ import net.minecraft.world.item.crafting.Ingredient;
 
 import appeng.api.config.Actionable;
 import appeng.api.networking.IGrid;
+import appeng.api.networking.IGridNodeListener;
 import appeng.api.networking.storage.IStorageService;
 import appeng.api.stacks.*;
 import appeng.api.storage.MEStorage;
@@ -112,6 +113,12 @@ public class MEDualHatchStockPartMachine extends MEBusPartMachine implements IDa
     protected NotifiableFluidTank createTank() {
         this.aeFluidHandler = new ExportOnlyAEStockingFluidList(this, CONFIG_SIZE);
         return this.aeFluidHandler;
+    }
+
+    @Override
+    public void onMainNodeStateChanged(IGridNodeListener.State reason) {
+        super.onMainNodeStateChanged(reason);
+        if (getMainNode().isOnline()) aeItemHandler.notifyListeners();
     }
 
     @Override
