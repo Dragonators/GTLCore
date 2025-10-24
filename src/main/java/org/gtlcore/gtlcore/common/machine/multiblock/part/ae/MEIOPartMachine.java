@@ -17,6 +17,7 @@ import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 
 import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
 
 import appeng.api.networking.IManagedGridNode;
 import appeng.api.networking.security.IActionSource;
@@ -74,6 +75,14 @@ public abstract class MEIOPartMachine extends MultiblockPartMachine implements I
             case BOTH -> new PageGroupingData("gtceu.multiblock.page_switcher.io.both", 3);
             case NONE -> null;
         };
+    }
+
+    @Override
+    public void loadCustomPersistedData(@NotNull CompoundTag tag) {
+        super.loadCustomPersistedData(tag);
+        if (tag.getCompound("ForgeData").getBoolean("isAllFacing")) {
+            getMainNode().setExposedOnSides(EnumSet.allOf(Direction.class));
+        }
     }
 
     @Override

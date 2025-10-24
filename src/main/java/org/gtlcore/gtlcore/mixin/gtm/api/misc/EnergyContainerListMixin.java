@@ -7,6 +7,7 @@ import org.gtlcore.gtlcore.utils.datastructure.Int128;
 import com.gregtechceu.gtceu.api.capability.IEnergyContainer;
 import com.gregtechceu.gtceu.api.misc.EnergyContainerList;
 
+import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -118,8 +119,9 @@ public abstract class EnergyContainerListMixin {
      * @author Dragons
      * @reason Dont Use
      */
+    @SuppressWarnings("NullableProblems")
     @Overwrite(remap = false)
-    private static long[] calculateVoltageAmperage(long voltage, long amperage) {
+    private static @NotNull long[] calculateVoltageAmperage(long voltage, long amperage) {
         return new long[] { voltage, amperage };
     }
 

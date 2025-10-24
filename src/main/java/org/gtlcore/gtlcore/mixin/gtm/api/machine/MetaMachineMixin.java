@@ -13,6 +13,7 @@ import com.gregtechceu.gtceu.integration.ae2.machine.feature.IGridConnectedMachi
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -132,9 +133,8 @@ public abstract class MetaMachineMixin implements IPerformanceDisplayMachine {
     private void onToolClick(Set<@NotNull GTToolType> toolType, ItemStack itemStack, UseOnContext context, CallbackInfoReturnable<Pair<GTToolType, InteractionResult>> cir) {
         if (cir.getReturnValue().getSecond() == InteractionResult.PASS && toolType.contains(GTToolType.WIRE_CUTTER)) {
             Player player = context.getPlayer();
-            if (player == null) return;
-            if (holder.getMetaMachine() instanceof IGridConnectedMachine gridConnectedMachine) {
-                cir.setReturnValue(Pair.of(GTToolType.WIRE_CUTTER, gtlcore$onWireCutterClick(player, context.getHand(), gridConnectedMachine)));
+            if (player instanceof ServerPlayer serverPlayer && holder.getMetaMachine() instanceof IGridConnectedMachine gridConnectedMachine) {
+                cir.setReturnValue(Pair.of(GTToolType.WIRE_CUTTER, gTLCore$onWireCutterClick(serverPlayer, context.getHand(), gridConnectedMachine)));
             }
         }
     }
@@ -148,19 +148,15 @@ public abstract class MetaMachineMixin implements IPerformanceDisplayMachine {
     }
 
     @Unique
-    private InteractionResult gtlcore$onWireCutterClick(Player playerIn, InteractionHand hand, IGridConnectedMachine machine) {
-        playerIn.swing(hand);
+    private InteractionResult gTLCore$onWireCutterClick(ServerPlayer serverPlayer, InteractionHand hand, IGridConnectedMachine machine) {
+        serverPlayer.swing(hand);
         if (holder.self().getPersistentData().getBoolean("isAllFacing")) {
             machine.getMainNode().setExposedOnSides(EnumSet.of(((MetaMachine) machine).getFrontFacing()));
-            if (isRemote()) {
-                playerIn.displayClientMessage(Component.translatable("gtlcore.me_front"), true);
-            }
+            serverPlayer.sendSystemMessage(Component.translatable("gtlcore.me_front"), true);
             holder.self().getPersistentData().putBoolean("isAllFacing", false);
         } else {
             machine.getMainNode().setExposedOnSides(EnumSet.allOf(Direction.class));
-            if (isRemote()) {
-                playerIn.displayClientMessage(Component.translatable("gtlcore.me_any"), true);
-            }
+            serverPlayer.sendSystemMessage(Component.translatable("gtlcore.me_any"), true);
             holder.self().getPersistentData().putBoolean("isAllFacing", true);
         }
         return InteractionResult.CONSUME;

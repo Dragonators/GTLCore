@@ -17,27 +17,28 @@ import com.gregtechceu.gtceu.integration.ae2.utils.KeyStorage;
 import com.lowdragmc.lowdraglib.misc.FluidStorage;
 import com.lowdragmc.lowdraglib.misc.ItemStackTransfer;
 
+import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.crafting.Ingredient;
 
 import appeng.api.networking.IGrid;
 import appeng.api.networking.IManagedGridNode;
 import appeng.api.networking.security.IActionSource;
 import com.hepdd.gtmthings.common.block.machine.multiblock.part.appeng.MEOutputPartMachine;
-import lombok.Getter;
-import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.*;
 
+import java.util.EnumSet;
 import java.util.List;
 import java.util.function.Function;
 
+@SuppressWarnings("all")
 @Mixin(MEOutputPartMachine.class)
 public abstract class MEOutputPartMachineMixin extends DualHatchPartMachine implements IMEOutputPart, IGridConnectedMachine {
 
-    @Getter
-    @Setter
-    private byte time;
+    @Unique
+    private byte gTLCore$time;
 
     @Shadow(remap = false)
     private KeyStorage internalBuffer;
@@ -63,7 +64,7 @@ public abstract class MEOutputPartMachineMixin extends DualHatchPartMachine impl
     @Overwrite(remap = false)
     protected void autoIO() {
         if (this.isReturn()) {
-            this.time++;
+            this.gTLCore$time++;
             if (this.updateMEStatus()) {
                 IGrid grid = this.getMainNode().getGrid();
                 if (grid != null) {
@@ -76,18 +77,36 @@ public abstract class MEOutputPartMachineMixin extends DualHatchPartMachine impl
                 }
                 this.updateInventorySubscription();
             }
-        } else this.time++;
+        } else this.gTLCore$time++;
     }
 
     @Override
-    public void attachConfigurators(ConfiguratorPanel configuratorPanel) {
+    public void attachConfigurators(@NotNull ConfiguratorPanel configuratorPanel) {
         super.attachConfigurators(configuratorPanel);
         IMEOutputPart.attachRecipeLockable(configuratorPanel, this);
     }
 
     @Override
-    public void retureStorage() {
-        this.time = 0;
+    public void loadCustomPersistedData(@NotNull CompoundTag tag) {
+        super.loadCustomPersistedData(tag);
+        if (tag.getCompound("ForgeData").getBoolean("isAllFacing")) {
+            getMainNode().setExposedOnSides(EnumSet.allOf(Direction.class));
+        }
+    }
+
+    @Override
+    public void returnStorage() {
+        this.gTLCore$time = 0;
+    }
+
+    @Override
+    public byte getTime() {
+        return gTLCore$time;
+    }
+
+    @Override
+    public void setTime(byte time) {
+        gTLCore$time = time;
     }
 
     @Mixin(targets = "com.hepdd.gtmthings.common.block.machine.multiblock.part.appeng.MEOutputPartMachine$InaccessibleInfiniteTank", remap = false)
