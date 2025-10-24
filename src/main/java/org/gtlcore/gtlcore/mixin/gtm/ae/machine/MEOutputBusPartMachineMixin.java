@@ -11,18 +11,18 @@ import com.gregtechceu.gtceu.integration.ae2.machine.feature.IGridConnectedMachi
 import com.gregtechceu.gtceu.integration.ae2.utils.KeyStorage;
 
 import appeng.api.networking.IGrid;
-import lombok.Getter;
-import lombok.Setter;
+import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 
+@SuppressWarnings("all")
 @Mixin(MEOutputBusPartMachine.class)
 public abstract class MEOutputBusPartMachineMixin extends MEBusPartMachine implements IMEOutputPart, IGridConnectedMachine {
 
-    @Getter
-    @Setter
-    private byte time;
+    @Unique
+    private byte gTLCore$time;
 
     @Shadow(remap = false)
     private KeyStorage internalBuffer;
@@ -38,7 +38,7 @@ public abstract class MEOutputBusPartMachineMixin extends MEBusPartMachine imple
     @Overwrite(remap = false)
     public void autoIO() {
         if (this.isReturn()) {
-            this.time++;
+            this.gTLCore$time++;
             if (this.updateMEStatus()) {
                 IGrid grid = this.getMainNode().getGrid();
                 if (grid != null && !this.internalBuffer.isEmpty()) {
@@ -46,17 +46,27 @@ public abstract class MEOutputBusPartMachineMixin extends MEBusPartMachine imple
                 }
                 this.updateInventorySubscription();
             }
-        } else this.time++;
+        } else this.gTLCore$time++;
     }
 
     @Override
-    public void attachConfigurators(ConfiguratorPanel configuratorPanel) {
+    public void attachConfigurators(@NotNull ConfiguratorPanel configuratorPanel) {
         super.attachConfigurators(configuratorPanel);
         IMEOutputPart.attachRecipeLockable(configuratorPanel, this);
     }
 
     @Override
-    public void retureStorage() {
-        this.time = 0;
+    public void returnStorage() {
+        this.gTLCore$time = 0;
+    }
+
+    @Override
+    public byte getTime() {
+        return gTLCore$time;
+    }
+
+    @Override
+    public void setTime(byte time) {
+        gTLCore$time = time;
     }
 }

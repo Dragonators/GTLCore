@@ -22,14 +22,14 @@ public interface IMEOutputPart {
 
     void setTime(byte time);
 
-    void retureStorage();
+    void returnStorage();
 
     static void attachRecipeLockable(ConfiguratorPanel configuratorPanel, MetaMachine machine) {
         if (machine instanceof IMEOutputPart part) {
             configuratorPanel.attachConfigurators(new IFancyConfiguratorButton.Toggle(
                     GuiTextures.BUTTON_ALLOW_IMPORT_EXPORT.getSubTexture(0, 0, 1, 0.5),
                     GuiTextures.BUTTON_ALLOW_IMPORT_EXPORT.getSubTexture(0, 0.5, 1, 0.5),
-                    part::isReturn, (clickData, pressed) -> part.retureStorage())
+                    part::isReturn, (clickData, pressed) -> part.returnStorage())
                     .setTooltipsSupplier(pressed -> List.of(Component.translatable("config.gtceu.option.hand.output"))));
         }
     }
