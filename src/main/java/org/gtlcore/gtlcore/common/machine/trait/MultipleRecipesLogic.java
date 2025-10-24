@@ -107,8 +107,8 @@ public class MultipleRecipesLogic extends RecipeLogic implements ILockRecipe, IR
             else if (p > 1) match = match.copy(ContentModifier.multiplier(p), false);
             ((IGTRecipe) match).setRealParallels(p);
             match = getRecipeOutputChance(machine, match);
-            remain -= p;
             if (handleRecipeInput(machine, match)) {
+                remain -= p;
                 totalEu += getTotalEuOfRecipe(match) * euMultiplier;
                 var item = match.outputs.get(ItemRecipeCapability.CAP);
                 if (item != null) output.outputs.get(ItemRecipeCapability.CAP).addAll(item);
