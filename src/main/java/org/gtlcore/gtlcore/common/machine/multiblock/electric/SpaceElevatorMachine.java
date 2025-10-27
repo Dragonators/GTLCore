@@ -1,10 +1,11 @@
 package org.gtlcore.gtlcore.common.machine.multiblock.electric;
 
-import org.gtlcore.gtlcore.api.machine.multiblock.ISpaceElevatorModule;
+import org.gtlcore.gtlcore.api.machine.multiblock.IModularMachineHost;
+import org.gtlcore.gtlcore.api.machine.multiblock.IModularMachineModule;
 import org.gtlcore.gtlcore.api.recipe.RecipeResult;
+import org.gtlcore.gtlcore.utils.MachineUtil;
 
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
-import com.gregtechceu.gtceu.api.machine.MetaMachine;
 import com.gregtechceu.gtceu.api.machine.feature.IMachineLife;
 
 import com.lowdragmc.lowdraglib.gui.util.ClickData;
@@ -21,38 +22,23 @@ import earth.terrarium.botarium.common.menu.MenuHooks;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-public class SpaceElevatorMachine extends TierCasingMachine implements IMachineLife {
+public class SpaceElevatorMachine extends TierCasingMachine
+                                  implements IModularMachineHost<SpaceElevatorMachine>, IMachineLife {
+
+    private final Set<IModularMachineModule<SpaceElevatorMachine, ?>> modules = new ReferenceOpenHashSet<>();
+    private int mam = 0;
 
     public SpaceElevatorMachine(IMachineBlockEntity holder) {
         super(holder, "SEPMTier");
     }
 
-    private final Set<ISpaceElevatorModule> proxyModules = new ReferenceOpenHashSet<>();
-
-    private int mam = 0;
-
-    public void addModule(ISpaceElevatorModule module) {
-        this.proxyModules.add(module);
-    }
-
-    public void removeModule(ISpaceElevatorModule module) {
-        this.proxyModules.remove(module);
-    }
-
-    protected @NotNull Set<ISpaceElevatorModule> getModules() {
-        return Collections.unmodifiableSet(this.proxyModules);
-    }
-
-    protected void safeClearModules() {
-        for (ISpaceElevatorModule module : this.getModules()) {
-            module.removeFromElevator(this);
-        }
-        this.proxyModules.clear();
+    @Override
+    public @NotNull Set<IModularMachineModule<SpaceElevatorMachine, ?>> getModuleSet() {
+        return modules;
     }
 
     @Override
@@ -70,14 +56,15 @@ public class SpaceElevatorMachine extends TierCasingMachine implements IMachineL
     public void onStructureFormed() {
         super.onStructureFormed();
         safeClearModules();
-        scanForModules();
+        scanAndConnectModules();
     }
 
-    private void scanForModules() {
+    @Override
+    public BlockPos[] getModuleScanPositions() {
         final Level level = getLevel();
         final BlockPos powerCore = getPowerCore(getPos(), level);
         if (powerCore != null) {
-            BlockPos[] modulePositions = new BlockPos[] {
+            return new BlockPos[] {
                     powerCore.offset(8, 2, 3),
                     powerCore.offset(8, 2, -3),
                     powerCore.offset(-8, 2, 3),
@@ -87,14 +74,8 @@ public class SpaceElevatorMachine extends TierCasingMachine implements IMachineL
                     powerCore.offset(3, 2, -8),
                     powerCore.offset(-3, 2, -8)
             };
-
-            for (BlockPos pos : modulePositions) {
-                MetaMachine machine = MetaMachine.getMachine(Objects.requireNonNull(level), pos);
-                if (machine instanceof ISpaceElevatorModule module && module.isFormed()) {
-                    module.connectToElevator(this);
-                }
-            }
         }
+        return MachineUtil.EMPTY_POS_ARRAY;
     }
 
     private BlockPos getPowerCore(BlockPos pos, Level level) {
@@ -112,9 +93,7 @@ public class SpaceElevatorMachine extends TierCasingMachine implements IMachineL
 
     private int getMAM() {
         if (getOffsetTimer() % 20 == 0) {
-            mam = (int) proxyModules.stream()
-                    .filter(ISpaceElevatorModule::isFormed)
-                    .count();
+            mam = getFormedModuleCount();
         }
         return mam;
     }

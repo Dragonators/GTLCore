@@ -24,6 +24,8 @@ import static org.gtlcore.gtlcore.api.recipe.RecipeRunnerHelper.*;
 
 public class MachineUtil {
 
+    public static final BlockPos[] EMPTY_POS_ARRAY = new BlockPos[0];
+
     private MachineUtil() {
         throw new IllegalAccessError();
     }

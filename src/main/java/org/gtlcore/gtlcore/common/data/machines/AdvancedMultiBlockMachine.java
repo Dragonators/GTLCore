@@ -932,7 +932,7 @@ public class AdvancedMultiBlockMachine {
             .workableCasingRenderer(GTLCore.id("block/dimension_connection_casing"), GTCEu.id("block/multiblock/create_aggregation"))
             .register();
 
-    public final static MultiblockMachineDefinition SUPRACHRONAL_ASSEMBLY_LINE = REGISTRATE.multiblock("suprachronal_assembly_line", (holder) -> new SuprachronalAssemblyLineMachine(holder, false))
+    public final static MultiblockMachineDefinition SUPRACHRONAL_ASSEMBLY_LINE = REGISTRATE.multiblock("suprachronal_assembly_line", SuprachronalAssemblyLineMachine::new)
             .rotationState(RotationState.ALL)
             .recipeType(GTLRecipeTypes.SUPRACHRONAL_ASSEMBLY_LINE_RECIPES)
             .recipeType(GTRecipeTypes.ASSEMBLY_LINE_RECIPES)
@@ -1011,7 +1011,7 @@ public class AdvancedMultiBlockMachine {
             .workableCasingRenderer(GTLCore.id("block/molecular_casing"), GTCEu.id("block/multiblock/fusion_reactor"))
             .register();
 
-    public final static MultiblockMachineDefinition SUPRACHRONAL_ASSEMBLY_LINE_MODULE = REGISTRATE.multiblock("suprachronal_assembly_line_module", (holder) -> new SuprachronalAssemblyLineMachine(holder, true))
+    public final static MultiblockMachineDefinition SUPRACHRONAL_ASSEMBLY_LINE_MODULE = REGISTRATE.multiblock("suprachronal_assembly_line_module", SuprachronalAssemblyLineModuleMachine::new)
             .rotationState(RotationState.ALL)
             .recipeType(GTRecipeTypes.ASSEMBLY_LINE_RECIPES)
             .recipeType(GTLRecipeTypes.CIRCUIT_ASSEMBLY_LINE_RECIPES)
@@ -1022,7 +1022,7 @@ public class AdvancedMultiBlockMachine {
             .tooltips(Component.translatable("gtceu.machine.available_recipe_map_2.tooltip",
                     Component.translatable("gtceu.assembly_line"), Component.translatable("gtceu.circuit_assembly_line")))
             .tooltipBuilder(GTLMachines.GTL_ADD)
-            .recipeModifiers((machine, recipe, params, result) -> GTLRecipeModifiers.reduction(machine, recipe, 1, 0.4), (machine, recipe, params, result) -> GTRecipeModifiers.accurateParallel(machine, recipe, ((SuprachronalAssemblyLineMachine) machine).getParallel(), false).getFirst(), GTRecipeModifiers.ELECTRIC_OVERCLOCK.apply(OverclockingLogic.NON_PERFECT_OVERCLOCK_SUBTICK))
+            .recipeModifiers((machine, recipe, params, result) -> GTLRecipeModifiers.reduction(machine, recipe, 1, 0.4), (machine, recipe, params, result) -> GTRecipeModifiers.accurateParallel(machine, recipe, ((SuprachronalAssemblyLineModuleMachine) machine).getParallel(), false).getFirst(), GTRecipeModifiers.ELECTRIC_OVERCLOCK.apply(OverclockingLogic.NON_PERFECT_OVERCLOCK_SUBTICK))
             .appearanceBlock(GTLBlocks.MOLECULAR_CASING)
             .pattern(definition -> FactoryBlockPattern.start()
                     .aisle(" D ", " E ", " D ")
@@ -1031,7 +1031,6 @@ public class AdvancedMultiBlockMachine {
                     .aisle(" C ", " C ", " C ")
                     .aisle(" B ", " B ", " B ")
                     .aisle("AAA", "A~A", "AAA")
-                    .aisle("   ", " - ", "   ")
                     .where("~", Predicates.controller(Predicates.blocks(definition.get())))
                     .where("B", Predicates.blocks(GTLBlocks.DIMENSIONALLY_TRANSCENDENT_CASING.get()))
                     .where("C", Predicates.blocks(Registries.getBlock("kubejs:molecular_coil")))
@@ -1045,7 +1044,6 @@ public class AdvancedMultiBlockMachine {
                             .or(Predicates.abilities(PartAbility.INPUT_ENERGY).setMaxGlobalLimited(2))
                             .or(Predicates.abilities(PartAbility.INPUT_LASER).setMaxGlobalLimited(1)))
                     .where(" ", Predicates.any())
-                    .where("-", Predicates.air())
                     .build())
             .workableCasingRenderer(GTLCore.id("block/molecular_casing"), GTCEu.id("block/multiblock/fusion_reactor"))
             .register();
