@@ -1,8 +1,9 @@
 package org.gtlcore.gtlcore.common.machine.multiblock.electric;
 
-import org.gtlcore.gtlcore.api.machine.multiblock.ISpaceElevatorModule;
+import org.gtlcore.gtlcore.api.machine.multiblock.IModularMachineModule;
 import org.gtlcore.gtlcore.common.data.GTLBlocks;
 import org.gtlcore.gtlcore.common.data.GTLRecipeModifiers;
+import org.gtlcore.gtlcore.utils.MachineUtil;
 
 import com.gregtechceu.gtceu.api.GTValues;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
@@ -28,6 +29,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -37,7 +40,8 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
-public class SpaceElevatorModuleMachine extends WorkableElectricMultiblockMachine implements ISpaceElevatorModule, IMachineLife {
+public class SpaceElevatorModuleMachine extends WorkableElectricMultiblockMachine
+                                        implements IModularMachineModule<SpaceElevatorMachine, SpaceElevatorModuleMachine>, IMachineLife {
 
     protected static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(SpaceElevatorModuleMachine.class, WorkableElectricMultiblockMachine.MANAGED_FIELD_HOLDER);
 
@@ -54,71 +58,99 @@ public class SpaceElevatorModuleMachine extends WorkableElectricMultiblockMachin
 
     @Persisted
     @Nullable
-    private BlockPos controllerPos;
+    @Getter
+    @Setter
+    private BlockPos hostPosition;
+
     @Nullable
-    private SpaceElevatorMachine controller;
+    @Getter
+    @Setter
+    private SpaceElevatorMachine host;
 
     @Override
-    public void removeFromElevator(@Nullable SpaceElevatorMachine elevator) {
-        this.controllerPos = null;
-        this.controller = null;
-        if (elevator != null) {
-            elevator.removeModule(this);
-        }
+    public @NotNull Class<SpaceElevatorMachine> getHostType() {
+        return SpaceElevatorMachine.class;
     }
 
     @Override
-    public void connectToElevator(@NotNull SpaceElevatorMachine elevator) {
-        this.controller = elevator;
-        this.controllerPos = elevator.getPos();
-        elevator.addModule(this);
+    public ManagedFieldHolder getFieldHolder() {
+        return MANAGED_FIELD_HOLDER;
+    }
+
+    // ========================================
+    // Elevator connection
+    // ========================================
+
+    @Override
+    public void onConnected(@NotNull SpaceElevatorMachine host) {
         getSpaceElevatorTier();
         recipeLogic.updateTickSubscription();
     }
 
-    private boolean getAndSetControllerOnStructureFormed() {
-        if (!(getLevel() instanceof ServerLevel serverLevel)) return false;
-        if (this.controllerPos != null) {
-            if (serverLevel.getBlockEntity(this.controllerPos) instanceof IMachineBlockEntity IMBE && IMBE.getMetaMachine() instanceof SpaceElevatorMachine elevator && elevator.isFormed()) {
-                connectToElevator(elevator);
-                return true;
-            }
-        }
-
+    @Override
+    public BlockPos[] getHostScanPositions() {
         final BlockPos pos = getPos();
-        BlockPos[] coordinates = new BlockPos[] { pos.offset(8, -2, 3),
+        BlockPos[] powerCorePositions = new BlockPos[] {
+                pos.offset(8, -2, 3),
                 pos.offset(8, -2, -3),
                 pos.offset(-8, -2, 3),
                 pos.offset(-8, -2, -3),
                 pos.offset(3, -2, 8),
                 pos.offset(-3, -2, 8),
                 pos.offset(3, -2, -8),
-                pos.offset(-3, -2, -8) };
+                pos.offset(-3, -2, -8)
+        };
 
-        for (BlockPos i : coordinates) {
-            if (serverLevel.getBlockState(i).getBlock() == GTLBlocks.POWER_CORE.get()) {
-                BlockPos[] coordinatess = new BlockPos[] { i.offset(3, 2, 0),
-                        i.offset(-3, 2, 0),
-                        i.offset(0, 2, 3),
-                        i.offset(0, 2, -3) };
-                for (BlockPos j : coordinatess) {
-                    if (serverLevel.getBlockEntity(j) instanceof IMachineBlockEntity IMBE && IMBE.getMetaMachine() instanceof SpaceElevatorMachine elevator && elevator.isFormed()) {
-                        connectToElevator(elevator);
-                        return true;
-                    }
+        if (getLevel() instanceof ServerLevel serverLevel) {
+            for (BlockPos i : powerCorePositions) {
+                if (serverLevel.getBlockState(i).getBlock() == GTLBlocks.POWER_CORE.get()) {
+                    return new BlockPos[] {
+                            i.offset(3, 2, 0),
+                            i.offset(-3, 2, 0),
+                            i.offset(0, 2, 3),
+                            i.offset(0, 2, -3)
+                    };
                 }
             }
         }
-
-        return false;
+        return MachineUtil.EMPTY_POS_ARRAY;
     }
 
+    @Override
+    public void onStructureFormed() {
+        super.onStructureFormed();
+        if (!findAndConnectToHost()) {
+            removeFromHost(this.host);
+        }
+    }
+
+    @Override
+    public void onStructureInvalid() {
+        super.onStructureInvalid();
+        removeFromHost(this.host);
+    }
+
+    @Override
+    public void onPartUnload() {
+        super.onPartUnload();
+        removeFromHost(this.host);
+    }
+
+    @Override
+    public void onMachineRemoved() {
+        removeFromHost(this.host);
+    }
+
+    // ========================================
+    // Recipe Tier
+    // ========================================
+
     private void getSpaceElevatorTier() {
-        if (this.controller != null) {
-            final RecipeLogic logic = controller.getRecipeLogic();
+        if (this.host != null) {
+            final RecipeLogic logic = host.getRecipeLogic();
             if (logic.isWorking() && logic.getProgress() > 80) {
-                spaceElevatorTier = controller.getTier() - GTValues.ZPM;
-                moduleTier = controller.getCasingTier();
+                spaceElevatorTier = host.getTier() - GTValues.ZPM;
+                moduleTier = host.getCasingTier();
             } else if (!logic.isWorking()) {
                 spaceElevatorTier = 0;
                 moduleTier = 0;
@@ -150,29 +182,6 @@ public class SpaceElevatorModuleMachine extends WorkableElectricMultiblockMachin
     }
 
     @Override
-    public void onStructureFormed() {
-        super.onStructureFormed();
-        if (!getAndSetControllerOnStructureFormed()) removeFromElevator(this.controller);
-    }
-
-    @Override
-    public void onStructureInvalid() {
-        super.onStructureInvalid();
-        removeFromElevator(this.controller);
-    }
-
-    @Override
-    public void onPartUnload() {
-        super.onPartUnload();
-        removeFromElevator(this.controller);
-    }
-
-    @Override
-    public void onMachineRemoved() {
-        removeFromElevator(this.controller);
-    }
-
-    @Override
     public boolean onWorking() {
         boolean value = super.onWorking();
         if (getOffsetTimer() % 20 == 0) {
@@ -194,10 +203,5 @@ public class SpaceElevatorModuleMachine extends WorkableElectricMultiblockMachin
         textList.add(Component.translatable("gtceu.multiblock.parallel", Component.literal(FormattingUtil.formatNumbers(Math.pow(4, moduleTier - 1))).withStyle(ChatFormatting.DARK_PURPLE)).withStyle(ChatFormatting.GRAY));
         textList.add(Component.translatable(spaceElevatorTier < 1 ? "tooltip.gtlcore.space_elevator_not_connected" : "tooltip.gtlcore.space_elevator_connected"));
         textList.add(Component.translatable("gtceu.machine.duration_multiplier.tooltip", FormattingUtil.formatPercent(Math.pow(0.8, spaceElevatorTier - 1))));
-    }
-
-    @Override
-    public ManagedFieldHolder getFieldHolder() {
-        return MANAGED_FIELD_HOLDER;
     }
 }
