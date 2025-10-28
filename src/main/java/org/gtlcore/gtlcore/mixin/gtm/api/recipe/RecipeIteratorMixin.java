@@ -8,21 +8,20 @@ import com.gregtechceu.gtceu.api.recipe.lookup.AbstractMapIngredient;
 import com.gregtechceu.gtceu.api.recipe.lookup.RecipeIterator;
 
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
-import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Overwrite;
-import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.Unique;
+import org.spongepowered.asm.mixin.*;
 
 import java.util.*;
 import java.util.function.Predicate;
 
 import static org.gtlcore.gtlcore.api.recipe.IRecipeIterator.diveIngredientTreeFindRecipeCollection;
 
+@Implements(@Interface(
+                       iface = IAdditionalRecipeIterator.class,
+                       prefix = "gTLCore$"))
 @Mixin(RecipeIterator.class)
-public class RecipeIteratorMixin implements IAdditionalRecipeIterator {
+public class RecipeIteratorMixin {
 
     @Shadow(remap = false)
     int index;
@@ -38,23 +37,50 @@ public class RecipeIteratorMixin implements IAdditionalRecipeIterator {
     Predicate<GTRecipe> canHandle;
 
     @Unique
-    private List<GTRecipe> gtlcore$additionalRecipes = null;
+    private List<GTRecipe> gtlCore$additionalRecipes = null;
 
     @Unique
-    private Iterator<GTRecipe> gtlcore$presentIndexGTRecipesIterator = null;
+    private Iterator<GTRecipe> gtlCore$presentIndexGTRecipesIterator = null;
 
     @Unique
-    private int gtlcore$additionalIndex = 0;
+    private int gtlCore$additionalIndex = 0;
 
     @Unique
-    private boolean gtlcore$useOriginal = true;
+    private boolean gtlCore$useOriginal = true;
 
     @Unique
-    @Setter
-    private boolean useDiveIngredientTreeFind = false;
+    private boolean gtlCore$useDiveIngredientTreeFind = false;
 
     @Unique
-    private GTRecipe gtlcore$singleRecipe = null;
+    private GTRecipe gtlCore$singleRecipe = null;
+
+    @Unique
+    private GTRecipe gtlCore$cachedNextAdditional = null;
+
+    // ==================== IAdditionalRecipeIterator ====================
+
+    @Unique
+    public void gTLCore$setUseDiveIngredientTreeFind(boolean useDiveIngredientTreeFind) {
+        this.gtlCore$useDiveIngredientTreeFind = useDiveIngredientTreeFind;
+    }
+
+    @Unique
+    public void gTLCore$setAdditionalRecipes(@NotNull List<@NotNull GTRecipe> additionalRecipes) {
+        if (!additionalRecipes.isEmpty()) {
+            this.gtlCore$additionalRecipes = additionalRecipes;
+            this.gtlCore$additionalIndex = 0;
+            this.gtlCore$useOriginal = true;
+            this.gtlCore$cachedNextAdditional = null;
+        }
+    }
+
+    @Unique
+    @Nullable
+    public List<GTRecipe> gTLCore$getAdditionalRecipes() {
+        return this.gtlCore$additionalRecipes;
+    }
+
+    // ==================== Iterator ====================
 
     /**
      * @author Dragons
@@ -62,28 +88,28 @@ public class RecipeIteratorMixin implements IAdditionalRecipeIterator {
      */
     @Overwrite(remap = false)
     public boolean hasNext() {
-        if (gtlcore$useOriginal) {
+        if (gtlCore$useOriginal) {
             // 非dive模式：检查是否有单个配方缓存
-            if (!useDiveIngredientTreeFind && gtlcore$singleRecipe != null) {
+            if (!gtlCore$useDiveIngredientTreeFind && gtlCore$singleRecipe != null) {
                 return true;
             }
 
             // dive模式：如果当前迭代器还有元素，直接返回true
-            if (useDiveIngredientTreeFind && gtlcore$presentIndexGTRecipesIterator != null && gtlcore$presentIndexGTRecipesIterator.hasNext()) {
+            if (gtlCore$useDiveIngredientTreeFind && gtlCore$presentIndexGTRecipesIterator != null && gtlCore$presentIndexGTRecipesIterator.hasNext()) {
                 return true;
             }
 
             // 尝试查找下一个有效的ingredient集合或单个配方
-            if (gtlcore$findNextRecipeSet()) {
+            if (gtlCore$findNextRecipeSet()) {
                 return true;
             }
 
             // 原始配方已遍历完，切换到额外配方
-            gtlcore$useOriginal = false;
+            gtlCore$useOriginal = false;
         }
 
         // 检查额外配方，使用index遍历并应用canHandle测试
-        return gtlcore$hasValidAdditionalRecipe();
+        return gtlCore$hasValidAdditionalRecipe();
     }
 
     /**
@@ -98,18 +124,18 @@ public class RecipeIteratorMixin implements IAdditionalRecipeIterator {
             throw new NoSuchElementException();
         }
 
-        if (gtlcore$useOriginal) {
+        if (gtlCore$useOriginal) {
             // 非dive模式：优先使用单个配方缓存
-            if (!useDiveIngredientTreeFind) {
-                GTRecipe recipe = gtlcore$singleRecipe;
-                gtlcore$singleRecipe = null; // 消费后设为null
+            if (!gtlCore$useDiveIngredientTreeFind) {
+                GTRecipe recipe = gtlCore$singleRecipe;
+                gtlCore$singleRecipe = null;
                 return recipe;
             }
 
             // dive模式：使用迭代器
-            return gtlcore$presentIndexGTRecipesIterator.next();
+            return gtlCore$presentIndexGTRecipesIterator.next();
         } else {
-            return gtlcore$getNextValidAdditionalRecipe();
+            return gtlCore$getNextValidAdditionalRecipe();
         }
     }
 
@@ -120,32 +146,18 @@ public class RecipeIteratorMixin implements IAdditionalRecipeIterator {
     @Overwrite(remap = false)
     public void reset() {
         this.index = 0;
-        this.gtlcore$singleRecipe = null;
-        this.gtlcore$useOriginal = true;
-        this.gtlcore$presentIndexGTRecipesIterator = null;
-        this.gtlcore$additionalIndex = 0;
-    }
-
-    @Override
-    public void setAdditionalRecipes(@NotNull List<@NotNull GTRecipe> additionalRecipes) {
-        if (!additionalRecipes.isEmpty()) {
-            this.gtlcore$additionalRecipes = additionalRecipes;
-            this.gtlcore$additionalIndex = 0;
-            this.gtlcore$useOriginal = true;
-        }
-    }
-
-    @Override
-    @Nullable
-    public List<GTRecipe> getAdditionalRecipes() {
-        return this.gtlcore$additionalRecipes;
+        this.gtlCore$singleRecipe = null;
+        this.gtlCore$useOriginal = true;
+        this.gtlCore$presentIndexGTRecipesIterator = null;
+        this.gtlCore$additionalIndex = 0;
+        this.gtlCore$cachedNextAdditional = null; // 清空缓存
     }
 
     @Unique
-    private boolean gtlcore$findNextRecipeSet() {
+    private boolean gtlCore$findNextRecipeSet() {
         if (ingredients == null) return false;
 
-        if (useDiveIngredientTreeFind) {
+        if (gtlCore$useDiveIngredientTreeFind) {
             // 使用diveIngredientTreeFind模式，收集所有配方
             ObjectOpenHashSet<GTRecipe> recipeSet = new ObjectOpenHashSet<>();
             while (this.index < this.ingredients.size()) {
@@ -154,9 +166,9 @@ public class RecipeIteratorMixin implements IAdditionalRecipeIterator {
                         canHandle, recipeSet);
                 this.index++;
 
-                recipeSet.remove(null); // 移除null元素
+                recipeSet.remove(null);
                 if (!recipeSet.isEmpty()) {
-                    gtlcore$presentIndexGTRecipesIterator = recipeSet.iterator();
+                    gtlCore$presentIndexGTRecipesIterator = recipeSet.iterator();
                     return true;
                 }
             }
@@ -174,43 +186,44 @@ public class RecipeIteratorMixin implements IAdditionalRecipeIterator {
                 this.index++;
 
                 if (recipe != null) {
-                    gtlcore$singleRecipe = recipe;
+                    gtlCore$singleRecipe = recipe;
                     return true;
                 }
             }
         }
 
-        gtlcore$presentIndexGTRecipesIterator = null;
+        gtlCore$presentIndexGTRecipesIterator = null;
         return false;
     }
 
     @Unique
-    private boolean gtlcore$hasValidAdditionalRecipe() {
-        if (gtlcore$additionalRecipes == null) return false;
+    private boolean gtlCore$hasValidAdditionalRecipe() {
+        if (gtlCore$cachedNextAdditional != null) {
+            return true;
+        }
 
-        while (gtlcore$additionalIndex < gtlcore$additionalRecipes.size()) {
-            GTRecipe recipe = gtlcore$additionalRecipes.get(gtlcore$additionalIndex);
+        if (gtlCore$additionalRecipes == null) return false;
+
+        while (gtlCore$additionalIndex < gtlCore$additionalRecipes.size()) {
+            GTRecipe recipe = gtlCore$additionalRecipes.get(gtlCore$additionalIndex);
+            gtlCore$additionalIndex++;
+
             if (canHandle.test(recipe)) {
+                gtlCore$cachedNextAdditional = recipe; // 缓存找到的配方
                 return true;
             }
-            gtlcore$additionalIndex++;
         }
         return false;
     }
 
     @Unique
-    private GTRecipe gtlcore$getNextValidAdditionalRecipe() {
-        if (gtlcore$additionalRecipes == null) {
+    private GTRecipe gtlCore$getNextValidAdditionalRecipe() {
+        GTRecipe recipe = gtlCore$cachedNextAdditional;
+        gtlCore$cachedNextAdditional = null;
+
+        if (recipe == null) {
             throw new NoSuchElementException();
         }
-
-        while (gtlcore$additionalIndex < gtlcore$additionalRecipes.size()) {
-            GTRecipe recipe = gtlcore$additionalRecipes.get(gtlcore$additionalIndex);
-            gtlcore$additionalIndex++;
-            if (canHandle.test(recipe)) {
-                return recipe;
-            }
-        }
-        throw new NoSuchElementException();
+        return recipe;
     }
 }
