@@ -3,19 +3,27 @@ package org.gtlcore.gtlcore.common.machine.multiblock.electric;
 import org.gtlcore.gtlcore.api.machine.multiblock.IModularMachineHost;
 import org.gtlcore.gtlcore.api.machine.multiblock.IModularMachineModule;
 import org.gtlcore.gtlcore.api.recipe.RecipeResult;
+import org.gtlcore.gtlcore.client.gui.widget.IExtendedClickData;
 import org.gtlcore.gtlcore.utils.MachineUtil;
 
+import com.gregtechceu.gtceu.api.gui.GuiTextures;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.feature.IMachineLife;
 
 import com.lowdragmc.lowdraglib.gui.util.ClickData;
-import com.lowdragmc.lowdraglib.gui.widget.ComponentPanelWidget;
+import com.lowdragmc.lowdraglib.gui.widget.*;
 
+import net.minecraft.Util;
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.AABB;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 import earth.terrarium.adastra.common.menus.base.PlanetsMenuProvider;
 import earth.terrarium.botarium.common.menu.MenuHooks;
@@ -25,6 +33,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 
 public class SpaceElevatorMachine extends TierCasingMachine
                                   implements IModularMachineHost<SpaceElevatorMachine>, IMachineLife {
@@ -111,29 +120,84 @@ public class SpaceElevatorMachine extends TierCasingMachine
     }
 
     @Override
+    public @NotNull Widget createUIWidget() {
+        WidgetGroup group = new WidgetGroup(0, 0, 190, 125);
+        group.addWidget((new DraggableScrollableWidgetGroup(4, 4, 182, 117))
+                .setBackground(this.getScreenTexture())
+                .addWidget(new LabelWidget(4, 5, this.self().getBlockState().getBlock().getDescriptionId()))
+                .addWidget((new ComponentPanelWidget(4, 17, this::addDisplayText) {
+
+                    @Override
+                    @OnlyIn(Dist.CLIENT)
+                    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+                        var style = getStyleUnderMouse(mouseX, mouseY);
+                        if (style != null) {
+                            if (style.getClickEvent() != null) {
+                                ClickEvent clickEvent = style.getClickEvent();
+                                String componentText = clickEvent.getValue();
+                                if (clickEvent.getAction() == ClickEvent.Action.OPEN_URL) {
+                                    if (componentText.startsWith("@!")) {
+                                        String rawText = componentText.substring(2);
+                                        ClickData clickData = new ClickData();
+                                        if (clickHandler != null) {
+                                            clickHandler.accept(rawText, clickData);
+                                        }
+                                        writeClientAction(1, buf -> {
+                                            clickData.writeToBuf(buf);
+                                            buf.writeUtf(rawText);
+                                            if (Minecraft.getInstance().player != null) buf.writeUUID(Minecraft.getInstance().player.getUUID());
+                                        });
+                                    } else if (componentText.startsWith("@#")) {
+                                        String rawText = componentText.substring(2);
+                                        Util.getPlatform().openUri(rawText);
+                                    }
+                                    playButtonClickSound();
+                                    return true;
+                                }
+                            }
+                        }
+                        return super.mouseClicked(mouseX, mouseY, button);
+                    }
+
+                    @Override
+                    public void handleClientAction(int id, FriendlyByteBuf buffer) {
+                        if (id == 1) {
+                            ClickData clickData = ClickData.readFromBuf(buffer);
+                            String componentData = buffer.readUtf();
+                            ((IExtendedClickData) clickData).setUUID(buffer.readUUID());
+                            if (clickHandler != null) {
+                                clickHandler.accept(componentData, clickData);
+                            }
+                        } else {
+                            super.handleClientAction(id, buffer);
+                        }
+                    }
+                })
+                        .textSupplier(Objects.requireNonNull(this.getLevel()).isClientSide ? null : this::addDisplayText).setMaxWidthLimit(150)
+                        .clickHandler(this::handleDisplayClick)));
+        group.setBackground(GuiTextures.BACKGROUND_INVERSE);
+        return group;
+    }
+
+    @Override
     public void addDisplayText(@NotNull List<Component> textList) {
         super.addDisplayText(textList);
         if (!this.isFormed) return;
         textList.add(Component.translatable("gtceu.machine.module", getMAM()));
-        textList.add(
-                ComponentPanelWidget.withButton(Component.translatable("gtceu.machine.space_elevator.set_out"),
-                        "set_out"));
+        textList.add(ComponentPanelWidget.withButton(Component.translatable("gtceu.machine.space_elevator.set_out"),
+                "set_out"));
     }
 
     @Override
     public void handleDisplayClick(String componentData, ClickData clickData) {
+        if (!(getLevel() instanceof ServerLevel serverLevel)) return;
         if (componentData.equals("set_out") && getRecipeLogic().isWorking()) {
-            final BlockPos pos = getPos();
-            List<ServerPlayer> entities = Objects.requireNonNull(getLevel()).getEntitiesOfClass(ServerPlayer.class, new AABB(pos.getX() - 2,
-                    pos.getY() - 2,
-                    pos.getZ() - 2,
-                    pos.getX() + 2,
-                    pos.getY() + 2,
-                    pos.getZ() + 2));
-            for (ServerPlayer pr : entities) {
-                if (pr != null) {
-                    pr.addTag("spaceelevatorst");
-                    MenuHooks.openMenu(pr, new PlanetsMenuProvider());
+            UUID playerUUID = ((IExtendedClickData) clickData).getUUID();
+            if (playerUUID != null) {
+                ServerPlayer player = serverLevel.getServer().getPlayerList().getPlayer(playerUUID);
+                if (player != null) {
+                    player.addTag("spaceelevatorst");
+                    MenuHooks.openMenu(player, new PlanetsMenuProvider());
                 }
             }
         }

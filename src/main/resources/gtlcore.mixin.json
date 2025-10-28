@@ -170,6 +170,7 @@
     "gtmt.trait.CatalystFluidStackHandlerMixin",
     "gtmt.trait.CatalystItemStackHandlerMixin",
     "ldlib.AsyncThreadDataMixin",
+    "ldlib.ClickDataMixin",
     "ldlib.ItemStackTransferMixin",
     "mc.LevelChunkMixin",
     "mc.RecipeManagerMixin",

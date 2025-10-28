@@ -58,6 +58,7 @@ import net.minecraft.world.level.block.DirectionalBlock;
 import net.minecraft.world.phys.AABB;
 
 import com.hepdd.gtmthings.data.CustomMachines;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -230,7 +231,31 @@ public class AdvancedMultiBlockMachine {
             .workableCasingRenderer(GTCEu.id("block/casings/gcym/atomic_casing"), GTCEu.id("block/multiblock/data_bank"))
             .register();
 
-    public final static MultiblockMachineDefinition SPACE_COSMIC_PROBE_RECEIVERS = REGISTRATE.multiblock("space_cosmic_probe_receivers", WorkableElectricMultiblockMachine::new)
+    public final static MultiblockMachineDefinition SPACE_COSMIC_PROBE_RECEIVERS = REGISTRATE.multiblock("space_cosmic_probe_receivers", holder -> new SpaceProbeSurfaceReceptionMachine(holder) {
+
+        @Override
+        @Nullable
+        protected BlockPos findTopBlock() {
+            Level level = getLevel();
+            if (level == null) return null;
+
+            BlockPos pos = getPos();
+            BlockPos[] coordinates = new BlockPos[] {
+                    pos.offset(9, 20, 0),
+                    pos.offset(-9, 20, 0),
+                    pos.offset(0, 20, 9),
+                    pos.offset(0, 20, -9)
+            };
+
+            for (BlockPos checkPos : coordinates) {
+                if (level.getBlockState(checkPos)
+                        .is(ChemicalHelper.getBlock(TagPrefix.frameGt, GTLMaterials.Vibranium))) {
+                    return checkPos.offset(0, 1, 0);
+                }
+            }
+            return null;
+        }
+    })
             .rotationState(RotationState.NON_Y_AXIS)
             .allowExtendedFacing(false)
             .recipeType(GTLRecipeTypes.SPACE_COSMIC_PROBE_RECEIVERS_RECIPES)
@@ -458,32 +483,16 @@ public class AdvancedMultiBlockMachine {
             .workableCasingRenderer(GTLCore.id("block/space_elevator_mechanical_casing"), GTCEu.id("block/multiblock/gcym/large_assembler"))
             .register();
 
-    private static final List<int[]> poses1 = new ArrayList<>();
-    private static final List<int[]> poses2 = new ArrayList<>();
-    private static final Map<String, String> covRecipe = new HashMap<>();
+    private static final Map<String, String> COV_RECIPE = new HashMap<>();
 
     static {
-        for (int i = -2; i <= 2; i++) {
-            for (int j = -1; j >= -5; j--) {
-                for (int k = -2; k <= 2; k++) {
-                    poses1.add(new int[] { i, j, k });
-                }
-            }
-        }
-        for (int i = -4; i <= 4; i++) {
-            for (int j = -1; j >= -7; j--) {
-                for (int k = -4; k <= 4; k++) {
-                    poses2.add(new int[] { i, j, k });
-                }
-            }
-        }
-        covRecipe.put("minecraft:bone_block", "kubejs:essence_block");
-        covRecipe.put("minecraft:oak_log", "minecraft:crimson_stem");
-        covRecipe.put("minecraft:birch_log", "minecraft:warped_stem");
-        covRecipe.put("gtceu:calcium_block", "minecraft:bone_block");
-        covRecipe.put("minecraft:moss_block", "minecraft:sculk");
-        covRecipe.put("minecraft:grass_block", "minecraft:moss_block");
-        covRecipe.put("kubejs:infused_obsidian", "kubejs:draconium_block_charged");
+        COV_RECIPE.put("minecraft:bone_block", "kubejs:essence_block");
+        COV_RECIPE.put("minecraft:oak_log", "minecraft:crimson_stem");
+        COV_RECIPE.put("minecraft:birch_log", "minecraft:warped_stem");
+        COV_RECIPE.put("gtceu:calcium_block", "minecraft:bone_block");
+        COV_RECIPE.put("minecraft:moss_block", "minecraft:sculk");
+        COV_RECIPE.put("minecraft:grass_block", "minecraft:moss_block");
+        COV_RECIPE.put("kubejs:infused_obsidian", "kubejs:draconium_block_charged");
     }
 
     private static boolean blockConversionRoom(List<int[]> poses, IRecipeLogicMachine machine, int tier) {
@@ -499,8 +508,8 @@ public class AdvancedMultiBlockMachine {
                             pos = pos_0;
                             BlockPos blockPos = machine.self().getPos().offset(pos[0], pos[1], pos[2]);
                             String block = level.getBlockState(blockPos).getBlock().kjs$getId();
-                            if (covRecipe.containsKey(block)) {
-                                level.setBlockAndUpdate(blockPos, Registries.getBlock(covRecipe.get(block)).defaultBlockState());
+                            if (COV_RECIPE.containsKey(block)) {
+                                level.setBlockAndUpdate(blockPos, Registries.getBlock(COV_RECIPE.get(block)).defaultBlockState());
                             }
                         } else {
                             i--;
